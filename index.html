@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#FAFAF9">
 <meta name="description" content="Tự mix vòng charm PunPun Tinygold Charm: chọn dây, gắn charm, xem thành phẩm rồi gửi shop.">
+<link rel="preconnect" href="https://docs.google.com">
+<link rel="preconnect" href="https://lh3.googleusercontent.com">
 <style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
 </head>
 <body>
@@ -340,7 +342,7 @@ function drawCharm(ctx,p,v){
 }
 
 function drawStrap(ctx,cx,cy,R,s,sp,sv,withClasp){
-  const m=METAL[sv.m||'silver'], TAU=Math.PI*2, Cpx=TAU*R;
+  const m=metalOf(sv.m), TAU=Math.PI*2, Cpx=TAU*R;
   const circ=(r)=>{ctx.beginPath();ctx.arc(cx,cy,r,0,TAU);};
   ctx.save();
   ctx.strokeStyle='rgba(40,30,15,.10)';ctx.lineWidth=3.6*s;ctx.beginPath();ctx.arc(cx,cy+1.3*s,R,0,TAU);ctx.stroke();
@@ -357,17 +359,18 @@ function drawStrap(ctx,cx,cy,R,s,sp,sv,withClasp){
       else{rr(ctx,-1.6*s,-.32*s,3.2*s,.64*s,.32*s);ctx.fillStyle=m.b;ctx.fill();}
       ctx.restore();}
   }else if(sp.kind==='leather'){
-    const c=sv.c;ctx.lineWidth=3.6*s;ctx.strokeStyle=c;circ(R);ctx.stroke();
+    const c=sv.c||m.b;ctx.lineWidth=3.6*s;ctx.strokeStyle=c;circ(R);ctx.stroke();
     const n=Math.round(Cpx/(1.6*s));ctx.strokeStyle=shade(c,-.28);ctx.lineWidth=Math.max(.5,.35*s);ctx.beginPath();for(let i=0;i<n;i++){const a=i/n*TAU,d=.8*s/R;seg(R-1.7*s,a,R,a+d);seg(R,a+d,R+1.7*s,a);}ctx.stroke();
     ctx.strokeStyle='rgba(255,255,255,.2)';ctx.lineWidth=.5*s;circ(R-.9*s);ctx.stroke();
   }else{
-    const c=sv.c;ctx.lineWidth=2.6*s;ctx.strokeStyle=c;circ(R);ctx.stroke();
+    const c=sv.c||m.b;ctx.lineWidth=2.6*s;ctx.strokeStyle=c;circ(R);ctx.stroke();
     const n=Math.round(Cpx/(1.2*s));ctx.strokeStyle=shade(c,-.32);ctx.lineWidth=Math.max(.5,.3*s);ctx.beginPath();for(let i=0;i<n;i++){const a=i/n*TAU;seg(R-1.25*s,a,R+1.25*s,a+.9*s/R);}ctx.stroke();
     ctx.strokeStyle='rgba(255,255,255,.22)';ctx.lineWidth=.45*s;circ(R-.6*s);ctx.stroke();
   }
   ctx.restore();
   if(withClasp!==false){
-    const cm=METAL[sv.m||'silver'];ctx.save();ctx.translate(cx,cy-R);ctx.scale(s,s);
+    const cm=(sp.kind==='leather'||sp.kind==='cord')&&typeof sv.m==='string'&&sv.m[0]==='#'?METAL.silver:m;
+    ctx.save();ctx.translate(cx,cy-R);ctx.scale(s,s);
     body(ctx,()=>rr(ctx,-5,-3.3,10,6.6,2.6),mgrad(ctx,cm,6.6));
     ctx.fillStyle=rgba(cm.e,.5);ctx.fillRect(-.16,-3,.32,6);
     ctx.strokeStyle=rgba(cm.d,.6);ctx.lineWidth=.25;ctx.beginPath();ctx.moveTo(-3.4,-2.6);ctx.lineTo(-3.4,2.6);ctx.moveTo(3.4,-2.6);ctx.lineTo(3.4,2.6);ctx.stroke();
@@ -375,39 +378,123 @@ function drawStrap(ctx,cx,cy,R,s,sp,sv,withClasp){
   }
 }
 
+/* ---------- catalog: Google Sheet + dữ liệu mẫu ---------- */
+const SHEET_ID="1EfG3PN7HUzXhmpJlYy1-vo6IIdRsOmVQyewymnijGik";
+const SHEET_GIDS={charm:"0",strap:"1728579730"};
+const noAccent=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/đ/g,'d').replace(/Đ/g,'D');
+const keyOf=s=>noAccent(s).toLowerCase().replace(/[^a-z0-9#]/g,'');
+const cleanCode=s=>noAccent(s).trim().replace(/[^A-Za-z0-9-]+/g,'-').replace(/^-+|-+$/g,'');
+function metalOf(x){if(x&&typeof x==='object')return x;if(typeof x==='string'&&/^#[0-9a-f]{3,6}$/i.test(x))return{b:x,l:shade(x,.6),d:shade(x,-.3),e:shade(x,-.55)};return METAL[x]||METAL.silver;}
+
+let CAT={charms:[],straps:[],cats:[],source:'demo',loading:false};
+let CE={},SE={};
+function sizeEntry(e){const h=e.w*(e.ar||1);e.h=h;if(e.kind==='dangle'){e.top=-Math.min(2.2,h*.15);e.bottom=h+e.top;e.strapW=Math.min(e.w,6);}else{e.top=-h/2;e.bottom=h/2;e.strapW=e.w;}return e;}
+function demoCatalog(){
+  const catName=Object.fromEntries(CATS.map(c=>[c.id,c.n]));
+  const charms=[];CHARMS.forEach(p=>p.variants.forEach((v,vi)=>{const x=ext(p);charms.push({code:p.id+'-'+vi,name:p.name,vname:v.n,cat:catName[p.cat],price:v.p,kind:p.type==='dangle'?'dangle':'bead',w:x.w,h:x.h,top:x.top,bottom:x.bottom,strapW:DIMS[p.type].w,img:null,demo:{p,v}});}));
+  const straps=[];STRAPS.forEach(sp=>sp.variants.forEach((v,vi)=>straps.push({code:sp.id+'-'+vi,name:sp.name,vname:v.n,price:v.p,img:null,kind:sp.kind,m:v.m||'silver',c:v.c||null})));
+  return{charms,straps};
+}
+function setCatalog(charms,straps,source){
+  CAT={charms,straps,cats:[],source,loading:false};
+  CE=Object.fromEntries(charms.map(e=>[e.code,e]));SE=Object.fromEntries(straps.map(e=>[e.code,e]));
+  charms.forEach(e=>{if(e.cat&&!CAT.cats.includes(e.cat))CAT.cats.push(e.cat);});
+  if(catId!=='all'&&!CAT.cats.includes(catId))catId='all';
+  charms.forEach(e=>{if(e.img)loadImg(e);});
+}
+function parseCSV(t){const rows=[];let row=[],f='',q=false;for(let i=0;i<t.length;i++){const ch=t[i];if(q){if(ch==='"'){if(t[i+1]==='"'){f+='"';i++;}else q=false;}else f+=ch;}else if(ch==='"')q=true;else if(ch===','){row.push(f);f='';}else if(ch==='\n'||ch==='\r'){if(ch==='\r'&&t[i+1]==='\n')i++;row.push(f);rows.push(row);row=[];f='';}else f+=ch;}if(f||row.length){row.push(f);rows.push(row);}return rows;}
+function tableOf(t){const rows=parseCSV(t).filter(r=>r.some(c=>c.trim()!==''));if(!rows.length)return[];const head=rows[0].map(keyOf);return rows.slice(1).map(r=>{const o={};head.forEach((h,i)=>o[h]=(r[i]||'').trim());return o;});}
+const num=s=>{const n=parseFloat(String(s||'').replace(',','.').replace(/[^0-9.]/g,''));return isFinite(n)?n:0;};
+const money=s=>parseInt(String(s||'').replace(/[^0-9]/g,''),10)||0;
+const shown=s=>!['khong','no','false','0','an','hethang'].includes(keyOf(s));
+function normImg(u){u=(u||'').trim();if(!u)return null;const m=u.match(/\/d\/([\w-]{20,})/)||u.match(/[?&]id=([\w-]{20,})/);if(m&&/google\./.test(u))return`https://lh3.googleusercontent.com/d/${m[1]}=w800`;if(/^https?:\/\//.test(u))return u;if(/\.(png|jpe?g|webp|gif|avif)$/i.test(u))return'images/'+encodeURIComponent(u.replace(/^.*[\\/]/,''));return null;}
+const kindOf=s=>{const k=keyOf(s);return k.startsWith('treo')||k==='dangle'?'dangle':'bead';};
+function strapKind(s){const k=keyOf(s);if(k.includes('ran'))return'snake';if(k.includes('xich'))return'cable';if(k.includes('du'))return'cord';if(k.includes('da'))return'leather';return'snake';}
+function strapColor(s){const t=(s||'').trim();if(/^#[0-9a-f]{3,6}$/i.test(t))return t;const k=keyOf(t);if(k.includes('vanghong')||k.includes('rose'))return'rose';if(k.includes('vang')||k.includes('gold'))return'gold';return'silver';}
+function buildFromSheet(cr,sr){
+  const charms=[],seen=new Set();
+  cr.forEach((r,i)=>{if(!shown(r.hien))return;const name=r.tencharm||r.ten||'';if(!name)return;let code=cleanCode(r.ma)||('C'+(i+2));while(seen.has(code))code+='-2';seen.add(code);
+    charms.push(sizeEntry({code,name,vname:r.phanloai||'',cat:r.nhom||'Khác',price:money(r.gia),kind:kindOf(r.kieu),w:num(r.rongmm)||10,ar:1,img:normImg(r.linkanh),demo:null}));});
+  const straps=[],seenS=new Set();
+  sr.forEach((r,i)=>{if(!shown(r.hien))return;const name=r.tenday||r.ten||'';if(!name)return;let code=cleanCode(r.ma)||('D'+(i+2));while(seenS.has(code))code+='-2';seenS.add(code);
+    const kind=strapKind(r.kieuday),col=strapColor(r.mau);
+    straps.push({code,name,vname:r.phanloai||'',price:money(r.gia),img:normImg(r.linkanh),kind,m:col,c:(kind==='leather'||kind==='cord')?metalOf(col).b:null});});
+  return{charms,straps};
+}
+function applyTables(cr,sr){
+  const b=buildFromSheet(cr,sr),d=demoCatalog();
+  const charms=b.charms.length?b.charms:d.charms, straps=b.straps.length?b.straps:d.straps;
+  setCatalog(charms,straps,b.charms.length?'sheet':'demo');
+}
+async function fetchTab(gid){
+  const u=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&headers=1&gid=${gid}&t=${Date.now()}`;
+  const ctl=new AbortController(),to=setTimeout(()=>ctl.abort(),10000);
+  try{const r=await fetch(u,{signal:ctl.signal,cache:'no-store'});if(!r.ok)throw new Error('HTTP '+r.status);const t=await r.text();if(/^\s*</.test(t))throw new Error('not csv');return tableOf(t);}
+  finally{clearTimeout(to);}
+}
+async function loadSheet(){const[cr,sr]=await Promise.all([fetchTab(SHEET_GIDS.charm),fetchTab(SHEET_GIDS.strap)]);return{cr,sr};}
+
+/* ảnh charm */
+const IMG=new Map();
+let rq=0;function scheduleRender(){if(rq)return;rq=requestAnimationFrame(()=>{rq=0;renderStage();});}
+function loadImg(e){
+  let rec=IMG.get(e.img);
+  if(!rec){
+    rec={el:null,ok:false,cors:true,failed:false,waiters:[]};IMG.set(e.img,rec);
+    const done=(el,cors)=>{rec.el=el;rec.ok=true;rec.cors=cors;const w=rec.waiters;rec.waiters=[];w.forEach(f=>f());};
+    const a=new Image();a.crossOrigin='anonymous';a.decoding='async';
+    a.onload=()=>done(a,true);
+    a.onerror=()=>{const b=new Image();b.decoding='async';b.onload=()=>done(b,false);b.onerror=()=>{rec.failed=true;};b.src=e.img;};
+    a.src=e.img;
+  }
+  const apply=()=>{if(rec.el&&rec.el.naturalWidth){e.ar=rec.el.naturalHeight/rec.el.naturalWidth;sizeEntry(e);}scheduleRender();};
+  if(rec.ok)apply();else rec.waiters.push(apply);
+}
+function drawEntry(ctx,e){
+  if(e.demo){drawCharm(ctx,e.demo.p,e.demo.v);return;}
+  const rec=e.img&&IMG.get(e.img);
+  if(rec&&rec.ok){shadowOn(ctx);ctx.drawImage(rec.el,-e.w/2,e.top,e.w,e.h);shadowOff(ctx);return;}
+  const w=e.strapW,h=Math.min(e.h,w*1.1),m=METAL.silver;
+  body(ctx,()=>rr(ctx,-w/2,-h/2,w,h,Math.min(w,h)*.42),mgrad(ctx,m,h));
+  ctx.fillStyle=m.e;ctx.font=`700 ${Math.min(w,h)*.5}px "Be Vietnam Pro", system-ui, sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(((e.name||'?').trim()[0]||'?').toUpperCase(),0,.3);
+}
+
 /* ---------- state ---------- */
 let uidSeq=1;
 const newUid=()=>uidSeq++;
-let state={strap:{pid:'sn',vi:1},size:17,items:[]};
+let state={strap:'',size:17,items:[]};
 let sel=null, showNums=false, drag=null, catId='all', ctab='charm';
 const hist=[];
-const SAMPLE=[['c01',1],['g01',0],['e01',0],['l02',15],['l02',20],['l02',13],['d01',3],['b01',1],['g01',1],['c01',1]];
-function sampleState(){return{strap:{pid:'sn',vi:1},size:17,items:SAMPLE.map(([pid,vi])=>({uid:newUid(),pid,vi}))};}
+const SAMPLE=['c01-1','g01-0','e01-0','l02-15','l02-20','l02-13','d01-3','b01-1','g01-1','c01-1'];
+function defaultState(){
+  if(CAT.source==='demo'&&SE['sn-1'])return{strap:'sn-1',size:17,items:SAMPLE.filter(c=>CE[c]).map(code=>({uid:newUid(),code}))};
+  return{strap:CAT.straps[0].code,size:17,items:[]};
+}
 const snap=()=>JSON.stringify({strap:state.strap,size:state.size,items:state.items});
 function pushHist(){hist.push(snap());if(hist.length>80)hist.shift();}
 function commit(fn){pushHist();fn();changed();}
 const selIndex=()=>state.items.findIndex(i=>i.uid===sel);
 const selItem=()=>state.items.find(i=>i.uid===sel)||null;
-const strapP=()=>ST[state.strap.pid], strapV=()=>ST[state.strap.pid].variants[state.strap.vi];
-const total=()=>strapV().p+state.items.reduce((a,it)=>a+CH[it.pid].variants[it.vi].p,0);
-const usedMM=()=>{const n=state.items.length;return state.items.reduce((a,it)=>a+DIMS[CH[it.pid].type].w,0)+.35*Math.max(0,n-1);};
+const strapE=()=>SE[state.strap]||CAT.straps[0];
+const total=()=>strapE().price+state.items.reduce((a,it)=>a+(CE[it.code]?CE[it.code].price:0),0);
+const usedMM=()=>{const n=state.items.length;return state.items.reduce((a,it)=>a+(CE[it.code]?CE[it.code].strapW:0),0)+.35*Math.max(0,n-1);};
+function fitState(){state.items=state.items.filter(it=>CE[it.code]);if(!SE[state.strap])state.strap=CAT.straps[0].code;if(!SIZES.includes(state.size))state.size=17;}
 
-function encode(){return['pp1',state.strap.pid+'.'+state.strap.vi,state.size,state.items.map(i=>i.pid+'.'+i.vi).join('_')].join('~');}
+function encode(){return['pp2',state.strap,state.size,state.items.map(i=>i.code).join('_')].join('~');}
 function decode(tok){
   try{
     tok=decodeURIComponent(String(tok).trim());
     const h=tok.indexOf('#');if(h>=0)tok=tok.slice(h+1);
-    const parts=tok.split('~');if(parts[0]!=='pp1'||parts.length<3)return null;
-    const [sp,svi]=parts[1].split('.');if(!ST[sp]||!ST[sp].variants[+svi])return null;
-    const size=+parts[2];if(!SIZES.includes(size))return null;
-    const items=[];
-    if(parts[3]){for(const t of parts[3].split('_')){const [pid,vi]=t.split('.');if(!CH[pid]||!CH[pid].variants[+vi])return null;items.push({uid:newUid(),pid,vi:+vi});}}
-    return{strap:{pid:sp,vi:+svi},size,items};
+    const parts=tok.split('~');if(parts[0]!=='pp2'||parts.length<3)return null;
+    const size=+parts[2];
+    const codes=parts[3]?parts[3].split('_').filter(Boolean):[];
+    const items=codes.filter(c=>CE[c]).map(code=>({uid:newUid(),code}));
+    return{strap:SE[parts[1]]?parts[1]:CAT.straps[0].code,size:SIZES.includes(size)?size:17,items,missing:codes.length-items.length};
   }catch(e){return null;}
 }
 const shareLink=()=>APP_URL?APP_URL+'#'+encode():'';
-function saveDraft(){try{localStorage.setItem('punpun-mix-v1',encode());}catch(e){}}
-function loadDraft(){try{const t=localStorage.getItem('punpun-mix-v1');return t?decode(t):null;}catch(e){return null;}}
+function saveDraft(){try{localStorage.setItem('punpun-mix-v2',encode());}catch(e){}}
+function loadDraft(){try{const t=localStorage.getItem('punpun-mix-v2');return t?decode(t):null;}catch(e){return null;}}
 
 /* ---------- stage ---------- */
 const cv=document.getElementById('stage'), cx2=cv.getContext('2d');
@@ -416,38 +503,42 @@ const tok=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim
 
 function layout(Sz){
   const R=Sz*.3, cx=Sz/2, cy=Sz*.45, L=state.size*10, s=2*Math.PI*R/L, gap=.35;
-  const ws=state.items.map(it=>DIMS[CH[it.pid].type].w);
+  const ents=state.items.map(it=>CE[it.code]).filter(Boolean);
+  const its=state.items.filter(it=>CE[it.code]);
+  const ws=ents.map(e=>e.strapW);
   const W=ws.reduce((a,b)=>a+b,0)+gap*Math.max(0,ws.length-1), maxW=L-13, k=W>maxW?maxW/W:1, Wk=W*k;
   let acc=0;
-  const list=state.items.map((it,i)=>{const c=(acc+ws[i]/2)*k;acc+=ws[i]+gap;const th=Math.PI/2+(Wk/2-c)*s/R;const p=CH[it.pid];return{it,p,v:p.variants[it.vi],c,th,x:cx+R*Math.cos(th),y:cy+R*Math.sin(th)};});
+  const list=its.map((it,i)=>{const c=(acc+ws[i]/2)*k;acc+=ws[i]+gap;const th=Math.PI/2+(Wk/2-c)*s/R;return{it,e:ents[i],c,th,x:cx+R*Math.cos(th),y:cy+R*Math.sin(th)};});
   return{R,cx,cy,s,L,Wk,k,list};
 }
 function drawScene(ctx,Sz,o){
   const lay=layout(Sz);
   if(o.bg){ctx.fillStyle=o.bg;ctx.fillRect(0,0,Sz,Sz);}
+  if(!CAT.straps.length)return lay;
   SH={c:'rgba(38,26,8,.26)',b:3*o.k,y:1.4*o.k};
-  drawStrap(ctx,lay.cx,lay.cy,lay.R,lay.s,strapP(),strapV());
-  const order=lay.list.filter(e=>!(o.drag&&e.it.uid===o.drag));
-  const dragged=lay.list.find(e=>o.drag&&e.it.uid===o.drag);
-  for(const e of order.concat(dragged?[dragged]:[])){
-    const lifted=e===dragged;
-    ctx.save();ctx.translate(e.x,e.y);ctx.rotate(e.th-Math.PI/2);ctx.scale(lay.s*(lifted?1.12:1),lay.s*(lifted?1.12:1));
+  const st=strapE();
+  drawStrap(ctx,lay.cx,lay.cy,lay.R,lay.s,{kind:st.kind},{m:st.m,c:st.c});
+  const order=lay.list.filter(x=>!(o.drag&&x.it.uid===o.drag));
+  const dragged=lay.list.find(x=>o.drag&&x.it.uid===o.drag);
+  for(const x of order.concat(dragged?[dragged]:[])){
+    const lifted=x===dragged,e=x.e;
+    ctx.save();ctx.translate(x.x,x.y);ctx.rotate(x.th-Math.PI/2);ctx.scale(lay.s*(lifted?1.12:1),lay.s*(lifted?1.12:1));
     if(lifted)SH={c:'rgba(38,26,8,.35)',b:9*o.k,y:5*o.k};
-    drawCharm(ctx,e.p,e.v);
+    drawEntry(ctx,e);
     if(lifted)SH={c:'rgba(38,26,8,.26)',b:3*o.k,y:1.4*o.k};
-    if(o.sel===e.it.uid){const x=ext(e.p);rr(ctx,-x.w/2-1.5,x.top-1.5,x.w+3,x.bottom-x.top+3,2.6);ctx.strokeStyle=o.ring;ctx.lineWidth=1.8/lay.s;ctx.stroke();}
+    if(o.sel===x.it.uid){rr(ctx,-e.w/2-1.5,e.top-1.5,e.w+3,e.bottom-e.top+3,2.6);ctx.strokeStyle=o.ring;ctx.lineWidth=1.8/lay.s;ctx.stroke();}
     ctx.restore();
   }
   SH=null;
   if(o.nums&&lay.list.length){
     const br=Math.max(7.5,Math.min(11,2.3*lay.s));
     ctx.font=`700 ${Math.round(br*1.05)}px "Be Vietnam Pro", system-ui, sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
-    lay.list.forEach((e,i)=>{const r=lay.R-(DIMS[e.p.type].h/2+3.6)*lay.s;const x=lay.cx+r*Math.cos(e.th),y=lay.cy+r*Math.sin(e.th);ctx.beginPath();ctx.arc(x,y,br,0,Math.PI*2);ctx.fillStyle=o.numBg;ctx.fill();ctx.fillStyle=o.numFg;ctx.fillText(String(i+1),x,y+.5);});
+    lay.list.forEach((x,i)=>{const r=lay.R-(-x.e.top+3.6)*lay.s;const px=lay.cx+r*Math.cos(x.th),py=lay.cy+r*Math.sin(x.th);ctx.beginPath();ctx.arc(px,py,br,0,Math.PI*2);ctx.fillStyle=o.numBg;ctx.fill();ctx.fillStyle=o.numFg;ctx.fillText(String(i+1),px,py+.5);});
   }
   if(!lay.list.length&&o.empty){
     ctx.fillStyle=o.empty;ctx.textAlign='center';ctx.textBaseline='middle';
-    ctx.font=`600 ${Math.max(13,Sz*.04)}px "Be Vietnam Pro", system-ui, sans-serif`;ctx.fillText('Chưa có charm',lay.cx,lay.cy-8);
-    ctx.font=`400 ${Math.max(11.5,Sz*.032)}px "Be Vietnam Pro", system-ui, sans-serif`;ctx.fillText('Chọn charm bên dưới để thêm',lay.cx,lay.cy+12);
+    ctx.font=`600 ${Math.max(13,Sz*.04)}px "Be Vietnam Pro", system-ui, sans-serif`;ctx.fillText(CAT.loading?'Đang tải danh mục…':'Chưa có charm',lay.cx,lay.cy-8);
+    if(!CAT.loading){ctx.font=`400 ${Math.max(11.5,Sz*.032)}px "Be Vietnam Pro", system-ui, sans-serif`;ctx.fillText('Chọn charm bên dưới để thêm',lay.cx,lay.cy+12);}
   }
   return lay;
 }
@@ -468,9 +559,10 @@ function sizeStage(){
 function hit(px,py){
   if(!LAY)return null;
   for(let i=LAY.list.length-1;i>=0;i--){
-    const e=LAY.list[i],d=DIMS[e.p.type],r=(Math.max(d.w,d.h)/2+1.2)*LAY.s;
-    if(Math.hypot(px-e.x,py-e.y)<r)return e;
-    if(e.p.type==='dangle'){const ph=e.th-Math.PI/2,qx=e.x-PEND_Y*LAY.s*Math.sin(ph),qy=e.y+PEND_Y*LAY.s*Math.cos(ph);if(Math.hypot(px-qx,py-qy)<(PEND_R+1.2)*LAY.s)return e;}
+    const x=LAY.list[i],e=x.e,ph=-(x.th-Math.PI/2),dx=px-x.x,dy=py-x.y;
+    const lx=(dx*Math.cos(ph)-dy*Math.sin(ph))/LAY.s, ly=(dx*Math.sin(ph)+dy*Math.cos(ph))/LAY.s;
+    const pad=Math.max(1.5,8/LAY.s-e.w/2);
+    if(lx>=-e.w/2-pad&&lx<=e.w/2+pad&&ly>=e.top-1.5&&ly<=e.bottom+1.5)return x;
   }
   return null;
 }
@@ -509,45 +601,41 @@ cv.addEventListener('keydown',e=>{
 
 /* ---------- thumbnails ---------- */
 const thumbCache=new Map();
-function charmThumb(pid,vi,px){
-  px=px||96;const key=pid+'.'+vi+'.'+px;if(thumbCache.has(key))return thumbCache.get(key);
+function charmThumb(code,px){
+  const e=CE[code];if(!e)return'';
+  if(e.img)return e.img;
+  px=px||96;const key=code+'.'+px;if(thumbCache.has(key))return thumbCache.get(key);
   const D=2,c=document.createElement('canvas');c.width=c.height=px*D;const x=c.getContext('2d');x.scale(D,D);
-  const p=CH[pid],v=p.variants[vi],e=ext(p),k=px*.74/17.5;
+  const k=px*.74/17.5;
   x.translate(px/2,px/2-(e.top+e.bottom)/2*k);
   x.strokeStyle='rgba(150,144,135,.35)';x.lineWidth=2.4*k;x.lineCap='round';x.beginPath();x.moveTo(-px*.42,0);x.lineTo(px*.42,0);x.stroke();
-  x.scale(k,k);SH={c:'rgba(38,26,8,.22)',b:3*D,y:1.2*D};drawCharm(x,p,v);SH=null;
+  x.scale(k,k);SH={c:'rgba(38,26,8,.22)',b:3*D,y:1.2*D};drawEntry(x,e);SH=null;
   const url=c.toDataURL();thumbCache.set(key,url);return url;
 }
-function strapThumb(pid,vi,px){
-  px=px||96;const key='S'+pid+'.'+vi+'.'+px;if(thumbCache.has(key))return thumbCache.get(key);
+function strapThumb(code,px){
+  const e=SE[code];if(!e)return'';
+  if(e.img)return e.img;
+  px=px||96;const key='S'+code+'.'+px;if(thumbCache.has(key))return thumbCache.get(key);
   const D=2,c=document.createElement('canvas');c.width=c.height=px*D;const x=c.getContext('2d');x.scale(D,D);
-  const R=px*.34,s=2*Math.PI*R/150;SH={c:'rgba(38,26,8,.2)',b:2*D,y:1*D};drawStrap(x,px/2,px/2+2,R,s,ST[pid],ST[pid].variants[vi]);SH=null;
+  const R=px*.34,s=2*Math.PI*R/150;SH={c:'rgba(38,26,8,.2)',b:2*D,y:1*D};drawStrap(x,px/2,px/2+2,R,s,{kind:e.kind},{m:e.m,c:e.c});SH=null;
   const url=c.toDataURL();thumbCache.set(key,url);return url;
-}
-function swatch(v){
-  if(v.c&&v.c2)return`linear-gradient(135deg, ${v.c} 50%, ${v.c2} 50%)`;
-  if(v.c)return`radial-gradient(circle at 35% 30%, ${shade(v.c,.45)}, ${v.c} 55%, ${shade(v.c,-.2)})`;
-  const m=METAL[v.m||'silver'];return`linear-gradient(135deg, ${m.l}, ${m.b} 50%, ${m.d})`;
-}
-function chipHTML(v,i,on,attr){
-  if(v.ch)return`<button class="chip letter" role="radio" aria-checked="${on}" ${attr}="${i}" aria-label="${esc(v.n)}">${v.ch}</button>`;
-  return`<button class="chip" role="radio" aria-checked="${on}" ${attr}="${i}"><span class="sw" style="background:${swatch(v)}"></span>${esc(v.n)}</button>`;
 }
 
-/* ---------- catalog ---------- */
+/* ---------- catalog UI ---------- */
 const grid=document.getElementById('grid'), side=document.getElementById('cside'), gridNote=document.getElementById('gridNote');
 function renderCatalog(){
   document.querySelectorAll('[data-ctab]').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.ctab===ctab)));
+  if(CAT.loading&&!CAT.charms.length){side.hidden=true;grid.innerHTML='';gridNote.textContent='Đang tải danh mục…';return;}
   if(ctab==='charm'){
     side.hidden=false;
-    side.innerHTML=CATS.map(c=>`<button data-cat="${c.id}" aria-current="${c.id===catId}">${c.n}</button>`).join('');
-    const counts={};state.items.forEach(i=>{const k=i.pid+'.'+i.vi;counts[k]=(counts[k]||0)+1;});
-    const list=CHARMS.filter(p=>catId==='all'||p.cat===catId);
-    grid.innerHTML=list.map(p=>p.variants.map((v,vi)=>{const k=p.id+'.'+vi;return`<button class="card" data-charm="${k}" aria-label="Thêm ${esc(p.name)} – ${esc(v.n)}, ${fmt(v.p)}">${counts[k]?`<span class="used">×${counts[k]}</span>`:''}<img src="${charmThumb(p.id,vi)}" alt="" loading="lazy"><span class="nm">${esc(p.name)}</span><span class="pr">${fmt(v.p)}</span><span class="tag">${esc(v.n)}</span></button>`;}).join('')).join('');
-    gridNote.textContent='Bấm vào charm là charm được gắn lên vòng. Hình minh hoạ và giá mẫu, shop sẽ thay bằng ảnh và giá thật.';
+    side.innerHTML=`<button data-cat="all" aria-current="${catId==='all'}">Tất cả</button>`+CAT.cats.map((c,i)=>`<button data-cat="${i}" aria-current="${c===catId}">${esc(c)}</button>`).join('');
+    const counts={};state.items.forEach(i=>{counts[i.code]=(counts[i.code]||0)+1;});
+    const list=CAT.charms.filter(e=>catId==='all'||e.cat===catId);
+    grid.innerHTML=list.map(e=>`<button class="card" data-charm="${e.code}" aria-label="Thêm ${esc(e.name)} – ${esc(e.vname)}, ${fmt(e.price)}">${counts[e.code]?`<span class="used">×${counts[e.code]}</span>`:''}<img src="${esc(charmThumb(e.code))}" alt="" loading="lazy"><span class="nm">${esc(e.name)}</span><span class="pr">${fmt(e.price)}</span>${e.vname?`<span class="tag">${esc(e.vname)}</span>`:''}</button>`).join('');
+    gridNote.textContent=CAT.source==='sheet'?'Bấm vào charm là charm được gắn lên vòng.':'Bấm vào charm là charm được gắn lên vòng. Đang hiện hình minh hoạ và giá mẫu.';
   }else{
     side.hidden=true;
-    grid.innerHTML=STRAPS.map(sp=>sp.variants.map((v,vi)=>{const on=state.strap.pid===sp.id&&state.strap.vi===vi;return`<button class="card ${on?'on':''}" data-strap="${sp.id}.${vi}" aria-pressed="${on}"><img src="${strapThumb(sp.id,vi)}" alt="" loading="lazy"><span class="nm">${esc(sp.name)}</span><span class="pr">${fmt(v.p)}</span><span class="tag">${on?'Đang dùng':esc(v.n)}</span></button>`;}).join('')).join('');
+    grid.innerHTML=CAT.straps.map(e=>{const on=state.strap===e.code;return`<button class="card ${on?'on':''}" data-strap="${e.code}" aria-pressed="${on}"><img src="${esc(strapThumb(e.code))}" alt="" loading="lazy"><span class="nm">${esc(e.name)}</span><span class="pr">${fmt(e.price)}</span><span class="tag">${on?'Đang dùng':esc(e.vname||'Chọn')}</span></button>`;}).join('');
     gridNote.textContent='Bấm vào dây để đổi dây cho vòng. Chọn size ở nút "Size dây" phía trên.';
   }
 }
@@ -558,13 +646,13 @@ function renderSpecs(){
   $('spSize').textContent=state.size+' cm';
   $('spCount').textContent=state.items.length;
   $('spUsed').textContent=(usedMM()/10).toLocaleString('vi-VN',{maximumFractionDigits:1})+' / '+state.size+' cm';
-  $('spTotal').textContent=fmt(total());
+  $('spTotal').textContent=CAT.straps.length?fmt(total()):'–';
 }
 function refreshSel(){
   if(sel&&!selItem())sel=null;
   const it=selItem();
   $('selPill').hidden=!it;$('hint').hidden=!!it||!state.items.length;
-  if(it){const p=CH[it.pid],v=p.variants[it.vi];$('selPill').textContent=`#${selIndex()+1} · ${p.name} · ${v.n} · ${fmt(v.p)}`;}
+  if(it){const e=CE[it.code];$('selPill').textContent=`#${selIndex()+1} · ${e.name}${e.vname?' · '+e.vname:''} · ${fmt(e.price)}`;}
   const has=!!it;
   document.querySelectorAll('[data-tool="left"],[data-tool="right"],[data-tool="dup"],[data-tool="del"]').forEach(b=>b.disabled=!has);
   if(has){const i=selIndex();document.querySelector('[data-tool="left"]').disabled=i<=0;document.querySelector('[data-tool="right"]').disabled=i>=state.items.length-1;}
@@ -572,14 +660,14 @@ function refreshSel(){
   $('clearBtn').disabled=!state.items.length;
   renderStage();
 }
-function changed(){saveDraft();renderSpecs();renderCatalog();refreshSel();if(sheetKind==='done')renderSheet();}
+function changed(){if(!CAT.loading)saveDraft();renderSpecs();renderCatalog();refreshSel();if(sheetKind==='done')renderSheet();}
 
 /* ---------- tools ---------- */
 let clearArmed=null;
 function tool(t){
   const i=selIndex();
   if(t==='size')return openSheet('size');
-  if(t==='undo'){if(!hist.length)return;const s=JSON.parse(hist.pop());state={strap:s.strap,size:s.size,items:s.items};changed();toast('Đã hoàn tác');return;}
+  if(t==='undo'){if(!hist.length)return;const s=JSON.parse(hist.pop());state={strap:s.strap,size:s.size,items:s.items};fitState();changed();toast('Đã hoàn tác');return;}
   if(t==='clear'){
     const b=$('clearBtn');
     if(!clearArmed){b.classList.add('armed');toast('Bấm "Xoá hết" lần nữa để xoá toàn bộ charm');clearArmed=setTimeout(()=>{b.classList.remove('armed');clearArmed=null;},3000);return;}
@@ -589,7 +677,7 @@ function tool(t){
   if(i<0)return;
   if(t==='left'&&i>0)commit(()=>{const[it]=state.items.splice(i,1);state.items.splice(i-1,0,it);});
   if(t==='right'&&i<state.items.length-1)commit(()=>{const[it]=state.items.splice(i,1);state.items.splice(i+1,0,it);});
-  if(t==='dup')commit(()=>{const it=state.items[i];const n={uid:newUid(),pid:it.pid,vi:it.vi};state.items.splice(i+1,0,n);sel=n.uid;});
+  if(t==='dup')commit(()=>{const it=state.items[i];const n={uid:newUid(),code:it.code};state.items.splice(i+1,0,n);sel=n.uid;});
   if(t==='del')commit(()=>{state.items.splice(i,1);const nx=state.items[Math.min(i,state.items.length-1)];sel=nx?nx.uid:null;});
 }
 
@@ -601,37 +689,22 @@ function openSheet(kind,data){lastFocus=document.activeElement;sheetKind=kind;sh
 function closeSheet(){overlay.hidden=true;sheetKind=null;sheetData=null;sheet.className='sheet';if(lastFocus&&lastFocus.focus)lastFocus.focus({preventScroll:true});}
 overlay.addEventListener('click',e=>{if(e.target===overlay)closeSheet();});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!overlay.hidden)closeSheet();});
+const label=e=>esc(e.name)+(e.vname?' – '+esc(e.vname):'');
 
 function renderSheet(){
   sheet.className='sheet';
   const d=sheetData;
-  if(sheetKind==='charm'){
-    const p=CH[d.pid],v=p.variants[d.vi],editing=d.uid!=null&&state.items.some(i=>i.uid===d.uid);
-    const idx=editing?state.items.findIndex(i=>i.uid===d.uid):selIndex();
-    sheet.innerHTML=`<div class="sh-head"><div><div class="code">${codeOf(p)}</div><h3>${esc(p.name)}</h3></div>${X}</div>
-      <div class="preview"><img src="${charmThumb(p.id,d.vi,180)}" alt="${esc(p.name+' – '+v.n)}"></div>
-      <div class="lbl">Phân loại · <b>${esc(v.n)}</b></div>
-      <div class="chips" role="radiogroup" aria-label="Phân loại">${p.variants.map((vv,i)=>chipHTML(vv,i,i===d.vi,'data-sv')).join('')}</div>
-      <p class="small">${editing?`Đổi phân loại cho charm #${idx+1} trên vòng.`:(idx>=0?`Charm sẽ được thêm ngay sau charm #${idx+1} đang chọn.`:'Charm sẽ được thêm vào cuối dây. Kéo trên vòng để đổi vị trí.')}</p>
-      <div class="sh-foot"><span class="price">${fmt(v.p)}</span><button class="btn primary" data-act="${editing?'apply':'add'}">${editing?'Lưu phân loại':'Thêm vào vòng'}</button></div>`;
-  }else if(sheetKind==='strap'){
-    const sp=ST[d.pid],v=sp.variants[d.vi],using=state.strap.pid===sp.id&&state.strap.vi===d.vi;
-    sheet.innerHTML=`<div class="sh-head"><div><div class="code">PP-D${sp.id.toUpperCase()}</div><h3>${esc(sp.name)}</h3></div>${X}</div>
-      <div class="preview"><img src="${strapThumb(sp.id,d.vi,180)}" alt="${esc(sp.name+' – '+v.n)}"></div>
-      <div class="lbl">Phân loại · <b>${esc(v.n)}</b></div>
-      <div class="chips" role="radiogroup" aria-label="Phân loại dây">${sp.variants.map((vv,i)=>chipHTML(vv,i,i===d.vi,'data-sv')).join('')}</div>
-      <div class="sh-foot"><span class="price">${fmt(v.p)}</span><button class="btn primary" data-act="useStrap" ${using?'disabled':''}>${using?'Đang dùng dây này':'Dùng dây này'}</button></div>`;
-  }else if(sheetKind==='size'){
+  if(sheetKind==='size'){
     sheet.innerHTML=`<div class="sh-head"><h3>Size dây</h3>${X}</div>
       <p class="small">Đo vòng cổ tay rồi cộng thêm khoảng 2 cm. Ví dụ cổ tay 15 cm thì chọn dây 17 cm.</p>
       <div class="chips" role="radiogroup" aria-label="Size dây">${SIZES.map(n=>`<button class="chip txt" role="radio" aria-checked="${n===state.size}" data-size="${n}">${n} cm</button>`).join('')}</div>
       <p class="small">Đang dùng ${(usedMM()/10).toLocaleString('vi-VN',{maximumFractionDigits:1})} cm cho ${state.items.length} charm.</p>`;
   }else if(sheetKind==='done'){
     sheet.className='sheet tall';
-    const sp=strapP(),sv=strapV();
-    const groups=[];const gm={};state.items.forEach(it=>{const k=it.pid+'.'+it.vi;if(!gm[k]){gm[k]={it,q:0};groups.push(gm[k]);}gm[k].q++;});
-    const rows=state.items.map((it,i)=>{const p=CH[it.pid],v=p.variants[it.vi];return`<button class="row" data-pick="${it.uid}" style="width:100%;text-align:left"><span class="num">${i+1}</span><img src="${charmThumb(it.pid,it.vi,80)}" alt=""><span class="t"><b>${esc(p.name)}</b><span>${esc(v.n)} · ${codeOf(p)}</span></span><span class="p">${fmt(v.p)}</span></button>`;}).join('');
-    const grows=groups.map(g=>{const p=CH[g.it.pid],v=p.variants[g.it.vi];return`<div class="row nonum"><img src="${charmThumb(g.it.pid,g.it.vi,80)}" alt=""><span class="t"><b>${esc(p.name)} – ${esc(v.n)}</b><span>${codeOf(p)} · ${fmt(v.p)} × ${g.q}</span></span><span class="p">${fmt(v.p*g.q)}</span></div>`;}).join('');
+    const st=strapE();
+    const groups=[];const gm={};state.items.forEach(it=>{if(!gm[it.code]){gm[it.code]={code:it.code,q:0};groups.push(gm[it.code]);}gm[it.code].q++;});
+    const rows=state.items.map((it,i)=>{const e=CE[it.code];return`<button class="row" data-pick="${it.uid}" style="width:100%;text-align:left"><span class="num">${i+1}</span><img src="${esc(charmThumb(it.code,80))}" alt=""><span class="t"><b>${esc(e.name)}</b><span>${esc(e.vname)}${e.vname?' · ':''}${esc(e.code)}</span></span><span class="p">${fmt(e.price)}</span></button>`;}).join('');
+    const grows=groups.map(g=>{const e=CE[g.code];return`<div class="row nonum"><img src="${esc(charmThumb(g.code,80))}" alt=""><span class="t"><b>${label(e)}</b><span>${esc(e.code)} · ${fmt(e.price)} × ${g.q}</span></span><span class="p">${fmt(e.price*g.q)}</span></div>`;}).join('');
     sheet.innerHTML=`<div class="sh-head"><div><h3>Thiết kế của bạn</h3><p class="small" style="margin-top:4px">Lưu ảnh rồi gửi cho PunPun qua chat Shopee hoặc TikTok Shop. Shop làm đúng thứ tự từ trái sang phải như trên vòng.</p></div>${X}</div>
       <div class="sum-actions">
         <button class="btn primary" data-act="image"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0-4-4m4 4 4-4M5 21h14"/></svg>Lưu ảnh thiết kế</button>
@@ -639,19 +712,20 @@ function renderSheet(){
         <button class="btn" data-act="text">Copy nội dung đơn</button>
       </div>
       <div class="sec-t"><span>Dây</span></div>
-      <div class="sum-box"><div class="row nonum"><img src="${strapThumb(sp.id,state.strap.vi,80)}" alt=""><span class="t"><b>${esc(sp.name)} – ${esc(sv.n)}</b><span>Size ${state.size} cm · PP-D${sp.id.toUpperCase()}</span></span><span class="p">${fmt(sv.p)}</span></div></div>
+      <div class="sum-box"><div class="row nonum"><img src="${esc(strapThumb(st.code,80))}" alt=""><span class="t"><b>${label(st)}</b><span>Size ${state.size} cm · ${esc(st.code)}</span></span><span class="p">${fmt(st.price)}</span></div></div>
       <div class="sec-t"><span>Charm theo thứ tự (trái → phải)</span><span>${state.items.length} cái</span></div>
       <div class="sum-box">${rows||'<div class="row nonum"><span></span><span class="t"><span>Chưa có charm nào.</span></span><span></span></div>'}</div>
       ${groups.length?`<div class="sec-t"><span>Gom theo phân loại (để lên đơn)</span><span>${groups.length} phân loại</span></div><div class="sum-box">${grows}</div>`:''}
       <div class="total"><span>Tạm tính</span><b>${fmt(total())}</b></div>
       <p class="small">Giá tạm tính, chưa gồm phí ship và khuyến mãi của sàn.</p>
       <details class="open-code"><summary>Mở thiết kế từ mã hoặc link</summary>
-        <div class="code-form"><input id="codeInput" placeholder="Dán mã pp1~… hoặc link" autocomplete="off" aria-label="Mã thiết kế"><button class="btn" data-act="openCode">Mở</button></div>
+        <div class="code-form"><input id="codeInput" placeholder="Dán mã pp2~… hoặc link" autocomplete="off" aria-label="Mã thiết kế"><button class="btn" data-act="openCode">Mở</button></div>
         <p class="small" style="margin-top:8px">Mã của thiết kế này: <span style="font-family:var(--mono);word-break:break-all">${esc(encode())}</span></p>
       </details>`;
   }else if(sheetKind==='image'){
     sheet.className='sheet tall';
-    sheet.innerHTML=`<div class="sh-head"><div><h3>Ảnh thiết kế</h3><p class="small" style="margin-top:4px">${d.url?'Điện thoại: nhấn giữ ảnh rồi chọn Lưu ảnh. Máy tính: chuột phải → Lưu hình ảnh.':'Đang tạo ảnh…'}</p></div>${X}</div>
+    const msg=d.error?esc(d.error):(d.url?'Điện thoại: nhấn giữ ảnh rồi chọn Lưu ảnh. Máy tính: chuột phải → Lưu hình ảnh.':'Đang tạo ảnh…');
+    sheet.innerHTML=`<div class="sh-head"><div><h3>Ảnh thiết kế</h3><p class="small" style="margin-top:4px">${msg}</p></div>${X}</div>
       ${d.url?`<img class="img-out" src="${d.url}" alt="Ảnh thiết kế vòng PunPun">`:''}
       ${d.url&&(DL||STANDALONE)?`<div class="sh-foot"><span class="small">Hoặc tải thẳng về máy</span><button class="btn primary" data-act="download">Tải ảnh</button></div>`:''}`;
   }else if(sheetKind==='copy'){
@@ -662,11 +736,11 @@ function renderSheet(){
 
 /* ---------- output ---------- */
 function orderText(){
-  const sp=strapP(),sv=strapV();
-  const lines=['ĐƠN MIX VÒNG – PunPun Tinygold Charm',`Dây: ${sp.name} – ${sv.n} – size ${state.size}cm (${fmt(sv.p)})`,`Charm (${state.items.length}), thứ tự từ trái sang phải:`];
-  state.items.forEach((it,i)=>{const p=CH[it.pid],v=p.variants[it.vi];lines.push(`${i+1}. ${p.name} – ${v.n} [${codeOf(p)}] ${fmt(v.p)}`);});
-  const gm={},order=[];state.items.forEach(it=>{const k=it.pid+'.'+it.vi;if(!gm[k]){gm[k]=0;order.push(it);}gm[k]++;});
-  if(order.length){lines.push('','Gom theo phân loại:');order.forEach(it=>{const p=CH[it.pid],v=p.variants[it.vi];lines.push(`- ${p.name} – ${v.n} × ${gm[it.pid+'.'+it.vi]}`);});}
+  const st=strapE();
+  const lines=['ĐƠN MIX VÒNG – PunPun Tinygold Charm',`Dây: ${st.name}${st.vname?' – '+st.vname:''} – size ${state.size}cm [${st.code}] (${fmt(st.price)})`,`Charm (${state.items.length}), thứ tự từ trái sang phải:`];
+  state.items.forEach((it,i)=>{const e=CE[it.code];lines.push(`${i+1}. ${e.name}${e.vname?' – '+e.vname:''} [${e.code}] ${fmt(e.price)}`);});
+  const gm={},order=[];state.items.forEach(it=>{if(!gm[it.code]){gm[it.code]=0;order.push(it.code);}gm[it.code]++;});
+  if(order.length){lines.push('','Gom theo phân loại:');order.forEach(code=>{const e=CE[code];lines.push(`- ${e.name}${e.vname?' – '+e.vname:''} [${code}] × ${gm[code]}`);});}
   lines.push('',`Tạm tính: ${fmt(total())}`,`Mã thiết kế: ${encode()}`);
   if(APP_URL)lines.push(`Xem thiết kế: ${shareLink()}`);
   return lines.join('\n');
@@ -677,11 +751,13 @@ async function copy(text,title,okMsg){
 const FONT='"Be Vietnam Pro", system-ui, sans-serif';
 function fitText(x,t,w){if(x.measureText(t).width<=w)return t;while(t.length>1&&x.measureText(t+'…').width>w)t=t.slice(0,-1);return t+'…';}
 function wrapText(x,t,w){const out=[];let line='';for(const ch of t){if(x.measureText(line+ch).width>w&&line){out.push(line);line=ch;}else line+=ch;}if(line)out.push(line);return out;}
+function img(src){return new Promise(r=>{const i=new Image();if(/^https?:/.test(src))i.crossOrigin='anonymous';i.onload=()=>r(i);i.onerror=()=>r(null);i.src=src;});}
+async function drawFit(x,src,bx,by,bs){const im=await img(src);if(!im||!im.naturalWidth)return;const k=Math.min(bs/im.naturalWidth,bs/im.naturalHeight);const w=im.naturalWidth*k,h=im.naturalHeight*k;x.drawImage(im,bx+(bs-w)/2,by+(bs-h)/2,w,h);}
 async function buildImage(){
   try{await Promise.all([document.fonts.load('700 20px "Be Vietnam Pro"'),document.fonts.load('500 20px "Be Vietnam Pro"'),document.fonts.load('400 20px "Be Vietnam Pro"')]);}catch(e){}
   const W=1080,P=64,inner=W-2*P,n=state.items.length,cols=n>8?2:1,rows=Math.max(1,Math.ceil(n/cols)),rowH=76;
-  const tmp=document.createElement('canvas').getContext('2d');tmp.font='500 19px '+'ui-monospace, Menlo, monospace';
-  const codeLines=wrapText(tmp,'Mã thiết kế: '+encode()+(APP_URL?'':''),inner);
+  const tmp=document.createElement('canvas').getContext('2d');tmp.font='500 19px ui-monospace, Menlo, monospace';
+  const codeLines=wrapText(tmp,'Mã thiết kế: '+encode(),inner);
   const H=P+118+inner+44+110+52+rows*rowH+30+90+codeLines.length*28+50+P;
   const c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');
   const INK='#1C1B19',MUTE='#76716A',LINE='#ECE9E4',GOLD='#9C7A2F';
@@ -690,50 +766,52 @@ async function buildImage(){
   x.textBaseline='alphabetic';x.textAlign='left';
   x.fillStyle=GOLD;x.font='600 19px '+FONT;try{x.letterSpacing='3px';}catch(e){}x.fillText('PUNPUN · TINYGOLD CHARM',P,y+20);try{x.letterSpacing='0px';}catch(e){}
   x.fillStyle=INK;x.font='700 46px '+FONT;x.fillText('Thiết kế vòng của bạn',P,y+80);
-  const dt=new Date();x.textAlign='right';x.fillStyle=MUTE;x.font='500 19px '+FONT;x.fillText(dt.toLocaleDateString('vi-VN'),W-P,y+20);x.textAlign='left';
+  x.textAlign='right';x.fillStyle=MUTE;x.font='500 19px '+FONT;x.fillText(new Date().toLocaleDateString('vi-VN'),W-P,y+20);x.textAlign='left';
   y+=118;
   x.save();x.translate(P,y);rr(x,0,0,inner,inner,28);x.fillStyle='#F3F2EF';x.fill();x.clip();
   drawScene(x,inner,{bg:null,k:1,nums:true,sel:null,numBg:INK,numFg:'#FFFFFF',empty:MUTE});x.restore();
   y+=inner+44;
-  const sp=strapP(),sv=strapV();
+  const st=strapE();
   x.fillStyle=MUTE;x.font='600 16px '+FONT;x.fillText('DÂY',P,y);
-  x.drawImage(await img(strapThumb(sp.id,state.strap.vi,80)),P,y+14,64,64);
-  x.fillStyle=INK;x.font='600 25px '+FONT;x.fillText(`${sp.name} – ${sv.n}`,P+84,y+42);
-  x.fillStyle=MUTE;x.font='400 19px '+FONT;x.fillText(`Size ${state.size} cm · PP-D${sp.id.toUpperCase()}`,P+84,y+70);
-  x.textAlign='right';x.fillStyle=INK;x.font='500 22px '+FONT;x.fillText(fmt(sv.p),W-P,y+42);x.textAlign='left';
+  await drawFit(x,strapThumb(st.code,80),P,y+14,64);
+  x.fillStyle=INK;x.font='600 25px '+FONT;x.fillText(fitText(x,`${st.name}${st.vname?' – '+st.vname:''}`,inner-84-160),P+84,y+42);
+  x.fillStyle=MUTE;x.font='400 19px '+FONT;x.fillText(`Size ${state.size} cm · ${st.code}`,P+84,y+70);
+  x.textAlign='right';x.fillStyle=INK;x.font='500 22px '+FONT;x.fillText(fmt(st.price),W-P,y+42);x.textAlign='left';
   y+=110;
   x.fillStyle=MUTE;x.font='600 16px '+FONT;x.fillText(`CHARM · ${n} CÁI · THỨ TỰ TỪ TRÁI SANG PHẢI`,P,y);
   y+=22;
   const colW=cols===2?(inner-36)/2:inner;
   for(let i=0;i<n;i++){
-    const it=state.items[i],p=CH[it.pid],v=p.variants[it.vi];
+    const it=state.items[i],e=CE[it.code];
     const col=cols===2&&i>=rows?1:0,r=col?i-rows:i,x0=P+col*(colW+36),y0=y+r*rowH;
     x.strokeStyle=LINE;x.lineWidth=1;x.beginPath();x.moveTo(x0,y0);x.lineTo(x0+colW,y0);x.stroke();
     x.beginPath();x.arc(x0+15,y0+rowH/2,15,0,Math.PI*2);x.fillStyle=INK;x.fill();
     x.fillStyle='#fff';x.font='700 15px '+FONT;x.textAlign='center';x.fillText(String(i+1),x0+15,y0+rowH/2+5.5);x.textAlign='left';
-    x.drawImage(await img(charmThumb(it.pid,it.vi,80)),x0+38,y0+8,60,60);
+    await drawFit(x,charmThumb(it.code,80),x0+38,y0+8,60);
     const priceW=110;
-    x.fillStyle=INK;x.font='600 21px '+FONT;x.fillText(fitText(x,p.name,colW-110-priceW),x0+108,y0+33);
-    x.fillStyle=MUTE;x.font='400 17px '+FONT;x.fillText(fitText(x,`${v.n} · ${codeOf(p)}`,colW-110-priceW),x0+108,y0+58);
-    x.textAlign='right';x.fillStyle=INK;x.font='500 19px '+FONT;x.fillText(fmt(v.p),x0+colW,y0+33);x.textAlign='left';
+    x.fillStyle=INK;x.font='600 21px '+FONT;x.fillText(fitText(x,e.name,colW-110-priceW),x0+108,y0+33);
+    x.fillStyle=MUTE;x.font='400 17px '+FONT;x.fillText(fitText(x,`${e.vname?e.vname+' · ':''}${e.code}`,colW-110-priceW),x0+108,y0+58);
+    x.textAlign='right';x.fillStyle=INK;x.font='500 19px '+FONT;x.fillText(fmt(e.price),x0+colW,y0+33);x.textAlign='left';
   }
   if(!n){x.fillStyle=MUTE;x.font='400 19px '+FONT;x.fillText('Chưa có charm nào.',P,y+40);}
   y+=rows*rowH+30;
   x.strokeStyle=INK;x.lineWidth=2;x.beginPath();x.moveTo(P,y);x.lineTo(W-P,y);x.stroke();
   x.fillStyle=INK;x.font='600 26px '+FONT;x.fillText('Tạm tính',P,y+56);
   x.textAlign='right';x.font='700 40px '+FONT;x.fillText(fmt(total()),W-P,y+60);x.textAlign='left';
-  y+=90+10;
+  y+=100;
   x.fillStyle=MUTE;x.font='500 19px ui-monospace, Menlo, monospace';codeLines.forEach((l,i)=>x.fillText(l,P,y+i*28));
   y+=codeLines.length*28+18;
   x.fillStyle=INK;x.font='500 20px '+FONT;x.fillText('Gửi ảnh này cho PunPun qua chat Shopee / TikTok Shop để shop lên đơn.',P,y);
   return c;
 }
-function img(src){return new Promise(r=>{const i=new Image();i.onload=()=>r(i);i.onerror=()=>r(i);i.src=src;});}
 let lastCanvas=null;
 async function exportImage(){
   openSheet('image',{});
-  try{const c=await buildImage();lastCanvas=c;if(sheetKind==='image'){sheetData={url:c.toDataURL('image/png')};renderSheet();}}
-  catch(e){toast('Chưa tạo được ảnh. Bạn thử lại hoặc chụp màn hình nhé.');}
+  try{
+    const c=await buildImage();lastCanvas=c;let url;
+    try{url=c.toDataURL('image/png');}catch(err){lastCanvas=null;if(sheetKind==='image'){sheetData={error:'Ảnh charm chưa cho phép xuất thành ảnh. Bạn chụp màn hình vòng và danh sách charm gửi shop giúp nhé.'};renderSheet();}return;}
+    if(sheetKind==='image'){sheetData={url};renderSheet();}
+  }catch(e){toast('Chưa tạo được ảnh. Bạn thử lại hoặc chụp màn hình nhé.');}
 }
 let DL=null;
 try{if(window.claude&&window.claude.use){window.claude.use('downloads').then(d=>{DL=d||null;if(sheetKind==='image')renderSheet();}).catch(()=>{});}}catch(e){}
@@ -765,45 +843,64 @@ document.addEventListener('click',e=>{
   if('close' in ds)return closeSheet();
   if(ds.tool)return tool(ds.tool);
   if(ds.ctab){ctab=ds.ctab;renderCatalog();$('gridWrap').scrollTop=0;return;}
-  if(ds.cat){catId=ds.cat;renderCatalog();$('gridWrap').scrollTop=0;return;}
+  if(ds.cat){catId=ds.cat==='all'?'all':(CAT.cats[+ds.cat]||'all');renderCatalog();$('gridWrap').scrollTop=0;return;}
   if(ds.charm){
-    const[pid,vs]=ds.charm.split('.'),vi=+vs,p=CH[pid],v=p.variants[vi],i=selIndex(),n={uid:newUid(),pid,vi};
+    const en=CE[ds.charm];if(!en)return;const i=selIndex(),n={uid:newUid(),code:en.code};
     commit(()=>{if(i>=0)state.items.splice(i+1,0,n);else state.items.push(n);sel=n.uid;});
-    toast(`Đã gắn ${p.name} · ${v.n} (#${selIndex()+1})`);return;
+    toast(`Đã gắn ${en.name}${en.vname?' · '+en.vname:''} (#${selIndex()+1})`);return;
   }
   if(ds.strap){
-    const[pid,vs]=ds.strap.split('.'),vi=+vs;
-    if(state.strap.pid===pid&&state.strap.vi===vi)return;
-    commit(()=>{state.strap={pid,vi};});toast(`Đã đổi sang ${ST[pid].name} · ${ST[pid].variants[vi].n}`);return;
+    const en=SE[ds.strap];if(!en||state.strap===en.code)return;
+    commit(()=>{state.strap=en.code;});toast(`Đã đổi sang ${en.name}${en.vname?' · '+en.vname:''}`);return;
   }
-  if(ds.sv!=null){sheetData.vi=+ds.sv;return renderSheet();}
   if(ds.size){const n=+ds.size;if(n!==state.size)commit(()=>{state.size=n;});return renderSheet();}
   if(ds.pick){sel=+ds.pick;closeSheet();refreshSel();return;}
   const a=ds.act;if(!a)return;
-  if(a==='add'){const p=CH[sheetData.pid],v=p.variants[sheetData.vi];const i=selIndex();const n={uid:newUid(),pid:p.id,vi:sheetData.vi};commit(()=>{if(i>=0)state.items.splice(i+1,0,n);else state.items.push(n);sel=n.uid;});closeSheet();toast(`Đã thêm ${p.name} · ${v.n}`);return;}
-  if(a==='apply'){const it=state.items.find(x=>x.uid===sheetData.uid);if(it&&it.vi!==sheetData.vi)commit(()=>{it.vi=sheetData.vi;});closeSheet();return;}
-  if(a==='useStrap'){commit(()=>{state.strap={pid:sheetData.pid,vi:sheetData.vi};});closeSheet();toast('Đã đổi dây');return;}
-  if(a==='done')return openSheet('done');
-  if(a==='image')return exportImage();
+  if(a==='done'){if(!CAT.straps.length){toast('Đang tải danh mục, bạn đợi chút nhé');return;}return openSheet('done');}
+  if(a==='image'){if(!CAT.straps.length){toast('Đang tải danh mục, bạn đợi chút nhé');return;}return exportImage();}
   if(a==='download')return download();
   if(a==='text')return copy(orderText(),'Nội dung đơn','Đã copy nội dung đơn');
   if(a==='link'){const l=shareLink();return l?copy(l,'Link thiết kế','Đã copy link thiết kế'):copy(encode(),'Mã thiết kế','Đã copy mã thiết kế');}
-  if(a==='openCode'){const v=$('codeInput').value;const s=decode(v);if(!s){toast('Mã không hợp lệ. Kiểm tra lại đoạn đã dán nhé.');return;}commit(()=>{state=s;sel=null;});closeSheet();toast('Đã mở thiết kế');return;}
+  if(a==='openCode'){const v=$('codeInput').value;const s=decode(v);if(!s){toast('Mã không hợp lệ. Kiểm tra lại đoạn đã dán nhé.');return;}commit(()=>{state={strap:s.strap,size:s.size,items:s.items};sel=null;});closeSheet();toast(s.missing?`Đã mở thiết kế, ${s.missing} charm không còn bán nên đã bỏ ra`:'Đã mở thiết kế');return;}
 });
 $('numBtn').addEventListener('click',()=>{showNums=!showNums;$('numBtn').setAttribute('aria-pressed',String(showNums));renderStage();});
 new ResizeObserver(()=>sizeStage()).observe($('canvasWrap'));
 addEventListener('resize',sizeStage);
 try{matchMedia('(prefers-color-scheme: dark)').addEventListener('change',renderStage);}catch(e){}
 new MutationObserver(renderStage).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
-addEventListener('hashchange',()=>{const s=decode(location.hash.slice(1));if(s){pushHist();state=s;sel=null;changed();toast('Đã mở thiết kế được chia sẻ');}});
+addEventListener('hashchange',()=>{if(CAT.loading)return;const s=decode(location.hash.slice(1));if(s){pushHist();state={strap:s.strap,size:s.size,items:s.items};sel=null;changed();toast('Đã mở thiết kế được chia sẻ');}});
 
 /* ---------- boot ---------- */
-(function boot(){
-  const fromHash=location.hash&&location.hash.length>1?decode(location.hash.slice(1)):null;
-  state=fromHash||loadDraft()||sampleState();
+function initState(announce){
+  const raw=location.hash&&location.hash.length>1?location.hash.slice(1):'';
+  const fromHash=raw?decode(raw):null;
+  const s=fromHash||loadDraft();
+  state=s?{strap:s.strap,size:s.size,items:s.items}:defaultState();
+  fitState();sel=null;
+  if(announce&&fromHash)toast(fromHash.missing?`Đã mở thiết kế, ${fromHash.missing} charm không còn bán nên đã bỏ ra`:'Đã mở thiết kế được chia sẻ');
+}
+(async function boot(){
+  let cached=null;
+  if(STANDALONE){try{cached=JSON.parse(localStorage.getItem('punpun-sheet-v1')||'null');}catch(e){}}
+  if(cached&&cached.cr)applyTables(cached.cr,cached.sr||[]);
+  else if(STANDALONE){setCatalog([],[],'demo');CAT.loading=true;}
+  else{const d=demoCatalog();setCatalog(d.charms,d.straps,'demo');}
+  if(!CAT.loading)initState(true);else state={strap:'',size:17,items:[]};
   sizeStage();changed();
-  if(fromHash)toast('Đã mở thiết kế được chia sẻ');
   if(document.fonts&&document.fonts.load){Promise.all([document.fonts.load('700 20px "Be Vietnam Pro"'),document.fonts.load('600 20px "Be Vietnam Pro"')]).then(()=>{thumbCache.clear();renderCatalog();renderStage();}).catch(()=>{});}
+  if(!STANDALONE)return;
+  const wasLoading=CAT.loading;
+  try{
+    const {cr,sr}=await loadSheet();
+    try{localStorage.setItem('punpun-sheet-v1',JSON.stringify({cr,sr}));}catch(e){}
+    const keep=wasLoading?null:{strap:state.strap,size:state.size,items:state.items};
+    thumbCache.clear();applyTables(cr,sr);
+    if(keep){state=keep;fitState();}else initState(true);
+  }catch(err){
+    if(wasLoading){const d=demoCatalog();setCatalog(d.charms,d.straps,'demo');initState(true);}
+    console.warn('Không tải được Google Sheet',err);
+  }
+  sizeStage();changed();
 })();
 })();
 </script>
