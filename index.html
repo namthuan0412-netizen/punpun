@@ -631,13 +631,13 @@ function zoomTo(uid,to){
   if(!ZOOM.raf){const tick=()=>{const up=ZOOM.to>ZOOM.from,t=Math.min(1,(performance.now()-ZOOM.t0)/(up?180:220));
     const c=1.25,ez=up?1+(c+1)*Math.pow(t-1,3)+c*Math.pow(t-1,2):1-Math.pow(1-t,3);
     ZOOM.v=ZOOM.from+(ZOOM.to-ZOOM.from)*ez;if(t>=1){ZOOM.v=ZOOM.to;if(ZOOM.to===1)ZOOM.uid=null;}
-    renderStage();ZOOM.raf=t<1?requestAnimationFrame(tick):0;};ZOOM.raf=requestAnimationFrame(tick);}
+    scheduleRender();ZOOM.raf=t<1?requestAnimationFrame(tick):0;};ZOOM.raf=requestAnimationFrame(tick);}
 }
 function setLift(to){
   if(LIFT.to===to&&(LIFT.raf||LIFT.v===to))return;
   LIFT.to=to;if(reduceMotion()||!LAY){LIFT.v=to;return;}
   LIFT.from=LIFT.v;LIFT.t0=performance.now();
-  if(!LIFT.raf){const tick=()=>{const t=Math.min(1,(performance.now()-LIFT.t0)/340);LIFT.v=lerp(LIFT.from,LIFT.to,1-Math.pow(1-t,3));renderStage();LIFT.raf=t<1?requestAnimationFrame(tick):0;};LIFT.raf=requestAnimationFrame(tick);}
+  if(!LIFT.raf){const tick=()=>{const t=Math.min(1,(performance.now()-LIFT.t0)/340);LIFT.v=lerp(LIFT.from,LIFT.to,1-Math.pow(1-t,3));scheduleRender();LIFT.raf=t<1?requestAnimationFrame(tick):0;};LIFT.raf=requestAnimationFrame(tick);}
 }
 /* Kiểu xem: m = 0 đeo tròn, m = 1 trải ngang; giá trị ở giữa là lúc đang tháo khoá / đeo lại */
 const VIEW={m:0,raf:0,target:0,pan:0,praf:0};
@@ -650,7 +650,7 @@ function posSnap(){const m=new Map();if(LAY)LAY.list.forEach(x=>m.set(x.it.uid,x
 function startReflow(from){
   if(!from||reduceMotion())return;
   ANIM.from=from;ANIM.t0=performance.now();
-  if(!ANIM.raf){const tick=()=>{ANIM.raf=0;const done=performance.now()-ANIM.t0>=ANIM.dur;if(done)ANIM.from=null;renderStage();if(!done)ANIM.raf=requestAnimationFrame(tick);};ANIM.raf=requestAnimationFrame(tick);}
+  if(!ANIM.raf){const tick=()=>{ANIM.raf=0;const done=performance.now()-ANIM.t0>=ANIM.dur;if(done)ANIM.from=null;scheduleRender();if(!done)ANIM.raf=requestAnimationFrame(tick);};ANIM.raf=requestAnimationFrame(tick);}
 }
 
 /* chừa chỗ ở hai đầu dây: dây đan có đoạn quấn chỉ vàng + hạt nút rút, dây kim loại có khoá */
@@ -844,7 +844,7 @@ function drawScene(ctx,W,H,o){
   if(o.bg){ctx.fillStyle=o.bg;ctx.fillRect(0,0,W,H);}
   if(!CAT.straps.length)return lay;
   SH={c:'rgba(38,26,8,.26)',b:3*o.k,y:1.4*o.k};
-  drawStrapCurve(ctx,g,strapE());
+  if(o.fast&&!VIEW.raf)drawStrapCached(ctx,g,strapE(),W,H,o.k);else drawStrapCurve(ctx,g,strapE());
   /* charm đang kéo: phóng to (×1,5) và vẽ trên cùng; thả tay thì thu nhỏ lại mượt rồi mới về lớp thường */
   const zm=o.zoom&&o.zoom.uid!=null&&(o.zoom.v>1.001||o.drag===o.zoom.uid)?o.zoom:null,zOf=uid=>zm&&zm.uid===uid?zm.v:1;
   const topUid=o.drag||(zm?zm.uid:null);
@@ -854,7 +854,7 @@ function drawScene(ctx,W,H,o){
     const lifted=x===dragged,e=x.e,k=g.s*(lifted?(zm?zOf(x.it.uid):1.12):1)*x.pop;
     ctx.save();ctx.translate(x.x,x.y);ctx.rotate(x.rot);ctx.scale(k,k);
     if(lifted)SH={c:'rgba(38,26,8,.35)',b:9*o.k,y:5*o.k};
-    drawEntry(ctx,e);
+    if(o.fast)drawEntryFast(ctx,e,k,o.k);else drawEntry(ctx,e);
     if(lifted)SH={c:'rgba(38,26,8,.26)',b:3*o.k,y:1.4*o.k};
     if(o.sel===x.it.uid){const sr=o.selRing||o.ring;rr(ctx,-e.w/2-1.6,e.top-1.6,e.w+3.2,e.bottom-e.top+3.2,2.8);ctx.strokeStyle=rgba(sr,.28);ctx.lineWidth=5/k;ctx.stroke();ctx.strokeStyle=sr;ctx.lineWidth=1.8/k;ctx.stroke();}
     ctx.restore();
@@ -882,10 +882,43 @@ function drawScene(ctx,W,H,o){
   }
   return lay;
 }
+/* Vẽ nhanh cho khung vòng (điện thoại yếu, nhất là ở chế độ Tròn):
+   - sợi dây (vài trăm lát ảnh xoay theo vòng) vẽ một lần vào canvas phụ, khung sau chỉ dán lại khi hình dây không đổi;
+   - mỗi charm ảnh thật được vẽ sẵn kèm bóng đổ thành một ảnh nhỏ theo đúng cỡ, khỏi tính bóng mờ cho từng charm mỗi khung hình. */
+const STRAP_LAYER={key:'',c:null};
+function drawStrapCached(ctx,g,st,W,H,dpr){
+  const tex=strapTex(st),tex2=strapTex2(st);
+  const key=[st.code,st.img,st.img2,tex?1:0,tex2?1:0,g.k.toFixed(7),g.s.toFixed(4),g.ax.toFixed(2),g.ay.toFixed(2),W,H,dpr].join('|');
+  let c=STRAP_LAYER.c;
+  if(STRAP_LAYER.key!==key||!c){
+    if(!c)c=STRAP_LAYER.c=document.createElement('canvas');
+    const cw=Math.round(W*dpr),ch=Math.round(H*dpr);if(c.width!==cw||c.height!==ch){c.width=cw;c.height=ch;}
+    const x=c.getContext('2d');x.setTransform(1,0,0,1,0,0);x.clearRect(0,0,cw,ch);x.setTransform(dpr,0,0,dpr,0,0);
+    drawStrapCurve(x,g,st);STRAP_LAYER.key=key;
+  }
+  ctx.save();ctx.setTransform(1,0,0,1,0,0);ctx.drawImage(c,0,0);ctx.restore();
+}
+const SPRITES=new Map();
+function charmSprite(e,rec,px){
+  const sh=SH||{c:'transparent',b:0,y:0},key=e.code+'|'+e.img+'|'+px.toFixed(1)+'|'+sh.b+'|'+sh.y+'|'+sh.c;
+  let sp=SPRITES.get(key);if(sp)return sp;
+  const pad=Math.ceil(sh.b*1.6+Math.abs(sh.y)+2),w=Math.max(1,Math.round(e.w*px)),h=Math.max(1,Math.round(e.h*px));
+  const c=document.createElement('canvas');c.width=w+2*pad;c.height=h+2*pad;const x=c.getContext('2d');
+  x.shadowColor=sh.c;x.shadowBlur=sh.b;x.shadowOffsetY=sh.y;x.drawImage(rec.el,pad,pad,w,h);
+  sp={c,pad,px};SPRITES.set(key,sp);
+  if(SPRITES.size>160)SPRITES.delete(SPRITES.keys().next().value);
+  return sp;
+}
+function drawEntryFast(ctx,e,k,dpr){
+  const rec=e.img&&!e.demo?charmImg(e):null;
+  if(!rec||!rec.ok){drawEntry(ctx,e);return;}
+  const px=Math.max(1,Math.round(k*dpr*10)/10),sp=charmSprite(e,rec,px),pm=sp.pad/px;
+  ctx.drawImage(sp.c,-e.w/2-pm,e.top-pm,sp.c.width/px,sp.c.height/px);
+}
 function renderStage(){
   const T=tokens();
   cx2.setTransform(dpr,0,0,dpr,0,0);cx2.clearRect(0,0,CW,S);
-  LAY=drawScene(cx2,CW,S,{bg:T.stage,k:dpr,m:VIEW.m,pan:VIEW.pan,lineMin:specsBottom+8,avoid:CORNER,lift:LIFT.v,nums:showNums,sel,drag:drag&&drag.moved?drag.uid:null,dragU:drag&&drag.moved?drag.u:null,anim:ANIM,zoom:ZOOM,ring:T.fg,selRing:T.accent,selFg:T.onAccent,numBg:T.fg,numFg:T.bg,empty:T.muted});
+  LAY=drawScene(cx2,CW,S,{bg:T.stage,k:dpr,m:VIEW.m,pan:VIEW.pan,lineMin:specsBottom+8,avoid:CORNER,lift:LIFT.v,nums:showNums,sel,drag:drag&&drag.moved?drag.uid:null,dragU:drag&&drag.moved?drag.u:null,fast:true,anim:ANIM,zoom:ZOOM,ring:T.fg,selRing:T.accent,selFg:T.onAccent,numBg:T.fg,numFg:T.bg,empty:T.muted});
   VIEW.pan=LAY.g.pan;
   syncPanUI();
 }
@@ -966,7 +999,7 @@ cv.addEventListener('pointerdown',e=>{
   if(VIEW.raf)return;
   stopPan();
   const[x,y]=ptr(e);const h=hit(x,y);
-  if(h)drag={uid:h.it.uid,x0:x,y0:y,moved:false,pushed:false,u:h.u};
+  if(h)drag={uid:h.it.uid,x0:x,y0:y,moved:false,pushed:false,u:h.u,fromIdle:sel===null};
   else if(canPanNow()){panDrag={x0:x,pan0:VIEW.pan,moved:false,lx:x,lt:performance.now(),v:0};cv.style.cursor='grabbing';}
   else{if(sel!==null){sel=null;refreshSel();}return;}
   try{cv.setPointerCapture(e.pointerId);}catch(_){}
@@ -978,7 +1011,7 @@ cv.addEventListener('pointermove',e=>{
     panDrag.moved=true;
     const now=performance.now(),dt=Math.max(1,now-panDrag.lt),vNew=-(x-panDrag.lx)/LAY.s/dt;
     panDrag.v=panDrag.v*.5+vNew*.5;panDrag.lx=x;panDrag.lt=now;
-    VIEW.pan=panDrag.pan0-(x-panDrag.x0)/LAY.s;renderStage();return;
+    VIEW.pan=panDrag.pan0-(x-panDrag.x0)/LAY.s;scheduleRender();return;
   }
   if(!drag){cv.style.cursor=hit(x,y)||canPanNow()?'grab':'default';return;}
   if(!drag.moved&&Math.hypot(x-drag.x0,y-drag.y0)<6)return;
@@ -991,7 +1024,7 @@ cv.addEventListener('pointermove',e=>{
   const from=state.items.findIndex(i=>i.uid===drag.uid);
   let to=0;LAY.list.forEach(en=>{if(en.it.uid!==drag.uid&&en.c<cP)to++;});
   if(to!==from){if(!drag.pushed){pushHist();drag.pushed=true;}const snapPos=posSnap();const[it]=state.items.splice(from,1);state.items.splice(to,0,it);startReflow(snapPos);}
-  renderStage();
+  scheduleRender();
 });
 function endDrag(){
   if(panDrag){
@@ -1110,7 +1143,9 @@ function refreshSel(){
     const tl=$('tools');tl.classList.remove('swap');void tl.offsetWidth;tl.classList.add('swap');
     if(hadFocus&&document.activeElement&&document.activeElement.offsetParent===null){const f=tb.querySelector(`.tool[data-ctx="${mode}"]:not(:disabled)`)||cv;f.focus({preventScroll:true});}
   }
-  $('selPill').hidden=!has;setLift(has?1:0);
+  /* đang kéo một charm từ trạng thái chưa chọn: giữ vòng đứng yên, chưa hiện viên thông tin; thả tay mới hiện và nhích vòng lên */
+  const quiet=!!(drag&&drag.moved&&drag.fromIdle);
+  $('selPill').hidden=!has||quiet;setLift(has&&!quiet?1:0);
   if(has){const e=CE[it.code],i=selIndex();$('selNum').textContent=`Charm số ${i+1}:`;$('selName').textContent=e.name;$('selVar').textContent=e.vname||'';$('selVar').hidden=!e.vname;$('selPrice').textContent=fmt(e.price);
     document.querySelector('[data-tool="left"]').disabled=i<=0;document.querySelector('[data-tool="right"]').disabled=i>=state.items.length-1;}
   $('undoBtn').disabled=!hist.length;
