@@ -21,18 +21,22 @@
   --bg:#FAFAF9; --surface:#FFFFFF; --stage:#F3F2EF; --fg:#1C1B19; --muted:#6B6761; --line:#E7E5E1;
   --accent:#8C6A1F; --soft:#F1EFEB; --scrim:rgba(18,16,14,.45);
   --danger:#B3261E; --on-danger:#FFFFFF; --toast-act:#E6C670; --shine:rgba(255,255,255,.6);
+  --on-accent:#FFFFFF; --chip:rgba(255,255,255,.94); --chip-line:#E2DFDA; --chip-shadow:0 6px 18px rgba(40,30,15,.10);
   --font:"Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --mono:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --ease:cubic-bezier(.2,.7,.2,1); --fast:120ms; --med:200ms;
+  --ease-out:cubic-bezier(.22,1,.36,1); --ease-in:cubic-bezier(.4,0,1,1);
 }
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
   --bg:#131312; --surface:#1B1B19; --stage:#222120; --fg:#F2F1EE; --muted:#A39F98; --line:#34332F;
   --accent:#D8B868; --soft:#262523; --scrim:rgba(0,0,0,.62);
-  --danger:#F28B82; --on-danger:#2B0B08; --toast-act:#6E5110; --shine:rgba(255,255,255,.07); color-scheme:dark } }
+  --danger:#F28B82; --on-danger:#2B0B08; --toast-act:#6E5110; --shine:rgba(255,255,255,.07);
+  --on-accent:#1B1A17; --chip:rgba(48,47,44,.94); --chip-line:#45433F; --chip-shadow:0 6px 18px rgba(0,0,0,.36); color-scheme:dark } }
 :root[data-theme="dark"]{
   --bg:#131312; --surface:#1B1B19; --stage:#222120; --fg:#F2F1EE; --muted:#A39F98; --line:#34332F;
   --accent:#D8B868; --soft:#262523; --scrim:rgba(0,0,0,.62);
-  --danger:#F28B82; --on-danger:#2B0B08; --toast-act:#6E5110; --shine:rgba(255,255,255,.07); color-scheme:dark }
+  --danger:#F28B82; --on-danger:#2B0B08; --toast-act:#6E5110; --shine:rgba(255,255,255,.07);
+  --on-accent:#1B1A17; --chip:rgba(48,47,44,.94); --chip-line:#45433F; --chip-shadow:0 6px 18px rgba(0,0,0,.36); color-scheme:dark }
 
 *{box-sizing:border-box}
 [hidden]{display:none!important}
@@ -75,11 +79,11 @@ button:disabled{cursor:default}
 .mini{height:34px; padding:0 11px; border-radius:999px; background:var(--surface); border:1px solid var(--line); font-size:12.5px; font-weight:600; display:inline-flex; align-items:center; gap:5px; color:var(--muted); transition:background-color var(--fast)}
 .mini::after{content:""; position:absolute; inset:-5px -3px}
 .mini[aria-pressed="true"]{background:var(--fg); color:var(--bg); border-color:var(--fg)}
-.sel-pill{position:absolute; left:50%; bottom:6px; transform:translateX(-50%); max-width:calc(100% - 12px); height:32px; display:flex; align-items:center; gap:2px; background:var(--fg); color:var(--bg); border-radius:999px; padding:0 2px 0 12px; font-size:13px; font-weight:500}
-.sel-pill span{white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0}
-.sel-pill button{flex:none; width:28px; height:28px; border-radius:50%; display:grid; place-items:center; color:var(--bg)}
-.sel-pill button::after{content:""; position:absolute; inset:-8px -6px}
-.sel-pill button:active{background:rgba(128,128,128,.3)}
+.sel-pill{position:absolute; left:50%; bottom:8px; transform:translateX(-50%); max-width:calc(100% - 16px); height:36px; display:flex; align-items:center; gap:8px; padding:0 14px 0 5px; border-radius:999px; background:var(--chip); border:1px solid var(--chip-line); box-shadow:var(--chip-shadow); -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); color:var(--fg); font-size:13px; white-space:nowrap; pointer-events:none}
+.sel-pill .sc-n{flex:none; min-width:26px; height:26px; padding:0 7px; border-radius:13px; background:var(--accent); color:var(--on-accent); font-weight:700; font-size:12.5px; display:grid; place-items:center; font-variant-numeric:tabular-nums}
+.sel-pill .sc-name{font-weight:600; overflow:hidden; text-overflow:ellipsis; min-width:0}
+.sel-pill .sc-v{flex:none; color:var(--muted)}
+.sel-pill .sc-p{flex:none; font-weight:600; font-variant-numeric:tabular-nums; padding-left:9px; border-left:1px solid var(--chip-line)}
 .hint{position:absolute; left:50%; bottom:8px; transform:translateX(-50%); width:max-content; max-width:calc(100% - 12px); color:var(--muted); font-size:12px; text-align:center; pointer-events:none}
 .pan-btn{position:absolute; top:0; width:36px; height:36px; margin-top:-18px; border-radius:50%; background:var(--surface); border:1px solid var(--line); display:grid; place-items:center; color:var(--fg); box-shadow:0 1px 4px rgba(0,0,0,.10); transition:opacity var(--med), background-color var(--fast)}
 .pan-btn::after{content:""; position:absolute; inset:-5px}
@@ -94,14 +98,13 @@ button:disabled{cursor:default}
 .tool:active:not(:disabled) .ic{background:var(--soft); transform:scale(.94)}
 .tool:disabled{opacity:.35}
 .toolbar[data-mode="sel"] .tool[data-ctx="idle"], .toolbar[data-mode="idle"] .tool[data-ctx="sel"]{display:none}
-.done{height:44px; padding:0 18px 0 16px; border-radius:999px; background:var(--fg); color:var(--bg); font-weight:600; flex:none; margin-left:auto; display:inline-flex; align-items:center; gap:7px; white-space:nowrap; transition:opacity var(--fast)}
-.done:active{opacity:.82}
-/* đang chọn một charm: thanh công cụ dành cho charm đó, chọn xong (bỏ chọn) mới hiện lại Copy link */
-.toolbar[data-mode="sel"] .done{display:none}
+
 @media (max-width:350px){
   .seg button{padding:0 8px; gap:4px}
   .mini{padding:0 9px}
   .specs dt{font-size:11.5px}
+  .sel-pill{height:32px; bottom:6px; gap:6px; padding-right:11px}
+  .sel-pill .sc-n{min-width:22px; height:22px; border-radius:11px; padding:0 6px; font-size:12px}
 }
 
 /* catalog */
@@ -195,7 +198,11 @@ details.open-code[open] summary::before{transform:rotate(45deg)}
 .img-skel{width:100%; height:min(56vh,440px); border-radius:12px}
 textarea.copybox{width:100%; min-height:240px; border-radius:12px; border:1px solid var(--line); background:var(--bg); color:var(--fg); padding:12px; font:16px/1.5 var(--mono)}
 
-.toast{position:fixed; left:50%; bottom:calc(24px + env(safe-area-inset-bottom,0px)); transform:translateX(-50%); display:flex; align-items:center; gap:2px; min-height:44px; width:max-content; max-width:calc(100% - 32px); background:var(--fg); color:var(--bg); padding:0 16px; border-radius:22px; font-size:13.5px; font-weight:500; z-index:80; pointer-events:none; box-shadow:0 8px 24px rgba(0,0,0,.18)}
+.toast{position:fixed; left:50%; bottom:calc(24px + env(safe-area-inset-bottom,0px)); --toast-off:calc(100% + 28px + env(safe-area-inset-bottom,0px));
+  transform:translate3d(-50%,var(--toast-off),0); opacity:0; visibility:hidden; will-change:transform,opacity;
+  transition:transform 240ms var(--ease-in), opacity 180ms linear 60ms, visibility 0s linear 240ms; display:flex; align-items:center; gap:2px; min-height:44px; width:max-content; max-width:calc(100% - 32px); background:var(--fg); color:var(--bg); padding:0 16px; border-radius:22px; font-size:13.5px; font-weight:500; z-index:80; pointer-events:none; box-shadow:0 8px 24px rgba(0,0,0,.18)}
+/* toast trượt lên từ đáy (giảm tốc khi tới), rút xuống nhanh hơn (tăng tốc khi đi); đang chạy vẫn đổi hướng mượt */
+.toast.show{transform:translate3d(-50%,0,0); opacity:1; visibility:visible; transition:transform 420ms var(--ease-out), opacity 200ms linear, visibility 0s}
 .toast .msg{padding:11px 0}
 .toast.has-act{padding-right:4px}
 .toast button{pointer-events:auto; flex:none; height:36px; padding:0 12px; margin-left:6px; border-radius:18px; font-weight:700; color:var(--toast-act)}
@@ -210,7 +217,7 @@ textarea.copybox{width:100%; min-height:240px; border-radius:12px; border:1px so
   .work{padding:0; grid-row:2; grid-column:1; align-self:start}
   .catalog{grid-row:2; grid-column:2; border:1px solid var(--line); border-bottom:0; border-radius:18px 18px 0 0; min-height:0}
   .toolbar{padding:6px 0 8px}
-  .toast{bottom:auto; top:calc(8px + env(safe-area-inset-top,0px))}
+  .toast{bottom:auto; top:calc(8px + env(safe-area-inset-top,0px)); --toast-off:calc(-100% - 16px - env(safe-area-inset-top,0px))}
 }
 @media (min-width:900px) and (min-height:521px){
   .shell{display:grid; grid-template-columns:minmax(0,1.1fr) minmax(0,1fr); grid-template-rows:auto minmax(0,1fr); column-gap:28px; padding:0 24px 24px}
@@ -235,8 +242,8 @@ textarea.copybox{width:100%; min-height:240px; border-radius:12px; border:1px so
   @keyframes swap{from{opacity:0; transform:translateY(4px)} to{opacity:1; transform:none}}
   .cgrid.enter .card{animation:cardIn .26s var(--ease) both; animation-delay:calc(var(--i,0) * 22ms)}
   @keyframes cardIn{from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none}}
-  .toast.show{animation:toastIn var(--med) var(--ease)}
-  @keyframes toastIn{from{opacity:0; transform:translate(-50%,10px)} to{opacity:1; transform:translate(-50%,0)}}
+  .sel-pill:not([hidden]){animation:chipIn 260ms var(--ease-out)}
+  @keyframes chipIn{from{opacity:0; transform:translate(-50%,8px) scale(.96)} to{opacity:1; transform:translate(-50%,0)}}
   .sk::after{content:""; position:absolute; inset:0; transform:translateX(-100%); background:linear-gradient(90deg,transparent,var(--shine),transparent); animation:shimmer 1.3s infinite}
   @keyframes shimmer{to{transform:translateX(100%)}}
 }
@@ -267,7 +274,7 @@ textarea.copybox{width:100%; min-height:240px; border-radius:12px; border:1px so
         </div>
         <button class="pan-btn l" id="panL" data-pan="-1" aria-label="Xem đoạn dây bên trái" hidden><svg aria-hidden="true" focusable="false" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 5-7 7 7 7"/></svg></button>
         <button class="pan-btn r" id="panR" data-pan="1" aria-label="Xem đoạn dây bên phải" hidden><svg aria-hidden="true" focusable="false" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg></button>
-        <div class="sel-pill" id="selPill" hidden><span id="selText" aria-live="polite"></span><button type="button" data-deselect aria-label="Bỏ chọn charm"><svg aria-hidden="true" focusable="false" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
+        <div class="sel-pill" id="selPill" role="status" aria-atomic="true" hidden><span class="sc-n" id="selNum"></span><span class="sc-name" id="selName"></span><span class="sc-v" id="selVar"></span><span class="sc-p" id="selPrice"></span></div>
         <div class="hint" id="hint">Chạm để chọn charm · kéo để đổi vị trí</div>
       </div>
       <dl class="specs">
@@ -278,14 +285,14 @@ textarea.copybox{width:100%; min-height:240px; border-radius:12px; border:1px so
     </div>
     <div class="toolbar" id="toolbar" data-mode="idle">
       <div class="tools" id="tools" role="group" aria-label="Công cụ">
-        <button class="tool" data-tool="undo" data-ctx="idle" id="undoBtn"><span class="ic"><svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></span>Hoàn tác</button>
-        <button class="tool" data-tool="clear" data-ctx="idle" id="clearBtn"><span class="ic"><svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 7h14M10 7V5h4v2M7 7l1 12h8l1-12"/></svg></span>Xoá hết</button>
+        <button class="tool" data-tool="undo" data-ctx="idle" id="undoBtn"><span class="ic"><svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></span>Undo</button>
+        <button class="tool" data-tool="clear" data-ctx="idle" id="clearBtn"><span class="ic"><svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg></span>Reset</button>
+        <button class="tool" data-act="link" data-ctx="idle" id="linkBtn"><span class="ic"><svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1 1"/><path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1-1"/></svg></span>Copy link</button>
         <button class="tool" data-tool="left" data-ctx="sel"><span class="ic"><svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5m0 0 6-6m-6 6 6 6"/></svg></span>Qua trái</button>
         <button class="tool" data-tool="right" data-ctx="sel"><span class="ic"><svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14m0 0-6-6m6 6-6 6"/></svg></span>Qua phải</button>
         <button class="tool" data-tool="dup" data-ctx="sel"><span class="ic"><svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="8" y="8" width="11" height="11" rx="2.5"/><path d="M16 5.5A2.5 2.5 0 0 0 13.5 5H7.5A2.5 2.5 0 0 0 5 7.5v6A2.5 2.5 0 0 0 5.5 16"/></svg></span>Nhân đôi</button>
         <button class="tool" data-tool="del" data-ctx="sel"><span class="ic"><svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><path d="m9 9 6 6m0-6-6 6"/></svg></span>Xoá</button>
       </div>
-      <button class="done" data-act="link"><svg aria-hidden="true" focusable="false" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1 1"/><path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1-1"/></svg>Copy link</button>
     </div>
   </section>
 
@@ -302,7 +309,7 @@ textarea.copybox{width:100%; min-height:240px; border-radius:12px; border:1px so
 </div>
 
 <div class="overlay" id="overlay" hidden><div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="shTitle"></div></div>
-<div class="toast" id="toast" hidden></div>
+<div class="toast" id="toast"></div>
 <div class="vh" id="live" role="status" aria-live="polite" aria-atomic="true"></div>
 
 <script>
@@ -610,7 +617,7 @@ function loadDraft(){try{const t=localStorage.getItem('punpun-mix-v2');return t?
 const cv=$('stage'), cx2=cv.getContext('2d');
 let S=320, CW=320, dpr=1, LAY=null, reserveR=76, specsBottom=0, CORNER=null, LAND=false, WIDE=false;
 const tok=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
-let TOK=null;const tokens=()=>TOK||(TOK={stage:tok('--stage'),fg:tok('--fg'),bg:tok('--bg'),muted:tok('--muted')});
+let TOK=null;const tokens=()=>TOK||(TOK={stage:tok('--stage'),fg:tok('--fg'),bg:tok('--bg'),muted:tok('--muted'),accent:tok('--accent'),onAccent:tok('--on-accent')});
 const easeIO=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
 const lerp=(a,b,t)=>a+(b-a)*t;
 /* Kiểu xem: m = 0 đeo tròn, m = 1 trải ngang; giá trị ở giữa là lúc đang tháo khoá / đeo lại */
@@ -822,14 +829,14 @@ function drawScene(ctx,W,H,o){
     if(lifted)SH={c:'rgba(38,26,8,.35)',b:9*o.k,y:5*o.k};
     drawEntry(ctx,e);
     if(lifted)SH={c:'rgba(38,26,8,.26)',b:3*o.k,y:1.4*o.k};
-    if(o.sel===x.it.uid){rr(ctx,-e.w/2-1.5,e.top-1.5,e.w+3,e.bottom-e.top+3,2.6);ctx.strokeStyle=o.ring;ctx.lineWidth=1.8/k;ctx.stroke();}
+    if(o.sel===x.it.uid){const sr=o.selRing||o.ring;rr(ctx,-e.w/2-1.6,e.top-1.6,e.w+3.2,e.bottom-e.top+3.2,2.8);ctx.strokeStyle=rgba(sr,.28);ctx.lineWidth=5/k;ctx.stroke();ctx.strokeStyle=sr;ctx.lineWidth=1.8/k;ctx.stroke();}
     ctx.restore();
   }
   SH=null;
   if(o.nums&&lay.list.length){
     const br=Math.max(7.5,Math.min(11,2.3*g.s));
     ctx.font=`700 ${Math.round(br*1.05)}px "Be Vietnam Pro", system-ui, sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
-    lay.list.forEach((x,i)=>{const d=(x.e.top-3.6)*g.s,px=x.x+x.nx*d,py=x.y+x.ny*d;ctx.beginPath();ctx.arc(px,py,br,0,Math.PI*2);ctx.fillStyle=o.numBg;ctx.fill();ctx.fillStyle=o.numFg;ctx.fillText(String(i+1),px,py+.5);});
+    lay.list.forEach((x,i)=>{const d=(x.e.top-3.6)*g.s,px=x.x+x.nx*d,py=x.y+x.ny*d,on=o.sel===x.it.uid&&o.selRing;ctx.beginPath();ctx.arc(px,py,br,0,Math.PI*2);ctx.fillStyle=on?o.selRing:o.numBg;ctx.fill();ctx.fillStyle=on?o.selFg:o.numFg;ctx.fillText(String(i+1),px,py+.5);});
   }
   if(o.bg&&g.e>0){
     const fw=Math.min(28,W*.08);
@@ -851,7 +858,7 @@ function drawScene(ctx,W,H,o){
 function renderStage(){
   const T=tokens();
   cx2.setTransform(dpr,0,0,dpr,0,0);cx2.clearRect(0,0,CW,S);
-  LAY=drawScene(cx2,CW,S,{bg:T.stage,k:dpr,m:VIEW.m,pan:VIEW.pan,lineMin:specsBottom+8,avoid:CORNER,nums:showNums,sel,drag:drag&&drag.moved?drag.uid:null,dragU:drag&&drag.moved?drag.u:null,anim:ANIM,ring:T.fg,numBg:T.fg,numFg:T.bg,empty:T.muted});
+  LAY=drawScene(cx2,CW,S,{bg:T.stage,k:dpr,m:VIEW.m,pan:VIEW.pan,lineMin:specsBottom+8,avoid:CORNER,nums:showNums,sel,drag:drag&&drag.moved?drag.uid:null,dragU:drag&&drag.moved?drag.u:null,anim:ANIM,ring:T.fg,selRing:T.accent,selFg:T.onAccent,numBg:T.fg,numFg:T.bg,empty:T.muted});
   VIEW.pan=LAY.g.pan;
   syncPanUI();
 }
@@ -1074,7 +1081,7 @@ function renderSpecs(){
 function refreshSel(){
   if(sel&&!selItem())sel=null;
   const it=selItem(),has=!!it,tb=$('toolbar'),mode=has?'sel':'idle';
-  /* hàng công cụ đổi theo ngữ cảnh: chưa chọn charm thì Size / Hoàn tác / Xoá hết, đang chọn thì công cụ cho charm đó */
+  /* hàng công cụ đổi theo ngữ cảnh: chưa chọn charm thì Undo / Reset / Copy link, đang chọn thì công cụ cho charm đó */
   if(tb.dataset.mode!==mode){
     const hadFocus=tb.contains(document.activeElement);
     tb.dataset.mode=mode;
@@ -1082,7 +1089,7 @@ function refreshSel(){
     if(hadFocus&&document.activeElement&&document.activeElement.offsetParent===null){const f=tb.querySelector(`.tool[data-ctx="${mode}"]:not(:disabled)`)||cv;f.focus({preventScroll:true});}
   }
   $('selPill').hidden=!has;
-  if(has){const e=CE[it.code],i=selIndex();$('selText').textContent=`#${i+1} · ${e.name}${e.vname?' · '+e.vname:''} · ${fmt(e.price)}`;
+  if(has){const e=CE[it.code],i=selIndex();$('selNum').textContent=String(i+1);$('selNum').setAttribute('aria-label',`Charm số ${i+1}`);$('selName').textContent=e.name;$('selVar').textContent=e.vname||'';$('selVar').hidden=!e.vname;$('selPrice').textContent=fmt(e.price);
     document.querySelector('[data-tool="left"]').disabled=i<=0;document.querySelector('[data-tool="right"]').disabled=i>=state.items.length-1;}
   $('undoBtn').disabled=!hist.length;
   $('clearBtn').disabled=!state.items.length;
@@ -1102,7 +1109,7 @@ function tool(t){
   if(t==='undo'){
     if(!hist.length)return;const from=posSnap();const s=JSON.parse(hist.pop());
     state={strap:s.strap,size:s.size,items:s.items};fitState();sel=s.sel!=null&&state.items.some(x=>x.uid===s.sel)?s.sel:null;
-    startReflow(from);changed();toast('Đã hoàn tác');return;
+    startReflow(from);changed();$('live').textContent='Đã undo';return;
   }
   if(t==='clear'){if(state.items.length)openSheet('confirmClear');return;}
   if(i<0)return;
@@ -1184,9 +1191,9 @@ function renderSheet(){
   sheet.className='sheet';
   if(sheetKind==='confirmClear'){
     const n=state.items.length;
-    sheet.innerHTML=`${head('Xoá hết charm?')}
-      <p class="small">Bỏ ${n} charm khỏi vòng. Dây và size vẫn giữ nguyên, và bạn bấm Hoàn tác được ngay sau đó.</p>
-      <div class="confirm-actions"><button class="btn" data-close data-autofocus>Huỷ</button><button class="btn danger" data-act="clearYes">Xoá hết</button></div>`;
+    sheet.innerHTML=`${head('Reset vòng?')}
+      <p class="small">Bỏ hết ${n} charm khỏi vòng, dây vẫn giữ nguyên. Bấm Undo để lấy lại ngay sau đó.</p>
+      <div class="confirm-actions"><button class="btn" data-close data-autofocus>Huỷ</button><button class="btn danger" data-act="clearYes">Reset</button></div>`;
   }else if(sheetKind==='image'){
     sheet.className='sheet tall';
     const msg=d.error?esc(d.error):(d.url?'Điện thoại: nhấn giữ ảnh rồi chọn Lưu ảnh. Máy tính: chuột phải → Lưu hình ảnh.':'Đang tạo ảnh…');
@@ -1320,20 +1327,21 @@ async function download(){
   setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1500);
 }
 
-/* ---------- toast (có nút Hoàn tác khi vừa xoá) ---------- */
+/* ---------- toast (có nút Undo khi vừa xoá) ---------- */
 let tt=null;
 function toast(m,opt){
   opt=opt||{};
   const t=$('toast');
-  t.innerHTML=`<span class="msg"></span>${opt.undo?'<button type="button" data-toast-undo>Hoàn tác</button>':''}`;
+  t.innerHTML=`<span class="msg"></span>${opt.undo?'<button type="button" data-toast-undo>Undo</button>':''}`;
   t.querySelector('.msg').textContent=m;
   t.classList.toggle('has-act',!!opt.undo);
   t.dataset.h=opt.undo?String(hist.length):'';
-  t.hidden=false;t.classList.remove('show');void t.offsetWidth;t.classList.add('show');
-  $('live').textContent=m+(opt.undo?'. Bấm Hoàn tác để lấy lại.':'');
+  /* đang hiện thì chỉ đổi nội dung; đang ẩn thì đợi 1 khung hình để trượt lên từ vị trí dưới đáy */
+  if(!t.classList.contains('show'))requestAnimationFrame(()=>requestAnimationFrame(()=>t.classList.add('show')));
+  $('live').textContent=m+(opt.undo?'. Bấm Undo để lấy lại.':'');
   clearTimeout(tt);tt=setTimeout(hideToast,opt.ms||(opt.undo?5000:2600));
 }
-function hideToast(){const t=$('toast');t.hidden=true;t.dataset.h='';}
+function hideToast(){clearTimeout(tt);const t=$('toast');t.classList.remove('show');t.dataset.h='';}
 
 /* ---------- events ---------- */
 document.addEventListener('click',e=>{
@@ -1341,7 +1349,7 @@ document.addEventListener('click',e=>{
   const ds=b.dataset;
   if('close' in ds)return closeSheet();
   if('deselect' in ds){sel=null;refreshSel();return;}
-  if('toastUndo' in ds){const t=$('toast');if(t.dataset.h!==''&&+t.dataset.h===hist.length)tool('undo');else hideToast();return;}
+  if('toastUndo' in ds){const t=$('toast');if(t.dataset.h!==''&&+t.dataset.h===hist.length)tool('undo');hideToast();return;}
   if(ds.pan){if(!LAY)return;const g=LAY.g,step=(CW*.6)/g.sL;panTo(Math.max(-g.panMax,Math.min(g.panMax,VIEW.pan+(+ds.pan)*step)),340);return;}
   if(ds.view)return setView(ds.view);
   if(ds.tool)return tool(ds.tool);
@@ -1349,18 +1357,24 @@ document.addEventListener('click',e=>{
   if(ds.cat){const c=ds.cat==='all'?'all':(CAT.cats[+ds.cat]||'all');if(c!==catId){catId=c;renderCatalog(true);$('gridWrap').scrollTop=0;}return;}
   if(ds.charm){
     const en=CE[ds.charm];if(!en)return;const i=selIndex(),n={uid:newUid(),code:en.code};
-    commit(()=>{if(i>=0)state.items.splice(i+1,0,n);else state.items.push(n);sel=n.uid;});
-    $('live').textContent=`Đã gắn ${en.name}${en.vname?' '+en.vname:''}, vị trí ${selIndex()+1}`;return;
+    commit(()=>{if(i>=0)state.items.splice(i+1,0,n);else state.items.push(n);sel=null;});
+    $('live').textContent=`Đã gắn ${en.name}${en.vname?' '+en.vname:''}, vị trí ${state.items.indexOf(n)+1}`;return;
   }
   if(ds.strap){
     const en=SE[ds.strap];if(!en||state.strap===en.code)return;
-    commit(()=>{state.strap=en.code;});toast(`Đã đổi sang ${en.name}${en.vname?' · '+en.vname:''}`);return;
+    commit(()=>{state.strap=en.code;});$('live').textContent=`Đã đổi sang ${en.name}${en.vname?' '+en.vname:''}`;return;
   }
   const a=ds.act;if(!a)return;
   if(a==='image'){if(!CAT.straps.length){toast('Đang tải danh mục, bạn đợi chút nhé');return;}return exportImage();}
   if(a==='download')return download();
   if(a==='link')return copyLink();
   if(a==='clearYes'){const n=state.items.length;closeSheet();commit(()=>{state.items=[];sel=null;});toast(`Đã xoá ${n} charm`,{undo:true});return;}
+});
+/* bấm bất kỳ đâu ngoài charm trên vòng (trừ các nút thao tác charm đang chọn) là bỏ chọn, hàng công cụ về Undo / Reset / Copy link */
+document.addEventListener('click',e=>{
+  if(sel===null||!e.target||!e.target.closest)return;
+  if(e.target===cv||e.target.closest('.tool[data-ctx="sel"],#overlay,#toast'))return;
+  sel=null;refreshSel();
 });
 $('numBtn').addEventListener('click',()=>{showNums=!showNums;$('numBtn').setAttribute('aria-pressed',String(showNums));renderStage();});
 /* phím mũi tên cho nhóm Tròn/Ngang và tab Charm/Dây */
