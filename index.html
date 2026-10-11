@@ -16,7 +16,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-/* Layout: work area (bracelet tray + specs + tool row) over a catalog with side categories; on desktop and phone-landscape the two sit side by side */
+/* Layout: work area (bracelet tray + info popover + tool row) over a catalog with side categories; on desktop and phone-landscape the two sit side by side */
 :root{
   --bg:#FAFAF9; --surface:#FFFFFF; --stage:#F3F2EF; --fg:#1C1B19; --muted:#6B6761; --line:#E7E5E1;
   --accent:#8C6A1F; --soft:#F1EFEB; --scrim:rgba(18,16,14,.45);
@@ -66,45 +66,46 @@ button:disabled{cursor:default}
 .stage{position:relative; background:var(--stage); border-radius:18px}
 .canvas-wrap{position:relative; display:flex; justify-content:flex-start; min-width:0}
 #stage{display:block; touch-action:none; user-select:none; -webkit-user-select:none; border-radius:18px}
-.specs{margin:0; display:grid; gap:9px; text-align:right; position:absolute; top:12px; right:12px; pointer-events:none}
+.info-btn{position:absolute; top:8px; right:8px; z-index:2; width:36px; height:36px; border-radius:50%; background:var(--surface); border:1px solid var(--line); display:grid; place-items:center; color:var(--muted); transition:background-color var(--fast), color var(--fast), border-color var(--fast)}
+.info-btn::after{content:""; position:absolute; inset:-5px}
+.info-btn:active{background:var(--soft)}
+.info-btn[aria-expanded="true"]{background:var(--fg); color:var(--bg); border-color:var(--fg)}
+/* thông tin vòng: chỉ hiện khi bấm nút (i) ở góc phải trên */
+.specs{position:absolute; top:50px; right:8px; z-index:2; margin:0; min-width:184px; padding:10px 12px; display:grid; gap:7px; border-radius:14px; background:var(--chip); border:1px solid var(--chip-line); box-shadow:var(--chip-shadow); -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); transform-origin:top right}
+.specs div{display:flex; justify-content:space-between; align-items:baseline; gap:16px}
 .specs dt{font-size:12px; color:var(--muted)}
-.specs dt,.specs dd{text-shadow:0 0 4px var(--stage),0 0 8px var(--stage)}
-.specs dd{margin:0; font-weight:600; font-size:13px; font-variant-numeric:tabular-nums}
-.specs dd.big{font-size:16px}
-.corner{position:absolute; top:8px; left:8px; display:flex; gap:6px; align-items:center}
+.specs dd{margin:0; font-weight:600; font-size:12.5px; font-variant-numeric:tabular-nums; white-space:nowrap}
+.specs dd.big{font-size:13.5px}
+.corner{position:absolute; top:8px; left:50%; transform:translateX(-50%); display:flex; align-items:center}
 .seg{display:inline-flex; padding:2px; gap:2px; border-radius:999px; background:var(--surface); border:1px solid var(--line)}
 .seg button{height:30px; padding:0 11px; border-radius:999px; font-size:12.5px; font-weight:600; color:var(--muted); display:inline-flex; align-items:center; gap:5px; transition:background-color var(--med) var(--ease), color var(--med) var(--ease)}
 .seg button::after{content:""; position:absolute; inset:-8px 0}
 .seg button[aria-checked="true"]{background:var(--fg); color:var(--bg)}
-.mini{height:34px; padding:0 11px; border-radius:999px; background:var(--surface); border:1px solid var(--line); font-size:12.5px; font-weight:600; display:inline-flex; align-items:center; gap:5px; color:var(--muted); transition:background-color var(--fast)}
-.mini::after{content:""; position:absolute; inset:-5px -3px}
-.mini[aria-pressed="true"]{background:var(--fg); color:var(--bg); border-color:var(--fg)}
-.sel-pill{position:absolute; left:50%; bottom:8px; transform:translateX(-50%); max-width:calc(100% - 16px); height:36px; display:flex; align-items:center; gap:8px; padding:0 14px 0 5px; border-radius:999px; background:var(--chip); border:1px solid var(--chip-line); box-shadow:var(--chip-shadow); -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); color:var(--fg); font-size:13px; white-space:nowrap; pointer-events:none}
-.sel-pill .sc-n{flex:none; min-width:26px; height:26px; padding:0 7px; border-radius:13px; background:var(--accent); color:var(--on-accent); font-weight:700; font-size:12.5px; display:grid; place-items:center; font-variant-numeric:tabular-nums}
+
+.sel-pill{position:absolute; left:50%; bottom:8px; transform:translateX(-50%); max-width:calc(100% - 16px); height:36px; display:flex; align-items:center; gap:8px; padding:0 16px; border-radius:999px; background:var(--chip); border:1px solid var(--chip-line); box-shadow:var(--chip-shadow); -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); color:var(--fg); font-size:13px; white-space:nowrap; pointer-events:none}
 .sel-pill .sc-name{font-weight:600; overflow:hidden; text-overflow:ellipsis; min-width:0}
 .sel-pill .sc-v{flex:none; color:var(--muted)}
 .sel-pill .sc-p{flex:none; font-weight:600; font-variant-numeric:tabular-nums; padding-left:9px; border-left:1px solid var(--chip-line)}
-.hint{position:absolute; left:50%; bottom:8px; transform:translateX(-50%); width:max-content; max-width:calc(100% - 12px); color:var(--muted); font-size:12px; text-align:center; pointer-events:none}
 .pan-btn{position:absolute; top:0; width:36px; height:36px; margin-top:-18px; border-radius:50%; background:var(--surface); border:1px solid var(--line); display:grid; place-items:center; color:var(--fg); box-shadow:0 1px 4px rgba(0,0,0,.10); transition:opacity var(--med), background-color var(--fast)}
 .pan-btn::after{content:""; position:absolute; inset:-5px}
 .pan-btn.l{left:8px} .pan-btn.r{right:8px}
 .pan-btn:disabled{opacity:0; visibility:hidden}
 .pan-btn:active{background:var(--soft)}
 
-.toolbar{display:flex; align-items:flex-start; gap:8px; padding:8px 0 10px}
+.toolbar{display:flex; align-items:flex-start; gap:2px; padding:8px 0 10px}
 .tools{display:flex; gap:2px; flex:1; min-width:0}
 .tool{display:flex; flex-direction:column; align-items:center; gap:4px; min-width:58px; flex:0 1 64px; font-size:12px; color:var(--fg); white-space:nowrap}
 .tool .ic{width:44px; height:44px; border-radius:50%; background:var(--surface); border:1px solid var(--line); display:grid; place-items:center; transition:background-color var(--fast), transform var(--fast) var(--ease)}
 .tool:active:not(:disabled) .ic{background:var(--soft); transform:scale(.94)}
 .tool:disabled{opacity:.35}
 .toolbar[data-mode="sel"] .tool[data-ctx="idle"], .toolbar[data-mode="idle"] .tool[data-ctx="sel"]{display:none}
+/* STT luôn đứng đầu hàng, không đổi theo chọn / bỏ chọn charm */
+.tool[aria-pressed="true"] .ic{background:var(--fg); color:var(--bg); border-color:var(--fg)}
 
 @media (max-width:350px){
   .seg button{padding:0 8px; gap:4px}
-  .mini{padding:0 9px}
-  .specs dt{font-size:11.5px}
-  .sel-pill{height:32px; bottom:6px; gap:6px; padding-right:11px}
-  .sel-pill .sc-n{min-width:22px; height:22px; border-radius:11px; padding:0 6px; font-size:12px}
+  .tool{min-width:54px}
+  .sel-pill{height:32px; bottom:6px; gap:6px; padding:0 12px}
 }
 
 /* catalog */
@@ -224,8 +225,6 @@ textarea.copybox{width:100%; min-height:240px; border-radius:12px; border:1px so
   .top{grid-column:1 / -1; padding:18px 0 10px}
   .work{padding:0; align-self:start}
   .canvas-wrap{justify-content:center}
-  .specs{top:18px; right:18px; gap:12px}
-  .specs dd{font-size:14px}
   .catalog{border:1px solid var(--line); border-radius:20px; min-height:0}
   .overlay{align-items:center}
   .sheet{border-radius:22px; padding:22px; max-height:88%}
@@ -243,6 +242,8 @@ textarea.copybox{width:100%; min-height:240px; border-radius:12px; border:1px so
   .cgrid.enter .card{animation:cardIn .26s var(--ease) both; animation-delay:calc(var(--i,0) * 22ms)}
   @keyframes cardIn{from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none}}
   .sel-pill:not([hidden]){animation:chipIn 260ms var(--ease-out)}
+  .specs:not([hidden]){animation:popIn 200ms var(--ease-out)}
+  @keyframes popIn{from{opacity:0; transform:translateY(-4px) scale(.96)} to{opacity:1; transform:none}}
   @keyframes chipIn{from{opacity:0; transform:translate(-50%,8px) scale(.96)} to{opacity:1; transform:translate(-50%,0)}}
   .sk::after{content:""; position:absolute; inset:0; transform:translateX(-100%); background:linear-gradient(90deg,transparent,var(--shine),transparent); animation:shimmer 1.3s infinite}
   @keyframes shimmer{to{transform:translateX(100%)}}
@@ -270,20 +271,20 @@ textarea.copybox{width:100%; min-height:240px; border-radius:12px; border:1px so
             <button role="radio" aria-checked="true" tabindex="0" data-view="circle" title="Xem vòng lúc đeo trên tay"><svg aria-hidden="true" focusable="false" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="8"/></svg>Tròn</button>
             <button role="radio" aria-checked="false" tabindex="-1" data-view="line" title="Tháo khoá, trải dây ra ngang"><svg aria-hidden="true" focusable="false" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 12h18"/></svg>Ngang</button>
           </div>
-          <button class="mini" id="numBtn" aria-pressed="false" title="Hiện số thứ tự" aria-label="Hiện số thứ tự"><span aria-hidden="true">#&nbsp;STT</span></button>
         </div>
         <button class="pan-btn l" id="panL" data-pan="-1" aria-label="Xem đoạn dây bên trái" hidden><svg aria-hidden="true" focusable="false" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 5-7 7 7 7"/></svg></button>
         <button class="pan-btn r" id="panR" data-pan="1" aria-label="Xem đoạn dây bên phải" hidden><svg aria-hidden="true" focusable="false" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg></button>
-        <div class="sel-pill" id="selPill" role="status" aria-atomic="true" hidden><span class="sc-n" id="selNum"></span><span class="sc-name" id="selName"></span><span class="sc-v" id="selVar"></span><span class="sc-p" id="selPrice"></span></div>
-        <div class="hint" id="hint">Chạm để chọn charm · kéo để đổi vị trí</div>
+        <div class="sel-pill" id="selPill" role="status" aria-atomic="true" hidden><span class="vh" id="selNum"></span><span class="sc-name" id="selName"></span><span class="sc-v" id="selVar"></span><span class="sc-p" id="selPrice"></span></div>
       </div>
-      <dl class="specs">
+      <button class="info-btn" id="infoBtn" aria-expanded="false" aria-controls="specs" aria-label="Thông tin vòng: số charm, độ dài đã dùng, tạm tính"><svg aria-hidden="true" focusable="false" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5"/><path d="M12 7.6v.1"/></svg></button>
+      <dl class="specs" id="specs" hidden>
         <div><dt>Số charm</dt><dd id="spCount">0</dd></div>
         <div><dt>Đã dùng</dt><dd id="spUsed">0 cm</dd></div>
         <div><dt>Tạm tính</dt><dd class="big" id="spTotal">0đ</dd></div>
       </dl>
     </div>
     <div class="toolbar" id="toolbar" data-mode="idle">
+      <button class="tool" id="numBtn" aria-pressed="false" title="Hiện số thứ tự trên vòng"><span class="ic"><svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 9h15M4 15h15M10 4 8 20M16 4l-2 16"/></svg></span>STT</button>
       <div class="tools" id="tools" role="group" aria-label="Công cụ">
         <button class="tool" data-tool="undo" data-ctx="idle" id="undoBtn"><span class="ic"><svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></span>Undo</button>
         <button class="tool" data-tool="clear" data-ctx="idle" id="clearBtn"><span class="ic"><svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg></span>Reset</button>
@@ -655,7 +656,8 @@ function geom(W,H,m,o){
   /* chừa khoảng dưới cụm nút góc trên-trái để luôn thấy rõ đầu dây / hạt nút rút ở đỉnh vòng:
      hạ vòng xuống, thiếu chỗ thì thu nhỏ vòng một chút (phần nhô trên đỉnh vòng ~4,5 mm) */
   if(o.avoid){const ext=1+28.3/L,top=o.avoid.b+4,bot=H*.775;
-    if(cxOf(R)-R*.6<o.avoid.r&&cyC-R*ext<top){cyC=top+R*ext;if(cyC+R>bot){R=Math.max(R0*.8,(bot-top)/(1+ext));cyC=Math.min(cyC,bot-R);}}}
+    const cx0=cxOf(R),hit=cx0+R*.6>(o.avoid.l||0)&&cx0-R*.6<o.avoid.r;
+    if(hit&&cyC-R*ext<top){cyC=top+R*ext;if(cyC+R>bot){R=Math.max(R0*.8,(bot-top)/(1+ext));cyC=Math.min(cyC,bot-R);}}}
   const cxC=cxOf(R), sC=2*Math.PI*R/L;
   const fitWhole=(W*.94)/(L+12), fitCluster=(W*.86)/(cl.Wk+24);
   const sL=o.fit==='whole'?fitWhole:Math.min(2*Math.PI*R0/L,Math.max(fitWhole,fitCluster));
@@ -876,24 +878,20 @@ function sizeStage(){
   const wrap=$('canvasWrap');
   LAND=innerWidth>innerHeight&&innerHeight<=520;WIDE=!LAND&&innerWidth>=900;
   const avail=Math.floor(wrap.clientWidth);
-  reserveR=WIDE?150:LAND?104:76;
+  reserveR=0;const hRes=WIDE?150:LAND?104:76;
   let maxH;
   if(WIDE)maxH=Math.min(560,innerHeight-230);
   else if(LAND)maxH=innerHeight-document.querySelector('.top').offsetHeight-$('toolbar').offsetHeight-14;
   else maxH=Math.max(240,innerHeight*.38);
-  S=Math.max(LAND?170:220,Math.floor(Math.min(avail-reserveR,maxH)));
+  S=Math.max(LAND?170:220,Math.floor(Math.min(avail-hRes,maxH)));
   CW=Math.max(S,avail);
-  const sp=document.querySelector('.specs');specsBottom=sp?sp.offsetTop+sp.offsetHeight:0;
-  const co=document.querySelector('.corner');CORNER=co?{r:co.offsetLeft+co.offsetWidth,b:co.offsetTop+co.offsetHeight}:null;
+  const co=document.querySelector('.corner'),wr=wrap.getBoundingClientRect(),cr=co?co.getBoundingClientRect():null;
+  CORNER=cr?{l:cr.left-wr.left,r:cr.right-wr.left,b:cr.bottom-wr.top}:null;specsBottom=CORNER?CORNER.b:0;
   dpr=Math.min(3,window.devicePixelRatio||1);
   cv.style.width=CW+'px';cv.style.height=S+'px';cv.width=Math.round(CW*dpr);cv.height=Math.round(S*dpr);
   panUI='';renderStage();
 }
-function updateHint(){
-  const h=$('hint'),line=VIEW.target===1,canPan=!!(LAY&&LAY.g.panMax>0);
-  h.textContent=line?'Vuốt ngang để xem cả dây · kéo charm để đổi chỗ':'Chạm để chọn charm · kéo để đổi vị trí';
-  h.hidden=!!selItem()||!state.items.length||VIEW.raf!==0||(line&&!canPan);
-}
+function updateHint(){} /* bỏ dòng gợi ý dưới vòng (shop yêu cầu 12/10) */
 function setView(mode,instant){
   const target=mode==='line'?1:0;
   document.querySelectorAll('[data-view]').forEach(b=>{const on=b.dataset.view===mode;b.setAttribute('aria-checked',String(on));b.tabIndex=on?0:-1;});
@@ -904,7 +902,6 @@ function setView(mode,instant){
   if(target===1&&VIEW.m===0)VIEW.pan=0;
   const finish=()=>{VIEW.raf=0;if(VIEW.target===0)VIEW.pan=0;renderStage();updateHint();ensureSelVisible();};
   if(instant||reduceMotion()||VIEW.m===target){VIEW.m=target;finish();return;}
-  $('hint').hidden=true;
   const from=VIEW.m,dur=1300*Math.abs(target-from),t0=performance.now();
   const step=now=>{const t=Math.min(1,(now-t0)/dur);VIEW.m=from+(target-from)*t;renderStage();if(t<1)VIEW.raf=requestAnimationFrame(step);else finish();};
   VIEW.raf=requestAnimationFrame(step);
@@ -1089,7 +1086,7 @@ function refreshSel(){
     if(hadFocus&&document.activeElement&&document.activeElement.offsetParent===null){const f=tb.querySelector(`.tool[data-ctx="${mode}"]:not(:disabled)`)||cv;f.focus({preventScroll:true});}
   }
   $('selPill').hidden=!has;
-  if(has){const e=CE[it.code],i=selIndex();$('selNum').textContent=String(i+1);$('selNum').setAttribute('aria-label',`Charm số ${i+1}`);$('selName').textContent=e.name;$('selVar').textContent=e.vname||'';$('selVar').hidden=!e.vname;$('selPrice').textContent=fmt(e.price);
+  if(has){const e=CE[it.code],i=selIndex();$('selNum').textContent=`Charm số ${i+1}:`;$('selName').textContent=e.name;$('selVar').textContent=e.vname||'';$('selVar').hidden=!e.vname;$('selPrice').textContent=fmt(e.price);
     document.querySelector('[data-tool="left"]').disabled=i<=0;document.querySelector('[data-tool="right"]').disabled=i>=state.items.length-1;}
   $('undoBtn').disabled=!hist.length;
   $('clearBtn').disabled=!state.items.length;
@@ -1352,6 +1349,7 @@ document.addEventListener('click',e=>{
   if('toastUndo' in ds){const t=$('toast');if(t.dataset.h!==''&&+t.dataset.h===hist.length)tool('undo');hideToast();return;}
   if(ds.pan){if(!LAY)return;const g=LAY.g,step=(CW*.6)/g.sL;panTo(Math.max(-g.panMax,Math.min(g.panMax,VIEW.pan+(+ds.pan)*step)),340);return;}
   if(ds.view)return setView(ds.view);
+  if(b.id==='infoBtn')return toggleInfo();
   if(ds.tool)return tool(ds.tool);
   if(ds.ctab){if(ds.ctab!==ctab){ctab=ds.ctab;renderCatalog(true);$('gridWrap').scrollTop=0;}return;}
   if(ds.cat){const c=ds.cat==='all'?'all':(CAT.cats[+ds.cat]||'all');if(c!==catId){catId=c;renderCatalog(true);$('gridWrap').scrollTop=0;}return;}
@@ -1370,10 +1368,17 @@ document.addEventListener('click',e=>{
   if(a==='link')return copyLink();
   if(a==='clearYes'){const n=state.items.length;closeSheet();commit(()=>{state.items=[];sel=null;});toast(`Đã xoá ${n} charm`,{undo:true});return;}
 });
+/* nút (i): bật / tắt bảng nhỏ Số charm · Đã dùng · Tạm tính; bấm ra ngoài hoặc Esc là đóng */
+function toggleInfo(open){
+  const sp=$('specs'),btn=$('infoBtn');open=open==null?sp.hidden:open;
+  sp.hidden=!open;btn.setAttribute('aria-expanded',String(open));
+}
+document.addEventListener('click',e=>{if(!$('specs').hidden&&e.target.closest&&!e.target.closest('#specs,#infoBtn'))toggleInfo(false);});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('specs').hidden&&!sheetKind){toggleInfo(false);$('infoBtn').focus();}});
 /* bấm bất kỳ đâu ngoài charm trên vòng (trừ các nút thao tác charm đang chọn) là bỏ chọn, hàng công cụ về Undo / Reset / Copy link */
 document.addEventListener('click',e=>{
   if(sel===null||!e.target||!e.target.closest)return;
-  if(e.target===cv||e.target.closest('.tool[data-ctx="sel"],#overlay,#toast'))return;
+  if(e.target===cv||e.target.closest('.tool[data-ctx="sel"],#numBtn,#infoBtn,#specs,#overlay,#toast'))return;
   sel=null;refreshSel();
 });
 $('numBtn').addEventListener('click',()=>{showNums=!showNums;$('numBtn').setAttribute('aria-pressed',String(showNums));renderStage();});
