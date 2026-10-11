@@ -66,10 +66,12 @@ button:disabled{cursor:default}
 .stage{position:relative; background:var(--stage); border-radius:18px}
 .canvas-wrap{position:relative; display:flex; justify-content:flex-start; min-width:0}
 #stage{display:block; touch-action:none; user-select:none; -webkit-user-select:none; border-radius:18px}
-.info-btn{position:absolute; top:8px; right:8px; z-index:2; width:36px; height:36px; border-radius:50%; background:var(--surface); border:1px solid var(--line); display:grid; place-items:center; color:var(--muted); transition:background-color var(--fast), color var(--fast), border-color var(--fast)}
-.info-btn::after{content:""; position:absolute; inset:-5px}
-.info-btn:active{background:var(--soft)}
-.info-btn[aria-expanded="true"]{background:var(--fg); color:var(--bg); border-color:var(--fg)}
+.stage-btn{position:absolute; top:8px; z-index:2; width:36px; height:36px; border-radius:50%; background:var(--surface); border:1px solid var(--line); display:grid; place-items:center; color:var(--muted); transition:background-color var(--fast), color var(--fast), border-color var(--fast)}
+.stage-btn::after{content:""; position:absolute; inset:-5px}
+.stage-btn:active{background:var(--soft)}
+.stage-btn[aria-expanded="true"], .stage-btn[aria-pressed="true"]{background:var(--fg); color:var(--bg); border-color:var(--fg)}
+.info-btn{right:8px}
+.num-btn{left:8px}
 /* thông tin vòng: chỉ hiện khi bấm nút (i) ở góc phải trên */
 .specs{position:absolute; top:50px; right:8px; z-index:2; margin:0; min-width:184px; padding:10px 12px; display:grid; gap:7px; border-radius:14px; background:var(--chip); border:1px solid var(--chip-line); box-shadow:var(--chip-shadow); -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); transform-origin:top right}
 .specs div{display:flex; justify-content:space-between; align-items:baseline; gap:16px}
@@ -99,8 +101,6 @@ button:disabled{cursor:default}
 .tool:active:not(:disabled) .ic{background:var(--soft); transform:scale(.94)}
 .tool:disabled{opacity:.35}
 .toolbar[data-mode="sel"] .tool[data-ctx="idle"], .toolbar[data-mode="idle"] .tool[data-ctx="sel"]{display:none}
-/* STT luôn đứng đầu hàng, không đổi theo chọn / bỏ chọn charm */
-.tool[aria-pressed="true"] .ic{background:var(--fg); color:var(--bg); border-color:var(--fg)}
 
 @media (max-width:350px){
   .seg button{padding:0 8px; gap:4px}
@@ -276,7 +276,8 @@ textarea.copybox{width:100%; min-height:240px; border-radius:12px; border:1px so
         <button class="pan-btn r" id="panR" data-pan="1" aria-label="Xem đoạn dây bên phải" hidden><svg aria-hidden="true" focusable="false" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg></button>
         <div class="sel-pill" id="selPill" role="status" aria-atomic="true" hidden><span class="vh" id="selNum"></span><span class="sc-name" id="selName"></span><span class="sc-v" id="selVar"></span><span class="sc-p" id="selPrice"></span></div>
       </div>
-      <button class="info-btn" id="infoBtn" aria-expanded="false" aria-controls="specs" aria-label="Thông tin vòng: số charm, độ dài đã dùng, tạm tính"><svg aria-hidden="true" focusable="false" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5"/><path d="M12 7.6v.1"/></svg></button>
+      <button class="stage-btn num-btn" id="numBtn" aria-pressed="false" aria-label="STT: hiện số thứ tự charm trên vòng" title="Hiện số thứ tự"><svg aria-hidden="true" focusable="false" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 9h15M4 15h15M10 4 8 20M16 4l-2 16"/></svg></button>
+      <button class="stage-btn info-btn" id="infoBtn" aria-expanded="false" aria-controls="specs" aria-label="Thông tin vòng: số charm, độ dài đã dùng, tạm tính"><svg aria-hidden="true" focusable="false" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5"/><path d="M12 7.6v.1"/></svg></button>
       <dl class="specs" id="specs" hidden>
         <div><dt>Số charm</dt><dd id="spCount">0</dd></div>
         <div><dt>Đã dùng</dt><dd id="spUsed">0 cm</dd></div>
@@ -284,7 +285,6 @@ textarea.copybox{width:100%; min-height:240px; border-radius:12px; border:1px so
       </dl>
     </div>
     <div class="toolbar" id="toolbar" data-mode="idle">
-      <button class="tool" id="numBtn" aria-pressed="false" title="Hiện số thứ tự trên vòng"><span class="ic"><svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 9h15M4 15h15M10 4 8 20M16 4l-2 16"/></svg></span>STT</button>
       <div class="tools" id="tools" role="group" aria-label="Công cụ">
         <button class="tool" data-tool="undo" data-ctx="idle" id="undoBtn"><span class="ic"><svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></span>Undo</button>
         <button class="tool" data-tool="clear" data-ctx="idle" id="clearBtn"><span class="ic"><svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg></span>Reset</button>
@@ -621,6 +621,14 @@ const tok=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim
 let TOK=null;const tokens=()=>TOK||(TOK={stage:tok('--stage'),fg:tok('--fg'),bg:tok('--bg'),muted:tok('--muted'),accent:tok('--accent'),onAccent:tok('--on-accent')});
 const easeIO=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
 const lerp=(a,b,t)=>a+(b-a)*t;
+/* vị trí dọc của vòng: 0 = giữa khung (chưa chọn charm), 1 = nhích lên (đang chọn, có viên thông tin ở đáy) */
+const LIFT={v:0,from:0,to:0,t0:0,raf:0};
+function setLift(to){
+  if(LIFT.to===to&&(LIFT.raf||LIFT.v===to))return;
+  LIFT.to=to;if(reduceMotion()||!LAY){LIFT.v=to;return;}
+  LIFT.from=LIFT.v;LIFT.t0=performance.now();
+  if(!LIFT.raf){const tick=()=>{const t=Math.min(1,(performance.now()-LIFT.t0)/340);LIFT.v=lerp(LIFT.from,LIFT.to,1-Math.pow(1-t,3));renderStage();LIFT.raf=t<1?requestAnimationFrame(tick):0;};LIFT.raf=requestAnimationFrame(tick);}
+}
 /* Kiểu xem: m = 0 đeo tròn, m = 1 trải ngang; giá trị ở giữa là lúc đang tháo khoá / đeo lại */
 const VIEW={m:0,raf:0,target:0,pan:0,praf:0};
 let panDrag=null;
@@ -657,7 +665,11 @@ function geom(W,H,m,o){
      hạ vòng xuống, thiếu chỗ thì thu nhỏ vòng một chút (phần nhô trên đỉnh vòng ~4,5 mm) */
   if(o.avoid){const ext=1+28.3/L,top=o.avoid.b+4,bot=H*.775;
     const cx0=cxOf(R),hit=cx0+R*.6>(o.avoid.l||0)&&cx0-R*.6<o.avoid.r;
-    if(hit&&cyC-R*ext<top){cyC=top+R*ext;if(cyC+R>bot){R=Math.max(R0*.8,(bot-top)/(1+ext));cyC=Math.min(cyC,bot-R);}}}
+    if(hit&&cyC-R*ext<top){cyC=top+R*ext;if(cyC+R>bot){R=Math.max(R0*.8,(bot-top)/(1+ext));cyC=Math.min(cyC,bot-R);}}
+    /* chưa chọn charm: dời vòng xuống giữa khung (từ dưới nút Tròn/Ngang tới đáy khung); đang chọn: vòng nhích lên chừa chỗ cho viên thông tin charm */
+    let below=1.6;cl.ents.forEach(en=>{below=Math.max(below,en.bottom);});
+    const s0=2*Math.PI*R/L,dy=((top+H-10)-((cyC-R*ext)+(cyC+R+below*s0)))/2,lift=o.lift!=null?o.lift:1;
+    if(dy>0)cyC+=dy*(1-lift);}
   const cxC=cxOf(R), sC=2*Math.PI*R/L;
   const fitWhole=(W*.94)/(L+12), fitCluster=(W*.86)/(cl.Wk+24);
   const sL=o.fit==='whole'?fitWhole:Math.min(2*Math.PI*R0/L,Math.max(fitWhole,fitCluster));
@@ -860,7 +872,7 @@ function drawScene(ctx,W,H,o){
 function renderStage(){
   const T=tokens();
   cx2.setTransform(dpr,0,0,dpr,0,0);cx2.clearRect(0,0,CW,S);
-  LAY=drawScene(cx2,CW,S,{bg:T.stage,k:dpr,m:VIEW.m,pan:VIEW.pan,lineMin:specsBottom+8,avoid:CORNER,nums:showNums,sel,drag:drag&&drag.moved?drag.uid:null,dragU:drag&&drag.moved?drag.u:null,anim:ANIM,ring:T.fg,selRing:T.accent,selFg:T.onAccent,numBg:T.fg,numFg:T.bg,empty:T.muted});
+  LAY=drawScene(cx2,CW,S,{bg:T.stage,k:dpr,m:VIEW.m,pan:VIEW.pan,lineMin:specsBottom+8,avoid:CORNER,lift:LIFT.v,nums:showNums,sel,drag:drag&&drag.moved?drag.uid:null,dragU:drag&&drag.moved?drag.u:null,anim:ANIM,ring:T.fg,selRing:T.accent,selFg:T.onAccent,numBg:T.fg,numFg:T.bg,empty:T.muted});
   VIEW.pan=LAY.g.pan;
   syncPanUI();
 }
@@ -960,7 +972,7 @@ cv.addEventListener('pointermove',e=>{
   if(!drag.moved){drag.moved=true;sel=drag.uid;cv.style.cursor='grabbing';refreshSel();}
   if(canPanNow()){const edge=44;if(x<edge)VIEW.pan-=(edge-x)/edge*3;else if(x>CW-edge)VIEW.pan+=(x-(CW-edge))/edge*3;}
   /* charm đi theo ngón tay dọc sợi dây; các charm khác dạt ra nhường chỗ */
-  const g=geom(CW,S,VIEW.m,{pan:VIEW.pan,lineMin:specsBottom+8,avoid:CORNER,nums:showNums});
+  const g=geom(CW,S,VIEW.m,{pan:VIEW.pan,lineMin:specsBottom+8,avoid:CORNER,lift:LIFT.v,nums:showNums});
   drag.u=uAt(g,x,y);
   const cP=drag.u+LAY.Wk/2;
   const from=state.items.findIndex(i=>i.uid===drag.uid);
@@ -1085,7 +1097,7 @@ function refreshSel(){
     const tl=$('tools');tl.classList.remove('swap');void tl.offsetWidth;tl.classList.add('swap');
     if(hadFocus&&document.activeElement&&document.activeElement.offsetParent===null){const f=tb.querySelector(`.tool[data-ctx="${mode}"]:not(:disabled)`)||cv;f.focus({preventScroll:true});}
   }
-  $('selPill').hidden=!has;
+  $('selPill').hidden=!has;setLift(has?1:0);
   if(has){const e=CE[it.code],i=selIndex();$('selNum').textContent=`Charm số ${i+1}:`;$('selName').textContent=e.name;$('selVar').textContent=e.vname||'';$('selVar').hidden=!e.vname;$('selPrice').textContent=fmt(e.price);
     document.querySelector('[data-tool="left"]').disabled=i<=0;document.querySelector('[data-tool="right"]').disabled=i>=state.items.length-1;}
   $('undoBtn').disabled=!hist.length;
