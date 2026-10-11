@@ -623,6 +623,16 @@ const easeIO=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
 const lerp=(a,b,t)=>a+(b-a)*t;
 /* vị trí dọc của vòng: 0 = giữa khung (chưa chọn charm), 1 = nhích lên (đang chọn, có viên thông tin ở đáy) */
 const LIFT={v:0,from:0,to:0,t0:0,raf:0};
+/* phóng to charm đang kéo: lớn lên 180ms (hơi nảy), thả tay thu về 220ms */
+const ZOOM={uid:null,v:1,from:1,to:1,t0:0,raf:0};
+function zoomTo(uid,to){
+  if(uid!=null)ZOOM.uid=uid;ZOOM.from=ZOOM.v;ZOOM.to=to;ZOOM.t0=performance.now();
+  if(reduceMotion()){ZOOM.v=to;if(to===1)ZOOM.uid=null;renderStage();return;}
+  if(!ZOOM.raf){const tick=()=>{const up=ZOOM.to>ZOOM.from,t=Math.min(1,(performance.now()-ZOOM.t0)/(up?180:220));
+    const c=1.25,ez=up?1+(c+1)*Math.pow(t-1,3)+c*Math.pow(t-1,2):1-Math.pow(1-t,3);
+    ZOOM.v=ZOOM.from+(ZOOM.to-ZOOM.from)*ez;if(t>=1){ZOOM.v=ZOOM.to;if(ZOOM.to===1)ZOOM.uid=null;}
+    renderStage();ZOOM.raf=t<1?requestAnimationFrame(tick):0;};ZOOM.raf=requestAnimationFrame(tick);}
+}
 function setLift(to){
   if(LIFT.to===to&&(LIFT.raf||LIFT.v===to))return;
   LIFT.to=to;if(reduceMotion()||!LAY){LIFT.v=to;return;}
@@ -835,10 +845,13 @@ function drawScene(ctx,W,H,o){
   if(!CAT.straps.length)return lay;
   SH={c:'rgba(38,26,8,.26)',b:3*o.k,y:1.4*o.k};
   drawStrapCurve(ctx,g,strapE());
-  const order=lay.list.filter(x=>!(o.drag&&x.it.uid===o.drag));
-  const dragged=lay.list.find(x=>o.drag&&x.it.uid===o.drag);
+  /* charm đang kéo: phóng to (×1,5) và vẽ trên cùng; thả tay thì thu nhỏ lại mượt rồi mới về lớp thường */
+  const zm=o.zoom&&o.zoom.uid!=null&&(o.zoom.v>1.001||o.drag===o.zoom.uid)?o.zoom:null,zOf=uid=>zm&&zm.uid===uid?zm.v:1;
+  const topUid=o.drag||(zm?zm.uid:null);
+  const order=lay.list.filter(x=>!(topUid!=null&&x.it.uid===topUid));
+  const dragged=lay.list.find(x=>topUid!=null&&x.it.uid===topUid);
   for(const x of order.concat(dragged?[dragged]:[])){
-    const lifted=x===dragged,e=x.e,k=g.s*(lifted?1.12:1)*x.pop;
+    const lifted=x===dragged,e=x.e,k=g.s*(lifted?(zm?zOf(x.it.uid):1.12):1)*x.pop;
     ctx.save();ctx.translate(x.x,x.y);ctx.rotate(x.rot);ctx.scale(k,k);
     if(lifted)SH={c:'rgba(38,26,8,.35)',b:9*o.k,y:5*o.k};
     drawEntry(ctx,e);
@@ -850,7 +863,7 @@ function drawScene(ctx,W,H,o){
   if(o.nums&&lay.list.length){
     const br=Math.max(7.5,Math.min(11,2.3*g.s));
     ctx.font=`700 ${Math.round(br*1.05)}px "Be Vietnam Pro", system-ui, sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
-    lay.list.forEach((x,i)=>{const d=(x.e.top-3.6)*g.s,px=x.x+x.nx*d,py=x.y+x.ny*d,on=o.sel===x.it.uid&&o.selRing;ctx.beginPath();ctx.arc(px,py,br,0,Math.PI*2);ctx.fillStyle=on?o.selRing:o.numBg;ctx.fill();ctx.fillStyle=on?o.selFg:o.numFg;ctx.fillText(String(i+1),px,py+.5);});
+    lay.list.forEach((x,i)=>{const d=(x.e.top*zOf(x.it.uid)-3.6)*g.s,px=x.x+x.nx*d,py=x.y+x.ny*d,on=o.sel===x.it.uid&&o.selRing;ctx.beginPath();ctx.arc(px,py,br,0,Math.PI*2);ctx.fillStyle=on?o.selRing:o.numBg;ctx.fill();ctx.fillStyle=on?o.selFg:o.numFg;ctx.fillText(String(i+1),px,py+.5);});
   }
   if(o.bg&&g.e>0){
     const fw=Math.min(28,W*.08);
@@ -872,7 +885,7 @@ function drawScene(ctx,W,H,o){
 function renderStage(){
   const T=tokens();
   cx2.setTransform(dpr,0,0,dpr,0,0);cx2.clearRect(0,0,CW,S);
-  LAY=drawScene(cx2,CW,S,{bg:T.stage,k:dpr,m:VIEW.m,pan:VIEW.pan,lineMin:specsBottom+8,avoid:CORNER,lift:LIFT.v,nums:showNums,sel,drag:drag&&drag.moved?drag.uid:null,dragU:drag&&drag.moved?drag.u:null,anim:ANIM,ring:T.fg,selRing:T.accent,selFg:T.onAccent,numBg:T.fg,numFg:T.bg,empty:T.muted});
+  LAY=drawScene(cx2,CW,S,{bg:T.stage,k:dpr,m:VIEW.m,pan:VIEW.pan,lineMin:specsBottom+8,avoid:CORNER,lift:LIFT.v,nums:showNums,sel,drag:drag&&drag.moved?drag.uid:null,dragU:drag&&drag.moved?drag.u:null,anim:ANIM,zoom:ZOOM,ring:T.fg,selRing:T.accent,selFg:T.onAccent,numBg:T.fg,numFg:T.bg,empty:T.muted});
   VIEW.pan=LAY.g.pan;
   syncPanUI();
 }
@@ -969,7 +982,7 @@ cv.addEventListener('pointermove',e=>{
   }
   if(!drag){cv.style.cursor=hit(x,y)||canPanNow()?'grab':'default';return;}
   if(!drag.moved&&Math.hypot(x-drag.x0,y-drag.y0)<6)return;
-  if(!drag.moved){drag.moved=true;sel=drag.uid;cv.style.cursor='grabbing';refreshSel();}
+  if(!drag.moved){drag.moved=true;sel=drag.uid;cv.style.cursor='grabbing';zoomTo(drag.uid,1.5);refreshSel();}
   if(canPanNow()){const edge=44;if(x<edge)VIEW.pan-=(edge-x)/edge*3;else if(x>CW-edge)VIEW.pan+=(x-(CW-edge))/edge*3;}
   /* charm đi theo ngón tay dọc sợi dây; các charm khác dạt ra nhường chỗ */
   const g=geom(CW,S,VIEW.m,{pan:VIEW.pan,lineMin:specsBottom+8,avoid:CORNER,lift:LIFT.v,nums:showNums});
@@ -989,7 +1002,7 @@ function endDrag(){
   }
   if(!drag)return;const d=drag;
   if(!d.moved){drag=null;cv.style.cursor='default';sel=(sel===d.uid)?null:d.uid;refreshSel();return;}
-  const from=posSnap();drag=null;cv.style.cursor='default';startReflow(from);changed();
+  const from=posSnap();drag=null;cv.style.cursor='default';zoomTo(d.uid,1);startReflow(from);changed();
 }
 cv.addEventListener('pointerup',endDrag);
 cv.addEventListener('pointercancel',endDrag);
