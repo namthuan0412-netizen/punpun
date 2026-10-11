@@ -31,6 +31,9 @@
 
 *{box-sizing:border-box}
 html,body{height:100%}
+/* chặn phóng to khi chạm 2 lần trên điện thoại (vẫn cuộn và zoom 2 ngón được) */
+html{-webkit-text-size-adjust:100%; text-size-adjust:100%}
+*{touch-action:manipulation}
 body{background:var(--bg); color:var(--fg); font-family:var(--font); font-size:14px; line-height:1.45; -webkit-tap-highlight-color:transparent}
 button{font:inherit; color:inherit; cursor:pointer; background:none; border:0; padding:0}
 button:disabled{cursor:default}
@@ -140,9 +143,9 @@ button:disabled{cursor:default}
 .sec-t{font-size:12px; color:var(--muted); margin:2px 2px -6px; display:flex; justify-content:space-between}
 details.open-code summary{cursor:pointer; color:var(--muted); font-size:13px}
 .code-form{display:flex; gap:8px; margin-top:10px}
-.code-form input{flex:1; min-width:0; height:44px; border-radius:12px; border:1px solid var(--line); background:var(--bg); color:var(--fg); padding:0 12px; font:inherit; font-size:13px}
+.code-form input{flex:1; min-width:0; height:44px; border-radius:12px; border:1px solid var(--line); background:var(--bg); color:var(--fg); padding:0 12px; font:inherit; font-size:16px}
 .img-out{width:100%; border-radius:12px; border:1px solid var(--line); display:block}
-textarea.copybox{width:100%; min-height:240px; border-radius:12px; border:1px solid var(--line); background:var(--bg); color:var(--fg); padding:12px; font:13px/1.5 var(--mono)}
+textarea.copybox{width:100%; min-height:240px; border-radius:12px; border:1px solid var(--line); background:var(--bg); color:var(--fg); padding:12px; font:16px/1.5 var(--mono)}
 
 .toast{position:fixed; left:50%; bottom:calc(24px + env(safe-area-inset-bottom,0px)); transform:translateX(-50%); background:var(--fg); color:var(--bg); padding:10px 16px; border-radius:999px; font-size:13px; font-weight:500; z-index:80; max-width:calc(100% - 32px); text-align:center}
 
@@ -513,7 +516,8 @@ const tok=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim
 const easeIO=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
 const lerp=(a,b,t)=>a+(b-a)*t;
 /* Kiểu xem: m = 0 đeo tròn, m = 1 trải ngang; giá trị ở giữa là lúc đang tháo khoá / đeo lại */
-const VIEW={m:0,raf:0};
+const VIEW={m:0,raf:0,target:0,pan:0,praf:0};
+let panDrag=null;
 
 function clusterOf(){
   const gap=.35,L=state.size*10;
@@ -535,9 +539,15 @@ function geom(W,H,m,o){
   const fitWhole=(W*.94)/(L+12), fitCluster=(W*.86)/(cl.Wk+24);
   const sL=o.fit==='whole'?fitWhole:Math.min(sC,Math.max(fitWhole,fitCluster));
   const e=easeIO(Math.max(0,Math.min(1,m)));
-  let ayL=H*(o.lineY||.7);
-  if(o.lineMin!=null){const lo=o.lineMin+9.6*sL,hi=H-30-14.5*sL;ayL=lo<=hi?Math.min(Math.max(ayL,lo),hi):(lo+hi)/2;}
-  return{cl,L,k:kc*(1-e),s:lerp(sC,sL,e),ax:lerp(cxC,W/2,e),ay:lerp(cyC+R,ayL,e),e,W,H,R,cxC,cyC};
+  let ayL=H*(o.lineY||.7),tight=false;
+  if(o.lineMin!=null){
+    let up=6,down=6;cl.ents.forEach(en=>{up=Math.max(up,-en.top);down=Math.max(down,en.bottom);});
+    const lo=o.lineMin+(up+(o.nums?5.6:1.5))*sL,hi=H-(o.linePad||36)-(down+1.6)*sL;
+    tight=lo>hi;ayL=tight?(lo+hi)/2:Math.min(Math.max(ayL,lo),hi);
+  }
+  /* trượt ngang: pan (mm) dời phần dây đang xem, giới hạn để luôn thấy được 2 đầu dây */
+  const panMax=Math.max(0,L/2+8-(W/2)/sL), pan=Math.max(-panMax,Math.min(panMax,o.pan||0));
+  return{cl,L,k:kc*(1-e),s:lerp(sC,sL,e),sL,ax:lerp(cxC,W/2-pan*sL,e),ay:lerp(cyC+R,ayL,e),e,W,H,R,cxC,cyC,pan,panMax,tight};
 }
 function curvePt(g,u){
   const k=g.k;let X,Y;
@@ -623,6 +633,11 @@ function drawScene(ctx,W,H,o){
     const fw=Math.min(28,W*.08);
     for(const right of[false,true]){const gr=ctx.createLinearGradient(right?W:0,0,right?W-fw:fw,0);gr.addColorStop(0,rgba(o.bg,g.e));gr.addColorStop(1,rgba(o.bg,0));ctx.fillStyle=gr;ctx.fillRect(right?W-fw:0,0,fw,H);}
   }
+  if(o.bg&&g.panMax>0&&g.e>.98&&!g.tight){
+    const tw=56,th=3,tx=W/2-tw/2,ty=H-31,tot=g.L+16,thw=Math.max(10,tw*Math.min(1,(W/g.sL)/tot)),pos=(g.pan+g.panMax)/(2*g.panMax);
+    ctx.fillStyle=rgba(o.empty,.28);rr(ctx,tx,ty,tw,th,1.5);ctx.fill();
+    ctx.fillStyle=rgba(o.ring,.75);rr(ctx,tx+(tw-thw)*pos,ty,thw,th,1.5);ctx.fill();
+  }
   if(!lay.list.length&&o.empty){
     const tx=lerp(g.cxC,W/2,g.e),ty=lerp(g.cyC,g.ay-H*.22,g.e);
     ctx.fillStyle=o.empty;ctx.textAlign='center';ctx.textBaseline='middle';
@@ -633,7 +648,8 @@ function drawScene(ctx,W,H,o){
 }
 function renderStage(){
   cx2.setTransform(dpr,0,0,dpr,0,0);cx2.clearRect(0,0,CW,S);
-  LAY=drawScene(cx2,CW,S,{bg:tok('--stage'),k:dpr,m:VIEW.m,lineMin:specsBottom+8,nums:showNums,sel,drag:drag&&drag.moved?drag.uid:null,ring:tok('--fg'),numBg:tok('--fg'),numFg:tok('--bg'),empty:tok('--muted')});
+  LAY=drawScene(cx2,CW,S,{bg:tok('--stage'),k:dpr,m:VIEW.m,pan:VIEW.pan,lineMin:specsBottom+8,nums:showNums,sel,drag:drag&&drag.moved?drag.uid:null,ring:tok('--fg'),numBg:tok('--fg'),numFg:tok('--bg'),empty:tok('--muted')});
+  VIEW.pan=LAY.g.pan;
 }
 function sizeStage(){
   const wrap=document.getElementById('canvasWrap');
@@ -648,19 +664,47 @@ function sizeStage(){
   cv.style.width=CW+'px';cv.style.height=S+'px';cv.width=Math.round(CW*dpr);cv.height=Math.round(S*dpr);
   renderStage();
 }
+function updateHint(){
+  const h=document.getElementById('hint'),line=VIEW.target===1,canPan=!!(LAY&&LAY.g.panMax>0);
+  h.textContent=line?'Vuốt ngang để xem cả dây · kéo charm để đổi chỗ':'Chạm để chọn charm · kéo để đổi vị trí';
+  h.hidden=!!selItem()||!state.items.length||VIEW.raf!==0||(line&&!canPan);
+}
 function setView(mode,instant){
   const target=mode==='line'?1:0;
   document.querySelectorAll('[data-view]').forEach(b=>b.setAttribute('aria-checked',String(b.dataset.view===mode)));
   try{localStorage.setItem('punpun-view',mode);}catch(e){}
   if(VIEW.raf){cancelAnimationFrame(VIEW.raf);VIEW.raf=0;}
-  drag=null;
+  stopPan();drag=null;panDrag=null;
+  VIEW.target=target;
+  if(target===1&&VIEW.m===0)VIEW.pan=0;
   let reduce=false;try{reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;}catch(e){}
-  $('hint').hidden=!!selItem()||!state.items.length||target===1;
-  if(instant||reduce||VIEW.m===target){VIEW.m=target;renderStage();return;}
+  const finish=()=>{VIEW.raf=0;if(VIEW.target===0)VIEW.pan=0;renderStage();updateHint();};
+  if(instant||reduce||VIEW.m===target){VIEW.m=target;finish();return;}
+  document.getElementById('hint').hidden=true;
   const from=VIEW.m,dur=1300*Math.abs(target-from),t0=performance.now();
-  const step=now=>{const t=Math.min(1,(now-t0)/dur);VIEW.m=from+(target-from)*t;renderStage();if(t<1)VIEW.raf=requestAnimationFrame(step);else VIEW.raf=0;};
+  const step=now=>{const t=Math.min(1,(now-t0)/dur);VIEW.m=from+(target-from)*t;renderStage();if(t<1)VIEW.raf=requestAnimationFrame(step);else finish();};
   VIEW.raf=requestAnimationFrame(step);
 }
+/* trượt dây khi đang trải ngang */
+function stopPan(){if(VIEW.praf){cancelAnimationFrame(VIEW.praf);VIEW.praf=0;}}
+function panTo(target,ms){
+  stopPan();const from=VIEW.pan,t0=performance.now(),dur=ms||320;
+  const step=now=>{const t=Math.min(1,(now-t0)/dur),k=1-Math.pow(1-t,3);VIEW.pan=from+(target-from)*k;renderStage();if(t<1)VIEW.praf=requestAnimationFrame(step);else VIEW.praf=0;};
+  VIEW.praf=requestAnimationFrame(step);
+}
+function fling(v){
+  stopPan();let last=performance.now();
+  const step=now=>{const dt=Math.min(40,now-last);last=now;const want=VIEW.pan+v*dt;VIEW.pan=want;v*=Math.pow(.94,dt/16);renderStage();
+    if(Math.abs(v)>.002&&Math.abs(VIEW.pan-want)<1e-6)VIEW.praf=requestAnimationFrame(step);else VIEW.praf=0;};
+  VIEW.praf=requestAnimationFrame(step);
+}
+function ensureSelVisible(){
+  if(VIEW.target!==1||VIEW.raf||!LAY||sel==null)return;
+  const x=LAY.list.find(en=>en.it.uid===sel);if(!x)return;
+  const m=Math.max(30,LAY.s*7);
+  if(x.x<m||x.x>CW-m)panTo(x.u,300);
+}
+const canPanNow=()=>VIEW.target===1&&!VIEW.raf&&LAY&&LAY.g.panMax>0;
 function hit(px,py){
   if(!LAY||VIEW.raf)return null;
   for(let i=LAY.list.length-1;i>=0;i--){
@@ -674,16 +718,26 @@ function hit(px,py){
 function ptr(e){const b=cv.getBoundingClientRect();return[e.clientX-b.left,e.clientY-b.top];}
 cv.addEventListener('pointerdown',e=>{
   if(VIEW.raf)return;
+  stopPan();
   const[x,y]=ptr(e);const h=hit(x,y);
-  if(!h){if(sel!==null){sel=null;refreshSel();}return;}
-  drag={uid:h.it.uid,x0:x,y0:y,moved:false,pushed:false};
+  if(h)drag={uid:h.it.uid,x0:x,y0:y,moved:false,pushed:false};
+  else if(canPanNow()){panDrag={x0:x,pan0:VIEW.pan,moved:false,lx:x,lt:performance.now(),v:0};cv.style.cursor='grabbing';}
+  else{if(sel!==null){sel=null;refreshSel();}return;}
   try{cv.setPointerCapture(e.pointerId);}catch(_){}
 });
 cv.addEventListener('pointermove',e=>{
   const[x,y]=ptr(e);
-  if(!drag){cv.style.cursor=hit(x,y)?'grab':'default';return;}
+  if(panDrag){
+    if(!panDrag.moved&&Math.abs(x-panDrag.x0)<5)return;
+    panDrag.moved=true;
+    const now=performance.now(),dt=Math.max(1,now-panDrag.lt),vNew=-(x-panDrag.lx)/LAY.s/dt;
+    panDrag.v=panDrag.v*.5+vNew*.5;panDrag.lx=x;panDrag.lt=now;
+    VIEW.pan=panDrag.pan0-(x-panDrag.x0)/LAY.s;renderStage();return;
+  }
+  if(!drag){cv.style.cursor=hit(x,y)||canPanNow()?'grab':'default';return;}
   if(!drag.moved&&Math.hypot(x-drag.x0,y-drag.y0)<6)return;
   if(!drag.moved){drag.moved=true;sel=drag.uid;cv.style.cursor='grabbing';}
+  if(canPanNow()){const edge=44;if(x<edge){VIEW.pan-=(edge-x)/edge*3;renderStage();}else if(x>CW-edge){VIEW.pan+=(x-(CW-edge))/edge*3;renderStage();}}
   const cP=uAt(LAY.g,x,y)+LAY.Wk/2;
   const from=state.items.findIndex(i=>i.uid===drag.uid);
   let to=0;LAY.list.forEach(en=>{if(en.it.uid!==drag.uid&&en.c<cP)to++;});
@@ -691,11 +745,22 @@ cv.addEventListener('pointermove',e=>{
   renderStage();
 });
 function endDrag(){
+  if(panDrag){
+    const p=panDrag;panDrag=null;cv.style.cursor='default';
+    if(!p.moved){if(sel!==null){sel=null;refreshSel();}}
+    else if(performance.now()-p.lt<90&&Math.abs(p.v)>.01)fling(p.v);
+    return;
+  }
   if(!drag)return;const d=drag;drag=null;cv.style.cursor='default';
   if(!d.moved){sel=(sel===d.uid)?null:d.uid;refreshSel();}else{changed();}
 }
 cv.addEventListener('pointerup',endDrag);
 cv.addEventListener('pointercancel',endDrag);
+cv.addEventListener('wheel',e=>{
+  if(!canPanNow())return;
+  const d=Math.abs(e.deltaX)>Math.abs(e.deltaY)?e.deltaX:e.deltaY;if(!d)return;
+  e.preventDefault();stopPan();VIEW.pan+=d*(e.deltaMode===1?16:1)/LAY.s;renderStage();
+},{passive:false});
 cv.addEventListener('keydown',e=>{
   if(!sel){if(e.key==='ArrowRight'&&state.items.length){sel=state.items[0].uid;refreshSel();e.preventDefault();}return;}
   if(e.key==='ArrowLeft'){tool('left');e.preventDefault();}
@@ -756,7 +821,7 @@ function renderSpecs(){
 function refreshSel(){
   if(sel&&!selItem())sel=null;
   const it=selItem();
-  $('selPill').hidden=!it;$('hint').hidden=!!it||!state.items.length||VIEW.m>.5;
+  $('selPill').hidden=!it;
   if(it){const e=CE[it.code];$('selPill').textContent=`#${selIndex()+1} · ${e.name}${e.vname?' · '+e.vname:''} · ${fmt(e.price)}`;}
   const has=!!it;
   document.querySelectorAll('[data-tool="left"],[data-tool="right"],[data-tool="dup"],[data-tool="del"]').forEach(b=>b.disabled=!has);
@@ -764,8 +829,9 @@ function refreshSel(){
   $('undoBtn').disabled=!hist.length;
   $('clearBtn').disabled=!state.items.length;
   renderStage();
+  updateHint();
 }
-function changed(){if(!CAT.loading)saveDraft();renderSpecs();renderCatalog();refreshSel();if(sheetKind==='done')renderSheet();}
+function changed(){if(!CAT.loading)saveDraft();renderSpecs();renderCatalog();refreshSel();ensureSelVisible();if(sheetKind==='done')renderSheet();}
 
 /* ---------- tools ---------- */
 let clearArmed=null;
