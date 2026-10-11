@@ -1,0 +1,812 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#FAFAF9">
+<meta name="description" content="Tự mix vòng charm PunPun Tinygold Charm: chọn dây, gắn charm, xem thành phẩm rồi gửi shop.">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>PunPun Charm Mix</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Layout: work area (bracelet tray + specs + tool row) over a catalog with side categories; on desktop the two sit side by side */
+:root{
+  --bg:#FAFAF9; --surface:#FFFFFF; --stage:#F3F2EF; --fg:#1C1B19; --muted:#706C66; --line:#E7E5E1;
+  --accent:#9C7A2F; --soft:#F1EFEB; --scrim:rgba(18,16,14,.42);
+  --font:"Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#131312; --surface:#1B1B19; --stage:#222120; --fg:#F2F1EE; --muted:#A39F98; --line:#302F2C;
+  --accent:#D8B868; --soft:#262523; --scrim:rgba(0,0,0,.6); color-scheme:dark } }
+:root[data-theme="dark"]{
+  --bg:#131312; --surface:#1B1B19; --stage:#222120; --fg:#F2F1EE; --muted:#A39F98; --line:#302F2C;
+  --accent:#D8B868; --soft:#262523; --scrim:rgba(0,0,0,.6); color-scheme:dark }
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--bg); color:var(--fg); font-family:var(--font); font-size:14px; line-height:1.45; -webkit-tap-highlight-color:transparent}
+button{font:inherit; color:inherit; cursor:pointer; background:none; border:0; padding:0}
+button:disabled{cursor:default}
+:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+.tab-num{font-variant-numeric:tabular-nums}
+
+.shell{height:100%; display:flex; flex-direction:column; max-width:1200px; margin:0 auto}
+.top{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 16px 4px}
+.brand{display:flex; align-items:baseline; gap:8px; min-width:0}
+.brand b{font-size:19px; font-weight:700; letter-spacing:-.02em}
+.brand span{font-size:10.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); white-space:nowrap}
+.pill-btn{height:36px; padding:0 16px; border-radius:999px; border:1px solid var(--fg); font-weight:600; font-size:13.5px; display:inline-flex; align-items:center; gap:6px; white-space:nowrap}
+.pill-btn.solid{background:var(--fg); color:var(--bg)}
+
+/* work area */
+.work{padding:0 16px; flex:none}
+.stage{position:relative; background:var(--stage); border-radius:18px}
+.canvas-wrap{position:relative; display:flex; justify-content:flex-start; min-width:0}
+#stage{display:block; touch-action:none; user-select:none; -webkit-user-select:none; border-radius:18px}
+.specs{margin:0; display:grid; gap:9px; text-align:right; position:absolute; top:12px; right:12px; pointer-events:none}
+.specs dt{font-size:11.5px; color:var(--muted)}
+.specs dd{margin:0; font-weight:600; font-size:13px; font-variant-numeric:tabular-nums}
+.specs dd.big{font-size:16px}
+.corner{position:absolute; top:8px; left:8px; display:flex; gap:6px}
+.mini{height:28px; padding:0 10px; border-radius:999px; background:var(--surface); border:1px solid var(--line); font-size:12px; font-weight:600; display:inline-flex; align-items:center; gap:5px; color:var(--muted)}
+.mini[aria-pressed="true"]{background:var(--fg); color:var(--bg); border-color:var(--fg)}
+.sel-pill{position:absolute; left:50%; bottom:6px; transform:translateX(-50%); max-width:calc(100% - 12px); background:var(--fg); color:var(--bg); border-radius:999px; padding:5px 12px; font-size:12.5px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; pointer-events:none}
+.hint{position:absolute; left:50%; bottom:8px; transform:translateX(-50%); width:max-content; max-width:calc(100% - 12px); color:var(--muted); font-size:12px; text-align:center; pointer-events:none}
+
+.toolbar{display:flex; align-items:center; gap:10px; padding:8px 0 10px}
+.tools{display:flex; gap:4px; overflow-x:auto; scrollbar-width:none; flex:1; min-width:0}
+.tools::-webkit-scrollbar{display:none}
+.tool{display:flex; flex-direction:column; align-items:center; gap:4px; min-width:56px; font-size:11.5px; color:var(--fg)}
+.tool .ic{width:42px; height:42px; border-radius:50%; background:var(--surface); border:1px solid var(--line); display:grid; place-items:center}
+.tool:disabled{opacity:.35}
+.tool.armed .ic{background:#B4423A; border-color:#B4423A; color:#fff}
+.done{height:42px; padding:0 22px; border-radius:999px; background:var(--fg); color:var(--bg); font-weight:600; flex:none; align-self:flex-start}
+
+/* catalog */
+.catalog{flex:1; min-height:0; display:flex; flex-direction:column; background:var(--surface); border-top:1px solid var(--line); border-radius:20px 20px 0 0}
+.ctabs{display:flex; gap:24px; padding:12px 16px 0; border-bottom:1px solid var(--line)}
+.ctab{padding:6px 0 10px; font-weight:600; font-size:15px; color:var(--muted); border-bottom:2px solid transparent; margin-bottom:-1px}
+.ctab[aria-selected="true"]{color:var(--fg); border-color:var(--fg)}
+.cbody{flex:1; min-height:0; display:flex}
+.cside{flex:none; width:92px; overflow-y:auto; background:var(--soft); padding:6px 0; scrollbar-width:none}
+.cside button{display:block; width:100%; text-align:left; padding:12px 12px; font-size:13px; color:var(--muted); position:relative}
+.cside button[aria-current="true"]{background:var(--surface); color:var(--fg); font-weight:600}
+.cside button[aria-current="true"]::before{content:""; position:absolute; left:0; top:12px; bottom:12px; width:3px; border-radius:0 3px 3px 0; background:var(--fg)}
+.cgrid-wrap{flex:1; min-width:0; overflow-y:auto; padding:12px 12px 24px}
+.cgrid{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px}
+.card{display:flex; flex-direction:column; align-items:center; gap:3px; padding:8px 4px 10px; border-radius:14px; text-align:center; position:relative; min-width:0}
+.card:hover{background:var(--soft)}
+.card img{width:100%; max-width:96px; aspect-ratio:1; display:block}
+.card .nm{font-size:12.5px; font-weight:600; line-height:1.3; width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.card .pr{font-size:12px; font-variant-numeric:tabular-nums}
+.card .tag{font-size:11px; color:var(--muted); background:var(--soft); border-radius:6px; padding:1px 8px; margin-top:2px}
+.card:hover .tag{background:var(--surface)}
+.card .used{position:absolute; top:6px; right:8px; font-size:11px; font-weight:700; background:var(--fg); color:var(--bg); border-radius:999px; min-width:20px; padding:0 6px; line-height:20px}
+.card.on{background:var(--soft)}
+.card.on .tag{background:var(--fg); color:var(--bg)}
+.note{font-size:12px; color:var(--muted); padding:16px 4px 0}
+
+/* sheets */
+.overlay{position:fixed; inset:0; background:var(--scrim); display:flex; align-items:flex-end; justify-content:center; z-index:50}
+.sheet{background:var(--surface); width:100%; max-width:560px; border-radius:22px 22px 0 0; padding:18px 16px calc(18px + env(safe-area-inset-bottom,0px)); max-height:90%; overflow-y:auto; display:flex; flex-direction:column; gap:14px}
+.sheet.tall{height:92%}
+.sh-head{display:flex; align-items:flex-start; justify-content:space-between; gap:12px}
+.sh-head h3{margin:0; font-size:18px; font-weight:700; letter-spacing:-.01em; text-wrap:balance}
+.code{font-size:11.5px; color:var(--muted); letter-spacing:.06em}
+.x{width:36px; height:36px; border-radius:50%; background:var(--soft); display:grid; place-items:center; flex:none}
+.preview{display:grid; place-items:center; background:var(--stage); border-radius:16px; padding:8px}
+.preview img{width:180px; max-width:100%; aspect-ratio:1}
+.lbl{font-size:12px; color:var(--muted)}
+.lbl b{color:var(--fg); font-weight:600}
+.chips{display:flex; flex-wrap:wrap; gap:8px}
+.chip{display:inline-flex; align-items:center; gap:7px; height:36px; padding:0 13px 0 6px; border-radius:999px; border:1px solid var(--line); font-size:13px; font-weight:500; white-space:nowrap}
+.chip .sw{width:24px; height:24px; border-radius:50%; box-shadow:inset 0 0 0 1px rgba(0,0,0,.12)}
+.chip.txt{padding:0 14px}
+.chip.letter{width:40px; padding:0; justify-content:center; font-weight:700}
+.chip[aria-checked="true"]{border-color:var(--fg); box-shadow:inset 0 0 0 1px var(--fg)}
+.sh-foot{display:flex; align-items:center; justify-content:space-between; gap:12px; position:sticky; bottom:-18px; background:var(--surface); padding:10px 0 4px; margin-top:auto}
+.price{font-size:20px; font-weight:700; font-variant-numeric:tabular-nums}
+.btn{height:46px; padding:0 22px; border-radius:999px; font-weight:600; display:inline-flex; align-items:center; justify-content:center; gap:8px; border:1px solid var(--line); background:var(--surface)}
+.btn.primary{background:var(--fg); color:var(--bg); border-color:var(--fg)}
+.small{font-size:12.5px; color:var(--muted); margin:0}
+
+/* summary */
+.sum-actions{display:grid; grid-template-columns:1fr 1fr; gap:8px}
+.sum-actions .primary{grid-column:1 / -1}
+.sum-box{border:1px solid var(--line); border-radius:14px}
+.row{display:grid; grid-template-columns:26px 40px minmax(0,1fr) auto; gap:10px; align-items:center; padding:9px 12px; border-top:1px solid var(--line)}
+.row:first-child{border-top:0}
+.row.nonum{grid-template-columns:40px minmax(0,1fr) auto}
+.row img{width:40px; height:40px}
+.row .t{min-width:0}
+.row .t b{display:block; font-weight:600; font-size:13.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.row .t span{font-size:12px; color:var(--muted)}
+.row .p{font-variant-numeric:tabular-nums; font-size:13px}
+.num{width:24px; height:24px; border-radius:50%; background:var(--fg); color:var(--bg); font-size:11.5px; font-weight:700; display:grid; place-items:center}
+.total{display:flex; justify-content:space-between; align-items:baseline; padding:4px 2px}
+.total span{font-weight:600}
+.total b{font-size:22px; font-variant-numeric:tabular-nums}
+.sec-t{font-size:12px; color:var(--muted); margin:2px 2px -6px; display:flex; justify-content:space-between}
+details.open-code summary{cursor:pointer; color:var(--muted); font-size:13px}
+.code-form{display:flex; gap:8px; margin-top:10px}
+.code-form input{flex:1; min-width:0; height:44px; border-radius:12px; border:1px solid var(--line); background:var(--bg); color:var(--fg); padding:0 12px; font:inherit; font-size:13px}
+.img-out{width:100%; border-radius:12px; border:1px solid var(--line); display:block}
+textarea.copybox{width:100%; min-height:240px; border-radius:12px; border:1px solid var(--line); background:var(--bg); color:var(--fg); padding:12px; font:13px/1.5 var(--mono)}
+
+.toast{position:fixed; left:50%; bottom:calc(24px + env(safe-area-inset-bottom,0px)); transform:translateX(-50%); background:var(--fg); color:var(--bg); padding:10px 16px; border-radius:999px; font-size:13px; font-weight:500; z-index:80; max-width:calc(100% - 32px); text-align:center}
+
+@media (min-width:900px){
+  .shell{display:grid; grid-template-columns:minmax(0,1.1fr) minmax(0,1fr); grid-template-rows:auto 1fr; column-gap:28px; padding:0 24px 24px}
+  .top{grid-column:1 / -1; padding:18px 0 10px}
+  .work{padding:0; align-self:start}
+  .canvas-wrap{justify-content:center}
+  .specs{top:18px; right:18px; gap:12px}
+  .specs dd{font-size:14px}
+  .catalog{border:1px solid var(--line); border-radius:20px; min-height:0}
+  .overlay{align-items:center}
+  .sheet{border-radius:22px; padding:22px; max-height:88%}
+  .sheet.tall{height:auto}
+  .cgrid{grid-template-columns:repeat(auto-fill,minmax(118px,1fr))}
+  .cside{width:112px}
+}
+@media (prefers-reduced-motion:no-preference){
+  .overlay .sheet{animation:up .22s ease-out}
+  @keyframes up{from{transform:translateY(24px); opacity:.6} to{transform:none; opacity:1}}
+}
+</style>
+
+<div class="shell">
+  <header class="top">
+    <div class="brand"><b>PunPun</b><span>Tinygold Charm</span></div>
+    <button class="pill-btn" data-act="image" id="topSave">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0-4-4m4 4 4-4M5 21h14"/></svg>
+      Lưu ảnh
+    </button>
+  </header>
+
+  <section class="work" aria-label="Khu vực mix vòng">
+    <div class="stage">
+      <div class="canvas-wrap" id="canvasWrap">
+        <canvas id="stage" tabindex="0" aria-label="Vòng tay đang mix. Chạm vào charm để chọn, kéo để đổi vị trí."></canvas>
+        <div class="corner"><button class="mini" id="numBtn" aria-pressed="false" title="Hiện số thứ tự">#&nbsp;Số thứ tự</button></div>
+        <div class="sel-pill" id="selPill" hidden></div>
+        <div class="hint" id="hint">Chạm để chọn charm · kéo để đổi vị trí</div>
+      </div>
+      <dl class="specs">
+        <div><dt>Size dây</dt><dd id="spSize">17 cm</dd></div>
+        <div><dt>Số charm</dt><dd id="spCount">0</dd></div>
+        <div><dt>Đã dùng</dt><dd id="spUsed">0 cm</dd></div>
+        <div><dt>Tạm tính</dt><dd class="big" id="spTotal">0đ</dd></div>
+      </dl>
+    </div>
+    <div class="toolbar">
+      <div class="tools">
+        <button class="tool" data-tool="size"><span class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="7.5"/><path d="M12 4.5v3M12 16.5v3M4.5 12h3M16.5 12h3"/></svg></span>Size dây</button>
+        <button class="tool" data-tool="left"><span class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5m0 0 6-6m-6 6 6 6"/></svg></span>Sang trái</button>
+        <button class="tool" data-tool="right"><span class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14m0 0-6-6m6 6-6 6"/></svg></span>Sang phải</button>
+        <button class="tool" data-tool="dup"><span class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="8" y="8" width="11" height="11" rx="2.5"/><path d="M16 5.5A2.5 2.5 0 0 0 13.5 5H7.5A2.5 2.5 0 0 0 5 7.5v6A2.5 2.5 0 0 0 5.5 16"/></svg></span>Nhân đôi</button>
+        <button class="tool" data-tool="del"><span class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><path d="m9 9 6 6m0-6-6 6"/></svg></span>Xoá</button>
+        <button class="tool" data-tool="undo" id="undoBtn"><span class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></span>Hoàn tác</button>
+        <button class="tool" data-tool="clear" id="clearBtn"><span class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 7h14M10 7V5h4v2M7 7l1 12h8l1-12"/></svg></span>Xoá hết</button>
+      </div>
+      <button class="done" data-act="done">Xong</button>
+    </div>
+  </section>
+
+  <section class="catalog" aria-label="Danh mục">
+    <div class="ctabs" role="tablist">
+      <button class="ctab" role="tab" data-ctab="charm" aria-selected="true">Charm</button>
+      <button class="ctab" role="tab" data-ctab="strap" aria-selected="false">Dây</button>
+    </div>
+    <div class="cbody">
+      <nav class="cside" id="cside" aria-label="Nhóm charm"></nav>
+      <div class="cgrid-wrap" id="gridWrap"><div class="cgrid" id="grid"></div><p class="note" id="gridNote"></p></div>
+    </div>
+  </section>
+</div>
+
+<div class="overlay" id="overlay" hidden><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+(function(){
+"use strict";
+/* Link chia sẻ: link artifact đã publish (để trống thì chỉ dùng mã thiết kế) */
+const STANDALONE = true; /* true khi chạy trên hosting riêng */
+const APP_URL = STANDALONE ? location.origin + location.pathname : "https://claude.ai/artifact/31UuneEVd2Wz1EXPCWwaNt";
+
+/* ---------- color helpers ---------- */
+function rgb(h){h=h.replace('#','');if(h.length===3)h=h.split('').map(c=>c+c).join('');const n=parseInt(h,16);return[n>>16&255,n>>8&255,n&255];}
+function mix(a,b,t){const A=rgb(a),B=rgb(b);return'#'+A.map((v,i)=>Math.round(v+(B[i]-v)*t).toString(16).padStart(2,'0')).join('');}
+function shade(c,t){return t>=0?mix(c,'#ffffff',t):mix(c,'#000000',-t);}
+function rgba(c,a){const[r,g,b]=rgb(c);return`rgba(${r},${g},${b},${a})`;}
+const fmt=n=>n.toLocaleString('vi-VN')+'đ';
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* ---------- catalog (dữ liệu mẫu) ---------- */
+const METAL={
+  silver:{b:'#C3C8CF',l:'#F5F7FA',d:'#858C96',e:'#4C535D'},
+  gold:{b:'#D6B058',l:'#F9E8B0',d:'#9E7829',e:'#6A4D14'},
+  rose:{b:'#DFA68F',l:'#F8DCCF',d:'#AD6F5C',e:'#7A4637'}
+};
+const metals3=(a,b)=>[{n:'Bạc 925',m:'silver',p:a},{n:'Mạ vàng',m:'gold',p:b},{n:'Vàng hồng',m:'rose',p:b}];
+const C={pink:'#F2AFC0',red:'#D4404C',baby:'#A6C8EA',lav:'#C3B1E6',mint:'#9FD8C0',lemon:'#F1DB72',white:'#F6F4EF',black:'#2B2B2E',peach:'#F4AE94',sea:'#4E8FD1',leaf:'#4FA06A',amber:'#D38C2C',clear:'#DCE7EE',violet:'#8E6CC9'};
+const LETTERS='ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+const CATS=[{id:'all',n:'Tất cả'},{id:'khac',n:'Hạt khắc'},{id:'men',n:'Men màu'},{id:'luuly',n:'Lưu ly'},{id:'treo',n:'Charm treo'},{id:'chu',n:'Chữ cái'},{id:'chan',n:'Chặn & lót'}];
+const withMP=(arr,m,p)=>arr.map(v=>Object.assign({m,p},v));
+const CHARMS=[
+ {id:'b01',cat:'khac',name:'Hạt khắc tim',type:'bead',motif:'heart',variants:metals3(45000,55000)},
+ {id:'b02',cat:'khac',name:'Hạt khắc sao',type:'bead',motif:'star',variants:metals3(45000,55000)},
+ {id:'b03',cat:'khac',name:'Hạt trơn bóng',type:'bead',motif:'plain',variants:metals3(35000,45000)},
+ {id:'b04',cat:'khac',name:'Hạt đính đá',type:'pave',variants:withMP([{n:'Trắng',c:'#FFFFFF'},{n:'Hồng',c:'#F39AB3'},{n:'Xanh biển',c:'#79AEE6'},{n:'Tím',c:'#B596E2'}],'silver',69000)},
+ {id:'e01',cat:'men',name:'Hạt men tim',type:'enamel',motif:'heart',variants:withMP([{n:'Hồng phấn',c:C.pink},{n:'Đỏ',c:C.red},{n:'Xanh baby',c:C.baby},{n:'Tím lavender',c:C.lav}],'gold',59000)},
+ {id:'e02',cat:'men',name:'Hạt men hoa',type:'enamel',motif:'flower',variants:withMP([{n:'Trắng',c:C.white,c2:C.pink},{n:'Hồng',c:C.pink,c2:C.white},{n:'Vàng chanh',c:C.lemon,c2:C.white},{n:'Xanh mint',c:C.mint,c2:C.white}],'gold',59000)},
+ {id:'e03',cat:'men',name:'Hạt chấm bi',type:'enamel',motif:'dots',variants:withMP([{n:'Hồng – trắng',c:C.pink,c2:C.white},{n:'Đen – trắng',c:C.black,c2:C.white},{n:'Xanh – trắng',c:C.baby,c2:C.white}],'silver',55000)},
+ {id:'e04',cat:'men',name:'Hạt kẻ sọc',type:'enamel',motif:'stripes',variants:withMP([{n:'Hồng – trắng',c:C.pink,c2:C.white},{n:'Navy – trắng',c:'#34477A',c2:C.white},{n:'Mint – trắng',c:C.mint,c2:C.white}],'silver',55000)},
+ {id:'g01',cat:'luuly',name:'Hạt lưu ly',type:'glass',variants:withMP([{n:'Hồng đào',c:C.peach},{n:'Xanh biển',c:C.sea},{n:'Xanh lá',c:C.leaf},{n:'Tím',c:C.violet},{n:'Hổ phách',c:C.amber},{n:'Trong suốt',c:C.clear}],'silver',49000)},
+ {id:'g02',cat:'luuly',name:'Lưu ly ánh nhũ',type:'glass',sparkle:true,variants:withMP([{n:'Hồng',c:'#E98FA9'},{n:'Xanh đêm',c:'#30457E'},{n:'Tím',c:'#7D5BB8'},{n:'Đen',c:'#2A2A30'}],'silver',59000)},
+ {id:'d01',cat:'treo',name:'Tim treo',type:'dangle',shape:'heart',variants:[{n:'Mạ vàng',m:'gold',p:65000},{n:'Bạc 925',m:'silver',p:59000},{n:'Vàng hồng',m:'rose',p:65000},{n:'Men hồng',m:'gold',c:C.pink,p:69000},{n:'Men đỏ',m:'gold',c:C.red,p:69000}]},
+ {id:'d02',cat:'treo',name:'Sao treo',type:'dangle',shape:'star',variants:[{n:'Mạ vàng',m:'gold',p:65000},{n:'Bạc 925',m:'silver',p:59000},{n:'Vàng hồng',m:'rose',p:65000}]},
+ {id:'d03',cat:'treo',name:'Trăng treo',type:'dangle',shape:'moon',variants:[{n:'Mạ vàng',m:'gold',p:65000},{n:'Bạc 925',m:'silver',p:59000},{n:'Vàng hồng',m:'rose',p:65000}]},
+ {id:'d04',cat:'treo',name:'Nơ treo',type:'dangle',shape:'bow',variants:withMP([{n:'Hồng',c:C.pink},{n:'Trắng',c:C.white},{n:'Đen',c:C.black}],'gold',69000)},
+ {id:'d05',cat:'treo',name:'Cỏ bốn lá',type:'dangle',shape:'clover',variants:[{n:'Men xanh lá',m:'gold',c:'#5BAA6E',p:69000},{n:'Mạ vàng',m:'gold',p:65000}]},
+ {id:'d06',cat:'treo',name:'Cherry treo',type:'dangle',shape:'cherry',variants:withMP([{n:'Đỏ',c:C.red},{n:'Hồng',c:'#EE8FA7'}],'gold',69000)},
+ {id:'l01',cat:'chu',name:'Chữ cái bạc',type:'letter',variants:LETTERS.map(ch=>({n:'Chữ '+ch,ch,m:'silver',p:39000}))},
+ {id:'l02',cat:'chu',name:'Chữ cái vàng',type:'letter',variants:LETTERS.map(ch=>({n:'Chữ '+ch,ch,m:'gold',p:45000}))},
+ {id:'c01',cat:'chan',name:'Chặn trơn',type:'clip',motif:'plain',variants:metals3(49000,59000)},
+ {id:'c02',cat:'chan',name:'Chặn khắc tim',type:'clip',motif:'heart',variants:metals3(55000,65000)},
+ {id:'s01',cat:'chan',name:'Hạt lót mỏng',type:'spacer',variants:metals3(19000,25000)},
+ {id:'s02',cat:'chan',name:'Lót đính đá',type:'spacer',pave:true,variants:withMP([{n:'Trắng',c:'#FFFFFF'},{n:'Hồng',c:'#F39AB3'},{n:'Xanh',c:'#79AEE6'}],'silver',29000)}
+];
+const STRAPS=[
+ {id:'sn',name:'Dây rắn',short:'Rắn',kind:'snake',variants:[{n:'Bạc 925',m:'silver',p:159000},{n:'Mạ vàng',m:'gold',p:189000},{n:'Vàng hồng',m:'rose',p:189000}]},
+ {id:'ca',name:'Dây xích mắt nhỏ',short:'Xích',kind:'cable',variants:[{n:'Bạc 925',m:'silver',p:139000},{n:'Mạ vàng',m:'gold',p:169000}]},
+ {id:'le',name:'Dây da tết',short:'Da tết',kind:'leather',variants:withMP([{n:'Hồng phấn',c:'#E7AAB3'},{n:'Nâu bò',c:'#97613F'},{n:'Đen',c:'#2B2A2C'},{n:'Kem',c:'#E6D9C2'}],'silver',99000)},
+ {id:'co',name:'Dây dù xoắn',short:'Dù',kind:'cord',variants:withMP([{n:'Đỏ',c:'#C63A3F'},{n:'Xanh navy',c:'#2F3F68'},{n:'Be',c:'#CDB99A'}],'silver',79000)}
+];
+const SIZES=[15,16,17,18,19,20];
+const CH=Object.fromEntries(CHARMS.map(p=>[p.id,p]));
+const ST=Object.fromEntries(STRAPS.map(p=>[p.id,p]));
+const DIMS={bead:{w:10,h:11},pave:{w:10,h:11},enamel:{w:10,h:11},glass:{w:12,h:12.5},dangle:{w:5,h:6.5},letter:{w:8.5,h:8.5},clip:{w:7,h:10},spacer:{w:3.6,h:9}};
+const PEND_Y=9.4, PEND_R=4;
+function ext(p){const d=DIMS[p.type];return{w:d.w,h:d.h,top:-d.h/2,bottom:p.type==='dangle'?PEND_Y+PEND_R+.3:d.h/2};}
+const codeOf=p=>'PP-'+p.id.toUpperCase();
+const priceFrom=p=>{const ps=p.variants.map(v=>v.p);const mn=Math.min(...ps),mx=Math.max(...ps);return mn===mx?fmt(mn):'từ '+fmt(mn);};
+
+/* ---------- drawing ---------- */
+let SH=null;
+function shadowOn(ctx){if(!SH)return;ctx.shadowColor=SH.c;ctx.shadowBlur=SH.b;ctx.shadowOffsetY=SH.y;}
+function shadowOff(ctx){ctx.shadowColor='transparent';ctx.shadowBlur=0;ctx.shadowOffsetY=0;}
+function rr(ctx,x,y,w,h,r){r=Math.min(r,w/2,h/2);ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+function mgrad(ctx,m,h){const g=ctx.createLinearGradient(0,-h/2,0,h/2);g.addColorStop(0,m.b);g.addColorStop(.2,m.l);g.addColorStop(.5,m.b);g.addColorStop(.85,m.d);g.addColorStop(1,shade(m.d,-.12));return g;}
+function cgrad(ctx,c,h){const g=ctx.createLinearGradient(0,-h/2,0,h/2);g.addColorStop(0,shade(c,.4));g.addColorStop(.45,c);g.addColorStop(1,shade(c,-.25));return g;}
+function body(ctx,path,fill){path();shadowOn(ctx);ctx.fillStyle=fill;ctx.fill();shadowOff(ctx);}
+function gloss(ctx,w,h,a){ctx.save();ctx.globalAlpha=a||.5;ctx.fillStyle='#fff';ctx.beginPath();ctx.ellipse(-w*.1,-h*.3,w*.3,h*.075,0,0,Math.PI*2);ctx.fill();ctx.restore();}
+function heartP(ctx,r){ctx.beginPath();ctx.moveTo(0,r*.95);ctx.bezierCurveTo(-r*1.3,r*.05,-r*.85,-r*1.1,0,-r*.42);ctx.bezierCurveTo(r*.85,-r*1.1,r*1.3,r*.05,0,r*.95);ctx.closePath();}
+function starP(ctx,r,n,inner){n=n||5;inner=inner||.47;ctx.beginPath();for(let i=0;i<n*2;i++){const a=-Math.PI/2+i*Math.PI/n,rad=i%2?r*inner:r;ctx.lineTo(Math.cos(a)*rad,Math.sin(a)*rad);}ctx.closePath();}
+function moonP(ctx,r){const d=Math.PI/180;ctx.beginPath();ctx.arc(0,0,r,-70*d,70*d,true);ctx.arc(.55*r,0,.963*r,102.5*d,257.5*d,false);ctx.closePath();}
+function stone(ctx,x,y,r,c){const g=ctx.createRadialGradient(x-r*.3,y-r*.35,r*.05,x,y,r);g.addColorStop(0,'#ffffff');g.addColorStop(.45,c);g.addColorStop(1,shade(c,-.38));ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();}
+function rims(ctx,m,w,h){ctx.strokeStyle=rgba(m.d,.55);ctx.lineWidth=.28;for(const sx of[-1,1]){const x=sx*(w/2-1.25);ctx.beginPath();ctx.moveTo(x,-h/2+1.1);ctx.quadraticCurveTo(x+sx*.5,0,x,h/2-1.1);ctx.stroke();}}
+function engrave(ctx,motif,m,r){const path=()=>motif==='star'?starP(ctx,r):heartP(ctx,r);ctx.save();ctx.translate(0,.28);path();ctx.fillStyle=rgba(m.l,.95);ctx.fill();ctx.restore();path();ctx.fillStyle=rgba(m.e,.62);ctx.fill();}
+function endCaps(ctx,m,w,h,pathFn,cw){ctx.save();pathFn();ctx.clip();ctx.fillStyle=mgrad(ctx,m,h);ctx.fillRect(-w/2,-h/2,cw,h);ctx.fillRect(w/2-cw,-h/2,cw,h);ctx.strokeStyle=rgba(m.d,.6);ctx.lineWidth=.2;ctx.beginPath();ctx.moveTo(-w/2+cw,-h/2);ctx.lineTo(-w/2+cw,h/2);ctx.moveTo(w/2-cw,-h/2);ctx.lineTo(w/2-cw,h/2);ctx.stroke();ctx.restore();}
+
+function pendant(ctx,shape,v,m){
+  const R=PEND_R, fill=v.c?cgrad(ctx,v.c,2*R):mgrad(ctx,m,2*R), line=v.c?m.b:m.d, lw=v.c?.55:.25;
+  if(shape==='cherry'){
+    ctx.strokeStyle='#6F7B3C';ctx.lineWidth=.45;ctx.beginPath();ctx.moveTo(0,-3.7);ctx.quadraticCurveTo(-1.4,-1.2,-1.8,1.1);ctx.moveTo(0,-3.7);ctx.quadraticCurveTo(1.1,-1,1.9,1.5);ctx.stroke();
+    ctx.fillStyle='#5D9B52';ctx.beginPath();ctx.ellipse(1.3,-3.3,1.4,.6,-.4,0,Math.PI*2);ctx.fill();
+    for(const [x,y] of [[-1.8,2.3],[1.9,2.7]]){ctx.beginPath();ctx.arc(x,y,1.9,0,Math.PI*2);shadowOn(ctx);ctx.fillStyle=cgrad(ctx,v.c||'#D4404C',4);ctx.save();ctx.translate(0,0);ctx.fill();ctx.restore();shadowOff(ctx);ctx.fillStyle='rgba(255,255,255,.7)';ctx.beginPath();ctx.arc(x-.6,y-.7,.45,0,Math.PI*2);ctx.fill();}
+    return;
+  }
+  if(shape==='heart')heartP(ctx,R);
+  else if(shape==='star')starP(ctx,R*1.08,5,.48);
+  else if(shape==='moon')moonP(ctx,R);
+  else if(shape==='clover'){ctx.beginPath();for(const [x,y] of [[0,-1.6],[1.6,0],[0,1.6],[-1.6,0]]){ctx.moveTo(x+1.75,y);ctx.arc(x,y,1.75,0,Math.PI*2);}}
+  else if(shape==='bow'){ctx.beginPath();ctx.ellipse(-2.1,-.4,2.2,1.5,-.35,0,Math.PI*2);ctx.moveTo(4.3,-.4);ctx.ellipse(2.1,-.4,2.2,1.5,.35,0,Math.PI*2);ctx.moveTo(-.4,.2);ctx.lineTo(-2.5,3.6);ctx.lineTo(-1.1,3.3);ctx.lineTo(0,.8);ctx.lineTo(1.1,3.3);ctx.lineTo(2.5,3.6);ctx.lineTo(.4,.2);ctx.closePath();}
+  shadowOn(ctx);ctx.fillStyle=fill;ctx.fill();shadowOff(ctx);
+  ctx.strokeStyle=line;ctx.lineWidth=lw;ctx.stroke();
+  if(shape==='clover'){ctx.strokeStyle=v.c?shade(v.c,-.3):m.d;ctx.lineWidth=.5;ctx.beginPath();ctx.moveTo(.6,.6);ctx.quadraticCurveTo(1.6,2.6,2.6,3.6);ctx.stroke();}
+  if(shape==='bow'){ctx.beginPath();ctx.arc(0,-.3,1,0,Math.PI*2);ctx.fillStyle=v.c?shade(v.c,-.12):m.d;ctx.fill();ctx.strokeStyle=line;ctx.lineWidth=lw;ctx.stroke();}
+  ctx.save();ctx.globalAlpha=.55;ctx.fillStyle='#fff';ctx.beginPath();ctx.ellipse(-1.3,-1.6,1.1,.45,-.5,0,Math.PI*2);ctx.fill();ctx.restore();
+}
+
+function drawCharm(ctx,p,v){
+  const m=METAL[v.m||'silver'];
+  switch(p.type){
+    case 'bead':{const w=10,h=11;body(ctx,()=>rr(ctx,-w/2,-h/2,w,h,4.4),mgrad(ctx,m,h));rims(ctx,m,w,h);if(p.motif!=='plain')engrave(ctx,p.motif,m,2.9);gloss(ctx,w,h);break;}
+    case 'pave':{const w=10,h=11;body(ctx,()=>rr(ctx,-w/2,-h/2,w,h,4.4),mgrad(ctx,m,h));ctx.save();rr(ctx,-w/2+1.5,-h/2+.6,w-3,h-1.2,3.4);ctx.clip();let row=0;for(let y=-h/2+1.3;y<h/2;y+=1.65,row++){for(let x=-w/2+1.9+(row%2?.82:0);x<w/2-1;x+=1.65)stone(ctx,x,y,.7,v.c);}ctx.restore();rims(ctx,m,w,h);break;}
+    case 'enamel':{const w=10,h=11,path=()=>rr(ctx,-w/2,-h/2,w,h,4.4);body(ctx,path,cgrad(ctx,v.c,h));
+      if(p.motif==='dots'||p.motif==='stripes'){ctx.save();path();ctx.clip();ctx.fillStyle=v.c2;if(p.motif==='dots'){let row=0;for(let y=-h/2+1;y<h/2;y+=2.1,row++)for(let x=-w/2+(row%2?1.05:0);x<w/2+1;x+=2.1){ctx.beginPath();ctx.arc(x,y,.62,0,Math.PI*2);ctx.fill();}}else{ctx.rotate(-.5);for(let x=-14;x<14;x+=2.4)ctx.fillRect(x,-14,1,28);}ctx.restore();ctx.save();path();ctx.clip();const g=ctx.createLinearGradient(0,-h/2,0,h/2);g.addColorStop(0,'rgba(255,255,255,.25)');g.addColorStop(.5,'rgba(255,255,255,0)');g.addColorStop(1,'rgba(0,0,0,.18)');ctx.fillStyle=g;ctx.fillRect(-w/2,-h/2,w,h);ctx.restore();}
+      endCaps(ctx,m,w,h,path,1.5);
+      if(p.motif==='heart'){heartP(ctx,3);ctx.fillStyle=mgrad(ctx,m,6);ctx.fill();ctx.strokeStyle=m.d;ctx.lineWidth=.22;ctx.stroke();}
+      if(p.motif==='flower'){for(let k=0;k<5;k++){const a=k*2*Math.PI/5-Math.PI/2;ctx.beginPath();ctx.arc(Math.cos(a)*1.5,Math.sin(a)*1.5,1.35,0,Math.PI*2);ctx.fillStyle=v.c2;ctx.fill();ctx.strokeStyle=shade(v.c2,-.18);ctx.lineWidth=.15;ctx.stroke();}ctx.beginPath();ctx.arc(0,0,.95,0,Math.PI*2);ctx.fillStyle=mgrad(ctx,m,2);ctx.fill();}
+      gloss(ctx,w,h,.42);break;}
+    case 'glass':{const w=12,h=12.5,c=v.c,path=()=>rr(ctx,-w/2,-h/2,w,h,5.4);
+      ctx.fillStyle=mgrad(ctx,METAL.silver,5.4);rr(ctx,-w/2-.35,-2.7,w+.7,5.4,.6);ctx.fill();
+      path();shadowOn(ctx);const g=ctx.createLinearGradient(0,-h/2,0,h/2);g.addColorStop(0,rgba(shade(c,.5),.95));g.addColorStop(.4,rgba(c,.9));g.addColorStop(1,rgba(shade(c,-.3),.95));ctx.fillStyle=g;ctx.fill();shadowOff(ctx);
+      ctx.save();path();ctx.clip();ctx.lineWidth=.5;ctx.strokeStyle='rgba(255,255,255,.55)';ctx.beginPath();ctx.moveTo(-6,-2);ctx.bezierCurveTo(-2,-6,2,4,6,-1);ctx.moveTo(-6,3);ctx.bezierCurveTo(-1,0,1,7,6,3);ctx.stroke();ctx.strokeStyle=rgba(shade(c,-.35),.55);ctx.beginPath();ctx.moveTo(-6,-4.5);ctx.bezierCurveTo(-3,-1,3,-7,6,-4);ctx.stroke();
+      if(p.sparkle){for(let i=0;i<26;i++){const x=((i*37)%100)/100*w-w/2,y=((i*61+13)%100)/100*h-h/2;ctx.fillStyle=i%3?'rgba(248,231,170,.95)':'rgba(255,255,255,.95)';ctx.beginPath();ctx.arc(x,y,.24,0,Math.PI*2);ctx.fill();}}
+      ctx.restore();gloss(ctx,w,h,.6);break;}
+    case 'dangle':{body(ctx,()=>rr(ctx,-2.5,-3.25,5,6.5,2.1),mgrad(ctx,m,6.5));ctx.strokeStyle=m.d;ctx.lineWidth=.6;ctx.beginPath();ctx.arc(0,4.35,1.1,0,Math.PI*2);ctx.stroke();ctx.save();ctx.translate(0,PEND_Y);pendant(ctx,p.shape,v,m);ctx.restore();break;}
+    case 'letter':{const w=8.5;body(ctx,()=>rr(ctx,-w/2,-w/2,w,w,1.8),mgrad(ctx,m,w));ctx.font='700 5.6px "Be Vietnam Pro", system-ui, sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle=rgba(m.l,.95);ctx.fillText(v.ch,0,.62);ctx.fillStyle=m.e;ctx.fillText(v.ch,0,.36);break;}
+    case 'clip':{const w=7,h=10;body(ctx,()=>rr(ctx,-w/2,-h/2,w,h,2.8),mgrad(ctx,m,h));ctx.fillStyle=rgba(m.e,.55);ctx.fillRect(-.22,-h/2+.4,.44,h-.8);rims(ctx,m,w,h);if(p.motif==='heart')engrave(ctx,'heart',m,1.9);gloss(ctx,w,h,.45);break;}
+    case 'spacer':{const w=3.6,h=9;body(ctx,()=>rr(ctx,-w/2,-h/2,w,h,1.5),mgrad(ctx,m,h));for(let y=-3.3;y<=3.31;y+=1.1){if(p.pave)stone(ctx,0,y,.52,v.c);else{ctx.beginPath();ctx.arc(0,y,.42,0,Math.PI*2);ctx.fillStyle=m.l;ctx.fill();ctx.strokeStyle=m.d;ctx.lineWidth=.12;ctx.stroke();}}break;}
+  }
+}
+
+function drawStrap(ctx,cx,cy,R,s,sp,sv,withClasp){
+  const m=METAL[sv.m||'silver'], TAU=Math.PI*2, Cpx=TAU*R;
+  const circ=(r)=>{ctx.beginPath();ctx.arc(cx,cy,r,0,TAU);};
+  ctx.save();
+  ctx.strokeStyle='rgba(40,30,15,.10)';ctx.lineWidth=3.6*s;ctx.beginPath();ctx.arc(cx,cy+1.3*s,R,0,TAU);ctx.stroke();
+  const seg=(r1,a1,r2,a2)=>{ctx.moveTo(cx+r1*Math.cos(a1),cy+r1*Math.sin(a1));ctx.lineTo(cx+r2*Math.cos(a2),cy+r2*Math.sin(a2));};
+  if(sp.kind==='snake'){
+    ctx.lineWidth=3*s;ctx.strokeStyle=m.b;circ(R);ctx.stroke();
+    ctx.lineWidth=1.1*s;ctx.strokeStyle=rgba(m.l,.9);circ(R-.55*s);ctx.stroke();
+    ctx.lineWidth=.55*s;ctx.strokeStyle=rgba(m.d,.7);circ(R+1.05*s);ctx.stroke();
+    const n=Math.round(Cpx/(1.0*s));ctx.strokeStyle=rgba(m.d,.4);ctx.lineWidth=Math.max(.5,.22*s);ctx.beginPath();for(let i=0;i<n;i++){const a=i/n*TAU;seg(R-1.35*s,a,R+1.35*s,a+.5*s/R);}ctx.stroke();
+  }else if(sp.kind==='cable'){
+    const n=Math.round(Cpx/(2.3*s));
+    for(let i=0;i<n;i++){const a=i/n*TAU;ctx.save();ctx.translate(cx+R*Math.cos(a),cy+R*Math.sin(a));ctx.rotate(a+Math.PI/2);
+      if(i%2===0){ctx.beginPath();ctx.ellipse(0,0,1.55*s,1.05*s,0,0,TAU);ctx.strokeStyle=m.d;ctx.lineWidth=.62*s;ctx.stroke();ctx.beginPath();ctx.ellipse(0,0,1.55*s,1.05*s,0,Math.PI*1.1,Math.PI*1.9);ctx.strokeStyle=m.l;ctx.lineWidth=.3*s;ctx.stroke();}
+      else{rr(ctx,-1.6*s,-.32*s,3.2*s,.64*s,.32*s);ctx.fillStyle=m.b;ctx.fill();}
+      ctx.restore();}
+  }else if(sp.kind==='leather'){
+    const c=sv.c;ctx.lineWidth=3.6*s;ctx.strokeStyle=c;circ(R);ctx.stroke();
+    const n=Math.round(Cpx/(1.6*s));ctx.strokeStyle=shade(c,-.28);ctx.lineWidth=Math.max(.5,.35*s);ctx.beginPath();for(let i=0;i<n;i++){const a=i/n*TAU,d=.8*s/R;seg(R-1.7*s,a,R,a+d);seg(R,a+d,R+1.7*s,a);}ctx.stroke();
+    ctx.strokeStyle='rgba(255,255,255,.2)';ctx.lineWidth=.5*s;circ(R-.9*s);ctx.stroke();
+  }else{
+    const c=sv.c;ctx.lineWidth=2.6*s;ctx.strokeStyle=c;circ(R);ctx.stroke();
+    const n=Math.round(Cpx/(1.2*s));ctx.strokeStyle=shade(c,-.32);ctx.lineWidth=Math.max(.5,.3*s);ctx.beginPath();for(let i=0;i<n;i++){const a=i/n*TAU;seg(R-1.25*s,a,R+1.25*s,a+.9*s/R);}ctx.stroke();
+    ctx.strokeStyle='rgba(255,255,255,.22)';ctx.lineWidth=.45*s;circ(R-.6*s);ctx.stroke();
+  }
+  ctx.restore();
+  if(withClasp!==false){
+    const cm=METAL[sv.m||'silver'];ctx.save();ctx.translate(cx,cy-R);ctx.scale(s,s);
+    body(ctx,()=>rr(ctx,-5,-3.3,10,6.6,2.6),mgrad(ctx,cm,6.6));
+    ctx.fillStyle=rgba(cm.e,.5);ctx.fillRect(-.16,-3,.32,6);
+    ctx.strokeStyle=rgba(cm.d,.6);ctx.lineWidth=.25;ctx.beginPath();ctx.moveTo(-3.4,-2.6);ctx.lineTo(-3.4,2.6);ctx.moveTo(3.4,-2.6);ctx.lineTo(3.4,2.6);ctx.stroke();
+    gloss(ctx,10,6.6,.55);ctx.restore();
+  }
+}
+
+/* ---------- state ---------- */
+let uidSeq=1;
+const newUid=()=>uidSeq++;
+let state={strap:{pid:'sn',vi:1},size:17,items:[]};
+let sel=null, showNums=false, drag=null, catId='all', ctab='charm';
+const hist=[];
+const SAMPLE=[['c01',1],['g01',0],['e01',0],['l02',15],['l02',20],['l02',13],['d01',3],['b01',1],['g01',1],['c01',1]];
+function sampleState(){return{strap:{pid:'sn',vi:1},size:17,items:SAMPLE.map(([pid,vi])=>({uid:newUid(),pid,vi}))};}
+const snap=()=>JSON.stringify({strap:state.strap,size:state.size,items:state.items});
+function pushHist(){hist.push(snap());if(hist.length>80)hist.shift();}
+function commit(fn){pushHist();fn();changed();}
+const selIndex=()=>state.items.findIndex(i=>i.uid===sel);
+const selItem=()=>state.items.find(i=>i.uid===sel)||null;
+const strapP=()=>ST[state.strap.pid], strapV=()=>ST[state.strap.pid].variants[state.strap.vi];
+const total=()=>strapV().p+state.items.reduce((a,it)=>a+CH[it.pid].variants[it.vi].p,0);
+const usedMM=()=>{const n=state.items.length;return state.items.reduce((a,it)=>a+DIMS[CH[it.pid].type].w,0)+.35*Math.max(0,n-1);};
+
+function encode(){return['pp1',state.strap.pid+'.'+state.strap.vi,state.size,state.items.map(i=>i.pid+'.'+i.vi).join('_')].join('~');}
+function decode(tok){
+  try{
+    tok=decodeURIComponent(String(tok).trim());
+    const h=tok.indexOf('#');if(h>=0)tok=tok.slice(h+1);
+    const parts=tok.split('~');if(parts[0]!=='pp1'||parts.length<3)return null;
+    const [sp,svi]=parts[1].split('.');if(!ST[sp]||!ST[sp].variants[+svi])return null;
+    const size=+parts[2];if(!SIZES.includes(size))return null;
+    const items=[];
+    if(parts[3]){for(const t of parts[3].split('_')){const [pid,vi]=t.split('.');if(!CH[pid]||!CH[pid].variants[+vi])return null;items.push({uid:newUid(),pid,vi:+vi});}}
+    return{strap:{pid:sp,vi:+svi},size,items};
+  }catch(e){return null;}
+}
+const shareLink=()=>APP_URL?APP_URL+'#'+encode():'';
+function saveDraft(){try{localStorage.setItem('punpun-mix-v1',encode());}catch(e){}}
+function loadDraft(){try{const t=localStorage.getItem('punpun-mix-v1');return t?decode(t):null;}catch(e){return null;}}
+
+/* ---------- stage ---------- */
+const cv=document.getElementById('stage'), cx2=cv.getContext('2d');
+let S=320, dpr=1, LAY=null;
+const tok=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+function layout(Sz){
+  const R=Sz*.3, cx=Sz/2, cy=Sz*.45, L=state.size*10, s=2*Math.PI*R/L, gap=.35;
+  const ws=state.items.map(it=>DIMS[CH[it.pid].type].w);
+  const W=ws.reduce((a,b)=>a+b,0)+gap*Math.max(0,ws.length-1), maxW=L-13, k=W>maxW?maxW/W:1, Wk=W*k;
+  let acc=0;
+  const list=state.items.map((it,i)=>{const c=(acc+ws[i]/2)*k;acc+=ws[i]+gap;const th=Math.PI/2+(Wk/2-c)*s/R;const p=CH[it.pid];return{it,p,v:p.variants[it.vi],c,th,x:cx+R*Math.cos(th),y:cy+R*Math.sin(th)};});
+  return{R,cx,cy,s,L,Wk,k,list};
+}
+function drawScene(ctx,Sz,o){
+  const lay=layout(Sz);
+  if(o.bg){ctx.fillStyle=o.bg;ctx.fillRect(0,0,Sz,Sz);}
+  SH={c:'rgba(38,26,8,.26)',b:3*o.k,y:1.4*o.k};
+  drawStrap(ctx,lay.cx,lay.cy,lay.R,lay.s,strapP(),strapV());
+  const order=lay.list.filter(e=>!(o.drag&&e.it.uid===o.drag));
+  const dragged=lay.list.find(e=>o.drag&&e.it.uid===o.drag);
+  for(const e of order.concat(dragged?[dragged]:[])){
+    const lifted=e===dragged;
+    ctx.save();ctx.translate(e.x,e.y);ctx.rotate(e.th-Math.PI/2);ctx.scale(lay.s*(lifted?1.12:1),lay.s*(lifted?1.12:1));
+    if(lifted)SH={c:'rgba(38,26,8,.35)',b:9*o.k,y:5*o.k};
+    drawCharm(ctx,e.p,e.v);
+    if(lifted)SH={c:'rgba(38,26,8,.26)',b:3*o.k,y:1.4*o.k};
+    if(o.sel===e.it.uid){const x=ext(e.p);rr(ctx,-x.w/2-1.5,x.top-1.5,x.w+3,x.bottom-x.top+3,2.6);ctx.strokeStyle=o.ring;ctx.lineWidth=1.8/lay.s;ctx.stroke();}
+    ctx.restore();
+  }
+  SH=null;
+  if(o.nums&&lay.list.length){
+    const br=Math.max(7.5,Math.min(11,2.3*lay.s));
+    ctx.font=`700 ${Math.round(br*1.05)}px "Be Vietnam Pro", system-ui, sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
+    lay.list.forEach((e,i)=>{const r=lay.R-(DIMS[e.p.type].h/2+3.6)*lay.s;const x=lay.cx+r*Math.cos(e.th),y=lay.cy+r*Math.sin(e.th);ctx.beginPath();ctx.arc(x,y,br,0,Math.PI*2);ctx.fillStyle=o.numBg;ctx.fill();ctx.fillStyle=o.numFg;ctx.fillText(String(i+1),x,y+.5);});
+  }
+  if(!lay.list.length&&o.empty){
+    ctx.fillStyle=o.empty;ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.font=`600 ${Math.max(13,Sz*.04)}px "Be Vietnam Pro", system-ui, sans-serif`;ctx.fillText('Chưa có charm',lay.cx,lay.cy-8);
+    ctx.font=`400 ${Math.max(11.5,Sz*.032)}px "Be Vietnam Pro", system-ui, sans-serif`;ctx.fillText('Chọn charm bên dưới để thêm',lay.cx,lay.cy+12);
+  }
+  return lay;
+}
+function renderStage(){
+  cx2.setTransform(dpr,0,0,dpr,0,0);cx2.clearRect(0,0,S,S);
+  LAY=drawScene(cx2,S,{bg:tok('--stage'),k:dpr,nums:showNums,sel,drag:drag&&drag.moved?drag.uid:null,ring:tok('--fg'),numBg:tok('--fg'),numFg:tok('--bg'),empty:tok('--muted')});
+}
+function sizeStage(){
+  const wrap=document.getElementById('canvasWrap');
+  const wide=innerWidth>=900;
+  const avail=wrap.clientWidth;
+  const maxH=wide?Math.min(560,innerHeight-230):Math.max(240,innerHeight*.38);
+  S=Math.max(220,Math.floor(Math.min(wide?avail-150:avail-76,maxH)));
+  dpr=Math.min(3,window.devicePixelRatio||1);
+  cv.style.width=S+'px';cv.style.height=S+'px';cv.width=Math.round(S*dpr);cv.height=Math.round(S*dpr);
+  renderStage();
+}
+function hit(px,py){
+  if(!LAY)return null;
+  for(let i=LAY.list.length-1;i>=0;i--){
+    const e=LAY.list[i],d=DIMS[e.p.type],r=(Math.max(d.w,d.h)/2+1.2)*LAY.s;
+    if(Math.hypot(px-e.x,py-e.y)<r)return e;
+    if(e.p.type==='dangle'){const ph=e.th-Math.PI/2,qx=e.x-PEND_Y*LAY.s*Math.sin(ph),qy=e.y+PEND_Y*LAY.s*Math.cos(ph);if(Math.hypot(px-qx,py-qy)<(PEND_R+1.2)*LAY.s)return e;}
+  }
+  return null;
+}
+function ptr(e){const b=cv.getBoundingClientRect();return[e.clientX-b.left,e.clientY-b.top];}
+cv.addEventListener('pointerdown',e=>{
+  const[x,y]=ptr(e);const h=hit(x,y);
+  if(!h){if(sel!==null){sel=null;refreshSel();}return;}
+  drag={uid:h.it.uid,x0:x,y0:y,moved:false,pushed:false};
+  try{cv.setPointerCapture(e.pointerId);}catch(_){}
+});
+cv.addEventListener('pointermove',e=>{
+  const[x,y]=ptr(e);
+  if(!drag){cv.style.cursor=hit(x,y)?'grab':'default';return;}
+  if(!drag.moved&&Math.hypot(x-drag.x0,y-drag.y0)<6)return;
+  if(!drag.moved){drag.moved=true;sel=drag.uid;cv.style.cursor='grabbing';}
+  let a=Math.atan2(y-LAY.cy,x-LAY.cx)-Math.PI/2;while(a>Math.PI)a-=2*Math.PI;while(a<=-Math.PI)a+=2*Math.PI;
+  const cP=LAY.Wk/2-a*LAY.R/LAY.s;
+  const from=state.items.findIndex(i=>i.uid===drag.uid);
+  let to=0;LAY.list.forEach(en=>{if(en.it.uid!==drag.uid&&en.c<cP)to++;});
+  if(to!==from){if(!drag.pushed){pushHist();drag.pushed=true;}const[it]=state.items.splice(from,1);state.items.splice(to,0,it);}
+  renderStage();
+});
+function endDrag(){
+  if(!drag)return;const d=drag;drag=null;cv.style.cursor='default';
+  if(!d.moved){sel=(sel===d.uid)?null:d.uid;refreshSel();}else{changed();}
+}
+cv.addEventListener('pointerup',endDrag);
+cv.addEventListener('pointercancel',endDrag);
+cv.addEventListener('keydown',e=>{
+  if(!sel){if(e.key==='ArrowRight'&&state.items.length){sel=state.items[0].uid;refreshSel();e.preventDefault();}return;}
+  if(e.key==='ArrowLeft'){tool('left');e.preventDefault();}
+  else if(e.key==='ArrowRight'){tool('right');e.preventDefault();}
+  else if(e.key==='Delete'||e.key==='Backspace'){tool('del');e.preventDefault();}
+  else if(e.key==='Escape'){sel=null;refreshSel();}
+});
+
+/* ---------- thumbnails ---------- */
+const thumbCache=new Map();
+function charmThumb(pid,vi,px){
+  px=px||96;const key=pid+'.'+vi+'.'+px;if(thumbCache.has(key))return thumbCache.get(key);
+  const D=2,c=document.createElement('canvas');c.width=c.height=px*D;const x=c.getContext('2d');x.scale(D,D);
+  const p=CH[pid],v=p.variants[vi],e=ext(p),k=px*.74/17.5;
+  x.translate(px/2,px/2-(e.top+e.bottom)/2*k);
+  x.strokeStyle='rgba(150,144,135,.35)';x.lineWidth=2.4*k;x.lineCap='round';x.beginPath();x.moveTo(-px*.42,0);x.lineTo(px*.42,0);x.stroke();
+  x.scale(k,k);SH={c:'rgba(38,26,8,.22)',b:3*D,y:1.2*D};drawCharm(x,p,v);SH=null;
+  const url=c.toDataURL();thumbCache.set(key,url);return url;
+}
+function strapThumb(pid,vi,px){
+  px=px||96;const key='S'+pid+'.'+vi+'.'+px;if(thumbCache.has(key))return thumbCache.get(key);
+  const D=2,c=document.createElement('canvas');c.width=c.height=px*D;const x=c.getContext('2d');x.scale(D,D);
+  const R=px*.34,s=2*Math.PI*R/150;SH={c:'rgba(38,26,8,.2)',b:2*D,y:1*D};drawStrap(x,px/2,px/2+2,R,s,ST[pid],ST[pid].variants[vi]);SH=null;
+  const url=c.toDataURL();thumbCache.set(key,url);return url;
+}
+function swatch(v){
+  if(v.c&&v.c2)return`linear-gradient(135deg, ${v.c} 50%, ${v.c2} 50%)`;
+  if(v.c)return`radial-gradient(circle at 35% 30%, ${shade(v.c,.45)}, ${v.c} 55%, ${shade(v.c,-.2)})`;
+  const m=METAL[v.m||'silver'];return`linear-gradient(135deg, ${m.l}, ${m.b} 50%, ${m.d})`;
+}
+function chipHTML(v,i,on,attr){
+  if(v.ch)return`<button class="chip letter" role="radio" aria-checked="${on}" ${attr}="${i}" aria-label="${esc(v.n)}">${v.ch}</button>`;
+  return`<button class="chip" role="radio" aria-checked="${on}" ${attr}="${i}"><span class="sw" style="background:${swatch(v)}"></span>${esc(v.n)}</button>`;
+}
+
+/* ---------- catalog ---------- */
+const grid=document.getElementById('grid'), side=document.getElementById('cside'), gridNote=document.getElementById('gridNote');
+function renderCatalog(){
+  document.querySelectorAll('[data-ctab]').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.ctab===ctab)));
+  if(ctab==='charm'){
+    side.hidden=false;
+    side.innerHTML=CATS.map(c=>`<button data-cat="${c.id}" aria-current="${c.id===catId}">${c.n}</button>`).join('');
+    const counts={};state.items.forEach(i=>{const k=i.pid+'.'+i.vi;counts[k]=(counts[k]||0)+1;});
+    const list=CHARMS.filter(p=>catId==='all'||p.cat===catId);
+    grid.innerHTML=list.map(p=>p.variants.map((v,vi)=>{const k=p.id+'.'+vi;return`<button class="card" data-charm="${k}" aria-label="Thêm ${esc(p.name)} – ${esc(v.n)}, ${fmt(v.p)}">${counts[k]?`<span class="used">×${counts[k]}</span>`:''}<img src="${charmThumb(p.id,vi)}" alt="" loading="lazy"><span class="nm">${esc(p.name)}</span><span class="pr">${fmt(v.p)}</span><span class="tag">${esc(v.n)}</span></button>`;}).join('')).join('');
+    gridNote.textContent='Bấm vào charm là charm được gắn lên vòng. Hình minh hoạ và giá mẫu, shop sẽ thay bằng ảnh và giá thật.';
+  }else{
+    side.hidden=true;
+    grid.innerHTML=STRAPS.map(sp=>sp.variants.map((v,vi)=>{const on=state.strap.pid===sp.id&&state.strap.vi===vi;return`<button class="card ${on?'on':''}" data-strap="${sp.id}.${vi}" aria-pressed="${on}"><img src="${strapThumb(sp.id,vi)}" alt="" loading="lazy"><span class="nm">${esc(sp.name)}</span><span class="pr">${fmt(v.p)}</span><span class="tag">${on?'Đang dùng':esc(v.n)}</span></button>`;}).join('')).join('');
+    gridNote.textContent='Bấm vào dây để đổi dây cho vòng. Chọn size ở nút "Size dây" phía trên.';
+  }
+}
+
+/* ---------- specs / selection ---------- */
+const $=id=>document.getElementById(id);
+function renderSpecs(){
+  $('spSize').textContent=state.size+' cm';
+  $('spCount').textContent=state.items.length;
+  $('spUsed').textContent=(usedMM()/10).toLocaleString('vi-VN',{maximumFractionDigits:1})+' / '+state.size+' cm';
+  $('spTotal').textContent=fmt(total());
+}
+function refreshSel(){
+  if(sel&&!selItem())sel=null;
+  const it=selItem();
+  $('selPill').hidden=!it;$('hint').hidden=!!it||!state.items.length;
+  if(it){const p=CH[it.pid],v=p.variants[it.vi];$('selPill').textContent=`#${selIndex()+1} · ${p.name} · ${v.n} · ${fmt(v.p)}`;}
+  const has=!!it;
+  document.querySelectorAll('[data-tool="left"],[data-tool="right"],[data-tool="dup"],[data-tool="del"]').forEach(b=>b.disabled=!has);
+  if(has){const i=selIndex();document.querySelector('[data-tool="left"]').disabled=i<=0;document.querySelector('[data-tool="right"]').disabled=i>=state.items.length-1;}
+  $('undoBtn').disabled=!hist.length;
+  $('clearBtn').disabled=!state.items.length;
+  renderStage();
+}
+function changed(){saveDraft();renderSpecs();renderCatalog();refreshSel();if(sheetKind==='done')renderSheet();}
+
+/* ---------- tools ---------- */
+let clearArmed=null;
+function tool(t){
+  const i=selIndex();
+  if(t==='size')return openSheet('size');
+  if(t==='undo'){if(!hist.length)return;const s=JSON.parse(hist.pop());state={strap:s.strap,size:s.size,items:s.items};changed();toast('Đã hoàn tác');return;}
+  if(t==='clear'){
+    const b=$('clearBtn');
+    if(!clearArmed){b.classList.add('armed');toast('Bấm "Xoá hết" lần nữa để xoá toàn bộ charm');clearArmed=setTimeout(()=>{b.classList.remove('armed');clearArmed=null;},3000);return;}
+    clearTimeout(clearArmed);clearArmed=null;b.classList.remove('armed');
+    commit(()=>{state.items=[];sel=null;});toast('Đã xoá hết charm. Bấm Hoàn tác nếu lỡ tay.');return;
+  }
+  if(i<0)return;
+  if(t==='left'&&i>0)commit(()=>{const[it]=state.items.splice(i,1);state.items.splice(i-1,0,it);});
+  if(t==='right'&&i<state.items.length-1)commit(()=>{const[it]=state.items.splice(i,1);state.items.splice(i+1,0,it);});
+  if(t==='dup')commit(()=>{const it=state.items[i];const n={uid:newUid(),pid:it.pid,vi:it.vi};state.items.splice(i+1,0,n);sel=n.uid;});
+  if(t==='del')commit(()=>{state.items.splice(i,1);const nx=state.items[Math.min(i,state.items.length-1)];sel=nx?nx.uid:null;});
+}
+
+/* ---------- sheets ---------- */
+const overlay=$('overlay'), sheet=$('sheet');
+let sheetKind=null, sheetData=null, lastFocus=null;
+const X=`<button class="x" data-close aria-label="Đóng"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="m6 6 12 12M18 6 6 18"/></svg></button>`;
+function openSheet(kind,data){lastFocus=document.activeElement;sheetKind=kind;sheetData=data||{};renderSheet();overlay.hidden=false;const f=sheet.querySelector('[data-close]');if(f)f.focus({preventScroll:true});}
+function closeSheet(){overlay.hidden=true;sheetKind=null;sheetData=null;sheet.className='sheet';if(lastFocus&&lastFocus.focus)lastFocus.focus({preventScroll:true});}
+overlay.addEventListener('click',e=>{if(e.target===overlay)closeSheet();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!overlay.hidden)closeSheet();});
+
+function renderSheet(){
+  sheet.className='sheet';
+  const d=sheetData;
+  if(sheetKind==='charm'){
+    const p=CH[d.pid],v=p.variants[d.vi],editing=d.uid!=null&&state.items.some(i=>i.uid===d.uid);
+    const idx=editing?state.items.findIndex(i=>i.uid===d.uid):selIndex();
+    sheet.innerHTML=`<div class="sh-head"><div><div class="code">${codeOf(p)}</div><h3>${esc(p.name)}</h3></div>${X}</div>
+      <div class="preview"><img src="${charmThumb(p.id,d.vi,180)}" alt="${esc(p.name+' – '+v.n)}"></div>
+      <div class="lbl">Phân loại · <b>${esc(v.n)}</b></div>
+      <div class="chips" role="radiogroup" aria-label="Phân loại">${p.variants.map((vv,i)=>chipHTML(vv,i,i===d.vi,'data-sv')).join('')}</div>
+      <p class="small">${editing?`Đổi phân loại cho charm #${idx+1} trên vòng.`:(idx>=0?`Charm sẽ được thêm ngay sau charm #${idx+1} đang chọn.`:'Charm sẽ được thêm vào cuối dây. Kéo trên vòng để đổi vị trí.')}</p>
+      <div class="sh-foot"><span class="price">${fmt(v.p)}</span><button class="btn primary" data-act="${editing?'apply':'add'}">${editing?'Lưu phân loại':'Thêm vào vòng'}</button></div>`;
+  }else if(sheetKind==='strap'){
+    const sp=ST[d.pid],v=sp.variants[d.vi],using=state.strap.pid===sp.id&&state.strap.vi===d.vi;
+    sheet.innerHTML=`<div class="sh-head"><div><div class="code">PP-D${sp.id.toUpperCase()}</div><h3>${esc(sp.name)}</h3></div>${X}</div>
+      <div class="preview"><img src="${strapThumb(sp.id,d.vi,180)}" alt="${esc(sp.name+' – '+v.n)}"></div>
+      <div class="lbl">Phân loại · <b>${esc(v.n)}</b></div>
+      <div class="chips" role="radiogroup" aria-label="Phân loại dây">${sp.variants.map((vv,i)=>chipHTML(vv,i,i===d.vi,'data-sv')).join('')}</div>
+      <div class="sh-foot"><span class="price">${fmt(v.p)}</span><button class="btn primary" data-act="useStrap" ${using?'disabled':''}>${using?'Đang dùng dây này':'Dùng dây này'}</button></div>`;
+  }else if(sheetKind==='size'){
+    sheet.innerHTML=`<div class="sh-head"><h3>Size dây</h3>${X}</div>
+      <p class="small">Đo vòng cổ tay rồi cộng thêm khoảng 2 cm. Ví dụ cổ tay 15 cm thì chọn dây 17 cm.</p>
+      <div class="chips" role="radiogroup" aria-label="Size dây">${SIZES.map(n=>`<button class="chip txt" role="radio" aria-checked="${n===state.size}" data-size="${n}">${n} cm</button>`).join('')}</div>
+      <p class="small">Đang dùng ${(usedMM()/10).toLocaleString('vi-VN',{maximumFractionDigits:1})} cm cho ${state.items.length} charm.</p>`;
+  }else if(sheetKind==='done'){
+    sheet.className='sheet tall';
+    const sp=strapP(),sv=strapV();
+    const groups=[];const gm={};state.items.forEach(it=>{const k=it.pid+'.'+it.vi;if(!gm[k]){gm[k]={it,q:0};groups.push(gm[k]);}gm[k].q++;});
+    const rows=state.items.map((it,i)=>{const p=CH[it.pid],v=p.variants[it.vi];return`<button class="row" data-pick="${it.uid}" style="width:100%;text-align:left"><span class="num">${i+1}</span><img src="${charmThumb(it.pid,it.vi,80)}" alt=""><span class="t"><b>${esc(p.name)}</b><span>${esc(v.n)} · ${codeOf(p)}</span></span><span class="p">${fmt(v.p)}</span></button>`;}).join('');
+    const grows=groups.map(g=>{const p=CH[g.it.pid],v=p.variants[g.it.vi];return`<div class="row nonum"><img src="${charmThumb(g.it.pid,g.it.vi,80)}" alt=""><span class="t"><b>${esc(p.name)} – ${esc(v.n)}</b><span>${codeOf(p)} · ${fmt(v.p)} × ${g.q}</span></span><span class="p">${fmt(v.p*g.q)}</span></div>`;}).join('');
+    sheet.innerHTML=`<div class="sh-head"><div><h3>Thiết kế của bạn</h3><p class="small" style="margin-top:4px">Lưu ảnh rồi gửi cho PunPun qua chat Shopee hoặc TikTok Shop. Shop làm đúng thứ tự từ trái sang phải như trên vòng.</p></div>${X}</div>
+      <div class="sum-actions">
+        <button class="btn primary" data-act="image"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0-4-4m4 4 4-4M5 21h14"/></svg>Lưu ảnh thiết kế</button>
+        <button class="btn" data-act="link">Copy link</button>
+        <button class="btn" data-act="text">Copy nội dung đơn</button>
+      </div>
+      <div class="sec-t"><span>Dây</span></div>
+      <div class="sum-box"><div class="row nonum"><img src="${strapThumb(sp.id,state.strap.vi,80)}" alt=""><span class="t"><b>${esc(sp.name)} – ${esc(sv.n)}</b><span>Size ${state.size} cm · PP-D${sp.id.toUpperCase()}</span></span><span class="p">${fmt(sv.p)}</span></div></div>
+      <div class="sec-t"><span>Charm theo thứ tự (trái → phải)</span><span>${state.items.length} cái</span></div>
+      <div class="sum-box">${rows||'<div class="row nonum"><span></span><span class="t"><span>Chưa có charm nào.</span></span><span></span></div>'}</div>
+      ${groups.length?`<div class="sec-t"><span>Gom theo phân loại (để lên đơn)</span><span>${groups.length} phân loại</span></div><div class="sum-box">${grows}</div>`:''}
+      <div class="total"><span>Tạm tính</span><b>${fmt(total())}</b></div>
+      <p class="small">Giá tạm tính, chưa gồm phí ship và khuyến mãi của sàn.</p>
+      <details class="open-code"><summary>Mở thiết kế từ mã hoặc link</summary>
+        <div class="code-form"><input id="codeInput" placeholder="Dán mã pp1~… hoặc link" autocomplete="off" aria-label="Mã thiết kế"><button class="btn" data-act="openCode">Mở</button></div>
+        <p class="small" style="margin-top:8px">Mã của thiết kế này: <span style="font-family:var(--mono);word-break:break-all">${esc(encode())}</span></p>
+      </details>`;
+  }else if(sheetKind==='image'){
+    sheet.className='sheet tall';
+    sheet.innerHTML=`<div class="sh-head"><div><h3>Ảnh thiết kế</h3><p class="small" style="margin-top:4px">${d.url?'Điện thoại: nhấn giữ ảnh rồi chọn Lưu ảnh. Máy tính: chuột phải → Lưu hình ảnh.':'Đang tạo ảnh…'}</p></div>${X}</div>
+      ${d.url?`<img class="img-out" src="${d.url}" alt="Ảnh thiết kế vòng PunPun">`:''}
+      ${d.url&&(DL||STANDALONE)?`<div class="sh-foot"><span class="small">Hoặc tải thẳng về máy</span><button class="btn primary" data-act="download">Tải ảnh</button></div>`:''}`;
+  }else if(sheetKind==='copy'){
+    sheet.innerHTML=`<div class="sh-head"><div><h3>${esc(d.title)}</h3><p class="small" style="margin-top:4px">Không copy tự động được ở đây. Bạn chọn hết đoạn bên dưới rồi copy nhé.</p></div>${X}</div><textarea class="copybox" readonly aria-label="${esc(d.title)}">${esc(d.text)}</textarea>`;
+    const ta=sheet.querySelector('textarea');setTimeout(()=>{ta.focus();ta.select();},50);
+  }
+}
+
+/* ---------- output ---------- */
+function orderText(){
+  const sp=strapP(),sv=strapV();
+  const lines=['ĐƠN MIX VÒNG – PunPun Tinygold Charm',`Dây: ${sp.name} – ${sv.n} – size ${state.size}cm (${fmt(sv.p)})`,`Charm (${state.items.length}), thứ tự từ trái sang phải:`];
+  state.items.forEach((it,i)=>{const p=CH[it.pid],v=p.variants[it.vi];lines.push(`${i+1}. ${p.name} – ${v.n} [${codeOf(p)}] ${fmt(v.p)}`);});
+  const gm={},order=[];state.items.forEach(it=>{const k=it.pid+'.'+it.vi;if(!gm[k]){gm[k]=0;order.push(it);}gm[k]++;});
+  if(order.length){lines.push('','Gom theo phân loại:');order.forEach(it=>{const p=CH[it.pid],v=p.variants[it.vi];lines.push(`- ${p.name} – ${v.n} × ${gm[it.pid+'.'+it.vi]}`);});}
+  lines.push('',`Tạm tính: ${fmt(total())}`,`Mã thiết kế: ${encode()}`);
+  if(APP_URL)lines.push(`Xem thiết kế: ${shareLink()}`);
+  return lines.join('\n');
+}
+async function copy(text,title,okMsg){
+  try{await navigator.clipboard.writeText(text);toast(okMsg);}catch(e){openSheet('copy',{text,title});}
+}
+const FONT='"Be Vietnam Pro", system-ui, sans-serif';
+function fitText(x,t,w){if(x.measureText(t).width<=w)return t;while(t.length>1&&x.measureText(t+'…').width>w)t=t.slice(0,-1);return t+'…';}
+function wrapText(x,t,w){const out=[];let line='';for(const ch of t){if(x.measureText(line+ch).width>w&&line){out.push(line);line=ch;}else line+=ch;}if(line)out.push(line);return out;}
+async function buildImage(){
+  try{await Promise.all([document.fonts.load('700 20px "Be Vietnam Pro"'),document.fonts.load('500 20px "Be Vietnam Pro"'),document.fonts.load('400 20px "Be Vietnam Pro"')]);}catch(e){}
+  const W=1080,P=64,inner=W-2*P,n=state.items.length,cols=n>8?2:1,rows=Math.max(1,Math.ceil(n/cols)),rowH=76;
+  const tmp=document.createElement('canvas').getContext('2d');tmp.font='500 19px '+'ui-monospace, Menlo, monospace';
+  const codeLines=wrapText(tmp,'Mã thiết kế: '+encode()+(APP_URL?'':''),inner);
+  const H=P+118+inner+44+110+52+rows*rowH+30+90+codeLines.length*28+50+P;
+  const c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');
+  const INK='#1C1B19',MUTE='#76716A',LINE='#ECE9E4',GOLD='#9C7A2F';
+  x.fillStyle='#FFFFFF';x.fillRect(0,0,W,H);
+  let y=P;
+  x.textBaseline='alphabetic';x.textAlign='left';
+  x.fillStyle=GOLD;x.font='600 19px '+FONT;try{x.letterSpacing='3px';}catch(e){}x.fillText('PUNPUN · TINYGOLD CHARM',P,y+20);try{x.letterSpacing='0px';}catch(e){}
+  x.fillStyle=INK;x.font='700 46px '+FONT;x.fillText('Thiết kế vòng của bạn',P,y+80);
+  const dt=new Date();x.textAlign='right';x.fillStyle=MUTE;x.font='500 19px '+FONT;x.fillText(dt.toLocaleDateString('vi-VN'),W-P,y+20);x.textAlign='left';
+  y+=118;
+  x.save();x.translate(P,y);rr(x,0,0,inner,inner,28);x.fillStyle='#F3F2EF';x.fill();x.clip();
+  drawScene(x,inner,{bg:null,k:1,nums:true,sel:null,numBg:INK,numFg:'#FFFFFF',empty:MUTE});x.restore();
+  y+=inner+44;
+  const sp=strapP(),sv=strapV();
+  x.fillStyle=MUTE;x.font='600 16px '+FONT;x.fillText('DÂY',P,y);
+  x.drawImage(await img(strapThumb(sp.id,state.strap.vi,80)),P,y+14,64,64);
+  x.fillStyle=INK;x.font='600 25px '+FONT;x.fillText(`${sp.name} – ${sv.n}`,P+84,y+42);
+  x.fillStyle=MUTE;x.font='400 19px '+FONT;x.fillText(`Size ${state.size} cm · PP-D${sp.id.toUpperCase()}`,P+84,y+70);
+  x.textAlign='right';x.fillStyle=INK;x.font='500 22px '+FONT;x.fillText(fmt(sv.p),W-P,y+42);x.textAlign='left';
+  y+=110;
+  x.fillStyle=MUTE;x.font='600 16px '+FONT;x.fillText(`CHARM · ${n} CÁI · THỨ TỰ TỪ TRÁI SANG PHẢI`,P,y);
+  y+=22;
+  const colW=cols===2?(inner-36)/2:inner;
+  for(let i=0;i<n;i++){
+    const it=state.items[i],p=CH[it.pid],v=p.variants[it.vi];
+    const col=cols===2&&i>=rows?1:0,r=col?i-rows:i,x0=P+col*(colW+36),y0=y+r*rowH;
+    x.strokeStyle=LINE;x.lineWidth=1;x.beginPath();x.moveTo(x0,y0);x.lineTo(x0+colW,y0);x.stroke();
+    x.beginPath();x.arc(x0+15,y0+rowH/2,15,0,Math.PI*2);x.fillStyle=INK;x.fill();
+    x.fillStyle='#fff';x.font='700 15px '+FONT;x.textAlign='center';x.fillText(String(i+1),x0+15,y0+rowH/2+5.5);x.textAlign='left';
+    x.drawImage(await img(charmThumb(it.pid,it.vi,80)),x0+38,y0+8,60,60);
+    const priceW=110;
+    x.fillStyle=INK;x.font='600 21px '+FONT;x.fillText(fitText(x,p.name,colW-110-priceW),x0+108,y0+33);
+    x.fillStyle=MUTE;x.font='400 17px '+FONT;x.fillText(fitText(x,`${v.n} · ${codeOf(p)}`,colW-110-priceW),x0+108,y0+58);
+    x.textAlign='right';x.fillStyle=INK;x.font='500 19px '+FONT;x.fillText(fmt(v.p),x0+colW,y0+33);x.textAlign='left';
+  }
+  if(!n){x.fillStyle=MUTE;x.font='400 19px '+FONT;x.fillText('Chưa có charm nào.',P,y+40);}
+  y+=rows*rowH+30;
+  x.strokeStyle=INK;x.lineWidth=2;x.beginPath();x.moveTo(P,y);x.lineTo(W-P,y);x.stroke();
+  x.fillStyle=INK;x.font='600 26px '+FONT;x.fillText('Tạm tính',P,y+56);
+  x.textAlign='right';x.font='700 40px '+FONT;x.fillText(fmt(total()),W-P,y+60);x.textAlign='left';
+  y+=90+10;
+  x.fillStyle=MUTE;x.font='500 19px ui-monospace, Menlo, monospace';codeLines.forEach((l,i)=>x.fillText(l,P,y+i*28));
+  y+=codeLines.length*28+18;
+  x.fillStyle=INK;x.font='500 20px '+FONT;x.fillText('Gửi ảnh này cho PunPun qua chat Shopee / TikTok Shop để shop lên đơn.',P,y);
+  return c;
+}
+function img(src){return new Promise(r=>{const i=new Image();i.onload=()=>r(i);i.onerror=()=>r(i);i.src=src;});}
+let lastCanvas=null;
+async function exportImage(){
+  openSheet('image',{});
+  try{const c=await buildImage();lastCanvas=c;if(sheetKind==='image'){sheetData={url:c.toDataURL('image/png')};renderSheet();}}
+  catch(e){toast('Chưa tạo được ảnh. Bạn thử lại hoặc chụp màn hình nhé.');}
+}
+let DL=null;
+try{if(window.claude&&window.claude.use){window.claude.use('downloads').then(d=>{DL=d||null;if(sheetKind==='image')renderSheet();}).catch(()=>{});}}catch(e){}
+async function download(){
+  if(!lastCanvas)return;
+  const blob=await new Promise(r=>lastCanvas.toBlob(r,'image/png'));
+  const name='punpun-thiet-ke-vong.png';
+  if(DL){
+    try{await DL.save({filename:name,data:blob});toast('Đã lưu ảnh');}
+    catch(e){if(e&&e.code==='declined')return;toast('Không tải được ở đây. Nhấn giữ ảnh để lưu nhé.');}
+    return;
+  }
+  try{
+    const file=new File([blob],name,{type:'image/png'});
+    if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:'Thiết kế vòng PunPun'});return;}
+  }catch(e){if(e&&e.name==='AbortError')return;}
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();
+  setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1500);
+}
+
+/* ---------- toast ---------- */
+let tt=null;
+function toast(m){const t=$('toast');t.textContent=m;t.hidden=false;clearTimeout(tt);tt=setTimeout(()=>t.hidden=true,2400);}
+
+/* ---------- events ---------- */
+document.addEventListener('click',e=>{
+  const b=e.target.closest('button,[data-pick]');if(!b)return;
+  const ds=b.dataset;
+  if('close' in ds)return closeSheet();
+  if(ds.tool)return tool(ds.tool);
+  if(ds.ctab){ctab=ds.ctab;renderCatalog();$('gridWrap').scrollTop=0;return;}
+  if(ds.cat){catId=ds.cat;renderCatalog();$('gridWrap').scrollTop=0;return;}
+  if(ds.charm){
+    const[pid,vs]=ds.charm.split('.'),vi=+vs,p=CH[pid],v=p.variants[vi],i=selIndex(),n={uid:newUid(),pid,vi};
+    commit(()=>{if(i>=0)state.items.splice(i+1,0,n);else state.items.push(n);sel=n.uid;});
+    toast(`Đã gắn ${p.name} · ${v.n} (#${selIndex()+1})`);return;
+  }
+  if(ds.strap){
+    const[pid,vs]=ds.strap.split('.'),vi=+vs;
+    if(state.strap.pid===pid&&state.strap.vi===vi)return;
+    commit(()=>{state.strap={pid,vi};});toast(`Đã đổi sang ${ST[pid].name} · ${ST[pid].variants[vi].n}`);return;
+  }
+  if(ds.sv!=null){sheetData.vi=+ds.sv;return renderSheet();}
+  if(ds.size){const n=+ds.size;if(n!==state.size)commit(()=>{state.size=n;});return renderSheet();}
+  if(ds.pick){sel=+ds.pick;closeSheet();refreshSel();return;}
+  const a=ds.act;if(!a)return;
+  if(a==='add'){const p=CH[sheetData.pid],v=p.variants[sheetData.vi];const i=selIndex();const n={uid:newUid(),pid:p.id,vi:sheetData.vi};commit(()=>{if(i>=0)state.items.splice(i+1,0,n);else state.items.push(n);sel=n.uid;});closeSheet();toast(`Đã thêm ${p.name} · ${v.n}`);return;}
+  if(a==='apply'){const it=state.items.find(x=>x.uid===sheetData.uid);if(it&&it.vi!==sheetData.vi)commit(()=>{it.vi=sheetData.vi;});closeSheet();return;}
+  if(a==='useStrap'){commit(()=>{state.strap={pid:sheetData.pid,vi:sheetData.vi};});closeSheet();toast('Đã đổi dây');return;}
+  if(a==='done')return openSheet('done');
+  if(a==='image')return exportImage();
+  if(a==='download')return download();
+  if(a==='text')return copy(orderText(),'Nội dung đơn','Đã copy nội dung đơn');
+  if(a==='link'){const l=shareLink();return l?copy(l,'Link thiết kế','Đã copy link thiết kế'):copy(encode(),'Mã thiết kế','Đã copy mã thiết kế');}
+  if(a==='openCode'){const v=$('codeInput').value;const s=decode(v);if(!s){toast('Mã không hợp lệ. Kiểm tra lại đoạn đã dán nhé.');return;}commit(()=>{state=s;sel=null;});closeSheet();toast('Đã mở thiết kế');return;}
+});
+$('numBtn').addEventListener('click',()=>{showNums=!showNums;$('numBtn').setAttribute('aria-pressed',String(showNums));renderStage();});
+new ResizeObserver(()=>sizeStage()).observe($('canvasWrap'));
+addEventListener('resize',sizeStage);
+try{matchMedia('(prefers-color-scheme: dark)').addEventListener('change',renderStage);}catch(e){}
+new MutationObserver(renderStage).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+addEventListener('hashchange',()=>{const s=decode(location.hash.slice(1));if(s){pushHist();state=s;sel=null;changed();toast('Đã mở thiết kế được chia sẻ');}});
+
+/* ---------- boot ---------- */
+(function boot(){
+  const fromHash=location.hash&&location.hash.length>1?decode(location.hash.slice(1)):null;
+  state=fromHash||loadDraft()||sampleState();
+  sizeStage();changed();
+  if(fromHash)toast('Đã mở thiết kế được chia sẻ');
+  if(document.fonts&&document.fonts.load){Promise.all([document.fonts.load('700 20px "Be Vietnam Pro"'),document.fonts.load('600 20px "Be Vietnam Pro"')]).then(()=>{thumbCache.clear();renderCatalog();renderStage();}).catch(()=>{});}
+})();
+})();
+</script>
+
+</body>
+</html>
