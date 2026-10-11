@@ -94,8 +94,15 @@ button:disabled{cursor:default}
 .tool:active:not(:disabled) .ic{background:var(--soft); transform:scale(.94)}
 .tool:disabled{opacity:.35}
 .toolbar[data-mode="sel"] .tool[data-ctx="idle"], .toolbar[data-mode="idle"] .tool[data-ctx="sel"]{display:none}
-.done{height:44px; padding:0 22px; border-radius:999px; background:var(--fg); color:var(--bg); font-weight:600; flex:none; margin-left:auto; transition:opacity var(--fast)}
+.done{height:44px; padding:0 18px 0 16px; border-radius:999px; background:var(--fg); color:var(--bg); font-weight:600; flex:none; margin-left:auto; display:inline-flex; align-items:center; gap:7px; white-space:nowrap; transition:opacity var(--fast)}
 .done:active{opacity:.82}
+/* đang chọn một charm: thanh công cụ dành cho charm đó, chọn xong (bỏ chọn) mới hiện lại Copy link */
+.toolbar[data-mode="sel"] .done{display:none}
+@media (max-width:350px){
+  .seg button{padding:0 8px; gap:4px}
+  .mini{padding:0 9px}
+  .specs dt{font-size:11.5px}
+}
 
 /* catalog */
 .catalog{flex:1; min-height:0; display:flex; flex-direction:column; background:var(--surface); border-top:1px solid var(--line); border-radius:20px 20px 0 0}
@@ -127,12 +134,6 @@ button:disabled{cursor:default}
 .card.skel .l1,.card.skel .l2{height:11px; border-radius:6px; margin-top:4px}
 .card.skel .l1{width:72%} .card.skel .l2{width:44%}
 .note{font-size:12.5px; color:var(--muted); padding:16px 4px 0; margin:0}
-.grid-head{margin:0 0 16px}
-.gh-row{display:flex; justify-content:space-between; align-items:baseline; gap:8px; margin:0 2px 8px}
-.gh-t{font-size:13px; font-weight:600}
-.gh-h{font-size:12px; color:var(--muted)}
-.size-chips{display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:6px}
-.size-chips .chip{justify-content:center; padding:0; font-variant-numeric:tabular-nums}
 .sk{background:var(--soft); position:relative; overflow:hidden}
 
 /* sheets */
@@ -270,7 +271,6 @@ textarea.copybox{width:100%; min-height:240px; border-radius:12px; border:1px so
         <div class="hint" id="hint">Chạm để chọn charm · kéo để đổi vị trí</div>
       </div>
       <dl class="specs">
-        <div><dt>Size dây</dt><dd id="spSize">17 cm</dd></div>
         <div><dt>Số charm</dt><dd id="spCount">0</dd></div>
         <div><dt>Đã dùng</dt><dd id="spUsed">0 cm</dd></div>
         <div><dt>Tạm tính</dt><dd class="big" id="spTotal">0đ</dd></div>
@@ -278,7 +278,6 @@ textarea.copybox{width:100%; min-height:240px; border-radius:12px; border:1px so
     </div>
     <div class="toolbar" id="toolbar" data-mode="idle">
       <div class="tools" id="tools" role="group" aria-label="Công cụ">
-        <button class="tool" data-tool="size" data-ctx="idle"><span class="ic"><svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="7.5"/><path d="M12 4.5v3M12 16.5v3M4.5 12h3M16.5 12h3"/></svg></span>Size dây</button>
         <button class="tool" data-tool="undo" data-ctx="idle" id="undoBtn"><span class="ic"><svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></span>Hoàn tác</button>
         <button class="tool" data-tool="clear" data-ctx="idle" id="clearBtn"><span class="ic"><svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 7h14M10 7V5h4v2M7 7l1 12h8l1-12"/></svg></span>Xoá hết</button>
         <button class="tool" data-tool="left" data-ctx="sel"><span class="ic"><svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5m0 0 6-6m-6 6 6 6"/></svg></span>Qua trái</button>
@@ -286,7 +285,7 @@ textarea.copybox{width:100%; min-height:240px; border-radius:12px; border:1px so
         <button class="tool" data-tool="dup" data-ctx="sel"><span class="ic"><svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="8" y="8" width="11" height="11" rx="2.5"/><path d="M16 5.5A2.5 2.5 0 0 0 13.5 5H7.5A2.5 2.5 0 0 0 5 7.5v6A2.5 2.5 0 0 0 5.5 16"/></svg></span>Nhân đôi</button>
         <button class="tool" data-tool="del" data-ctx="sel"><span class="ic"><svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><path d="m9 9 6 6m0-6-6 6"/></svg></span>Xoá</button>
       </div>
-      <button class="done" data-act="done">Xong</button>
+      <button class="done" data-act="link"><svg aria-hidden="true" focusable="false" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1 1"/><path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1-1"/></svg>Copy link</button>
     </div>
   </section>
 
@@ -363,7 +362,7 @@ const STRAPS=[
  {id:'le',name:'Dây da tết',short:'Da tết',kind:'leather',variants:withMP([{n:'Hồng phấn',c:'#E7AAB3'},{n:'Nâu bò',c:'#97613F'},{n:'Đen',c:'#2B2A2C'},{n:'Kem',c:'#E6D9C2'}],'silver',99000)},
  {id:'co',name:'Dây dù xoắn',short:'Dù',kind:'cord',variants:withMP([{n:'Đỏ',c:'#C63A3F'},{n:'Xanh navy',c:'#2F3F68'},{n:'Be',c:'#CDB99A'}],'silver',79000)}
 ];
-const SIZES=[15,16,17,18,19,20];
+const STRAP_CM=23;
 const CH=Object.fromEntries(CHARMS.map(p=>[p.id,p]));
 const ST=Object.fromEntries(STRAPS.map(p=>[p.id,p]));
 const DIMS={bead:{w:10,h:11},pave:{w:10,h:11},enamel:{w:10,h:11},glass:{w:12,h:12.5},dangle:{w:5,h:6.5},letter:{w:8.5,h:8.5},clip:{w:7,h:10},spacer:{w:3.6,h:9}};
@@ -569,18 +568,18 @@ function texStrip(st,t,L){
   S.ppm=ppm;t.strips.set(key,S);return S;
 }
 let texTimer=0;
-function onStrapTex(){clearTimeout(texTimer);texTimer=setTimeout(()=>{scheduleRender();refreshStrapThumbs();if(sheetKind==='done')renderSheet();},30);}
+function onStrapTex(){clearTimeout(texTimer);texTimer=setTimeout(()=>{scheduleRender();refreshStrapThumbs();},30);}
 
 /* ---------- state ---------- */
 let uidSeq=1;
 const newUid=()=>uidSeq++;
-let state={strap:'',size:17,items:[]};
+let state={strap:'',size:STRAP_CM,items:[]};
 let sel=null, showNums=false, drag=null, catId='all', ctab='charm';
 const hist=[];
 const SAMPLE=['c01-1','g01-0','e01-0','l02-15','l02-20','l02-13','d01-3','b01-1','g01-1','c01-1'];
 function defaultState(){
-  if(CAT.source==='demo'&&SE['sn-1'])return{strap:'sn-1',size:17,items:SAMPLE.filter(c=>CE[c]).map(code=>({uid:newUid(),code}))};
-  return{strap:CAT.straps[0].code,size:17,items:[]};
+  if(CAT.source==='demo'&&SE['br-0'])return{strap:'br-0',size:STRAP_CM,items:SAMPLE.filter(c=>CE[c]).map(code=>({uid:newUid(),code}))};
+  return{strap:CAT.straps[0].code,size:STRAP_CM,items:[]};
 }
 const snap=()=>JSON.stringify({strap:state.strap,size:state.size,items:state.items,sel});
 function pushHist(){hist.push(snap());if(hist.length>80)hist.shift();}
@@ -590,7 +589,7 @@ const selItem=()=>state.items.find(i=>i.uid===sel)||null;
 const strapE=()=>SE[state.strap]||CAT.straps[0];
 const total=()=>strapE().price+state.items.reduce((a,it)=>a+(CE[it.code]?CE[it.code].price:0),0);
 const usedMM=()=>{const n=state.items.length;return state.items.reduce((a,it)=>a+(CE[it.code]?CE[it.code].strapW:0),0)+.35*Math.max(0,n-1);};
-function fitState(){state.items=state.items.filter(it=>CE[it.code]);if(!SE[state.strap])state.strap=CAT.straps[0].code;if(!SIZES.includes(state.size))state.size=17;}
+function fitState(){state.items=state.items.filter(it=>CE[it.code]);if(!SE[state.strap])state.strap=CAT.straps[0].code;state.size=STRAP_CM;}
 
 function encode(){return['pp2',state.strap,state.size,state.items.map(i=>i.code).join('_')].join('~');}
 function decode(tok){
@@ -598,10 +597,9 @@ function decode(tok){
     tok=decodeURIComponent(String(tok).trim());
     const h=tok.indexOf('#');if(h>=0)tok=tok.slice(h+1);
     const parts=tok.split('~');if(parts[0]!=='pp2'||parts.length<3)return null;
-    const size=+parts[2];
     const codes=parts[3]?parts[3].split('_').filter(Boolean):[];
     const items=codes.filter(c=>CE[c]).map(code=>({uid:newUid(),code}));
-    return{strap:SE[parts[1]]?parts[1]:CAT.straps[0].code,size:SIZES.includes(size)?size:17,items,missing:codes.length-items.length};
+    return{strap:SE[parts[1]]?parts[1]:CAT.straps[0].code,size:STRAP_CM,items,missing:codes.length-items.length};
   }catch(e){return null;}
 }
 const shareLink=()=>APP_URL?APP_URL+'#'+encode():'';
@@ -610,7 +608,7 @@ function loadDraft(){try{const t=localStorage.getItem('punpun-mix-v2');return t?
 
 /* ---------- stage ---------- */
 const cv=$('stage'), cx2=cv.getContext('2d');
-let S=320, CW=320, dpr=1, LAY=null, reserveR=76, specsBottom=0, LAND=false, WIDE=false;
+let S=320, CW=320, dpr=1, LAY=null, reserveR=76, specsBottom=0, CORNER=null, LAND=false, WIDE=false;
 const tok=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 let TOK=null;const tokens=()=>TOK||(TOK={stage:tok('--stage'),fg:tok('--fg'),bg:tok('--bg'),muted:tok('--muted')});
 const easeIO=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
@@ -629,12 +627,14 @@ function startReflow(from){
   if(!ANIM.raf){const tick=()=>{ANIM.raf=0;const done=performance.now()-ANIM.t0>=ANIM.dur;if(done)ANIM.from=null;renderStage();if(!done)ANIM.raf=requestAnimationFrame(tick);};ANIM.raf=requestAnimationFrame(tick);}
 }
 
+/* chừa chỗ ở hai đầu dây: dây đan có đoạn quấn chỉ vàng + hạt nút rút, dây kim loại có khoá */
+const endPad=()=>{const st=CAT.straps.length?strapE():null;return st&&st.kind==='braid'?44:13;};
 function clusterOf(){
   const gap=.35,L=state.size*10;
   const its=state.items.filter(it=>CE[it.code]);
   const ents=its.map(it=>CE[it.code]);
   const ws=ents.map(e=>e.strapW);
-  const W=ws.reduce((a,b)=>a+b,0)+gap*Math.max(0,ws.length-1), maxW=L-13, k=W>maxW?maxW/W:1;
+  const W=ws.reduce((a,b)=>a+b,0)+gap*Math.max(0,ws.length-1), maxW=L-endPad(), k=W>maxW?maxW/W:1;
   let acc=0;const cs=ws.map(w=>{const c=(acc+w/2)*k;acc+=w+gap;return c;});
   return{its,ents,cs,Wk:W*k,L};
 }
@@ -644,10 +644,14 @@ function geom(W,H,m,o){
   o=o||{};
   const cl=clusterOf(), L=cl.L, kc=2*Math.PI/L;
   const reserve=o.reserve!=null?o.reserve:reserveR;
-  const R=H*.3, cxC=Math.max(R+12,Math.min(W/2,(W-reserve)/2)), cyC=H*.45;
-  const sC=2*Math.PI*R/L;
+  const R0=H*.3,cxOf=r=>Math.max(r+12,Math.min(W/2,(W-reserve)/2));let R=R0,cyC=H*.45;
+  /* chừa khoảng dưới cụm nút góc trên-trái để luôn thấy rõ đầu dây / hạt nút rút ở đỉnh vòng:
+     hạ vòng xuống, thiếu chỗ thì thu nhỏ vòng một chút (phần nhô trên đỉnh vòng ~4,5 mm) */
+  if(o.avoid){const ext=1+28.3/L,top=o.avoid.b+4,bot=H*.775;
+    if(cxOf(R)-R*.6<o.avoid.r&&cyC-R*ext<top){cyC=top+R*ext;if(cyC+R>bot){R=Math.max(R0*.8,(bot-top)/(1+ext));cyC=Math.min(cyC,bot-R);}}}
+  const cxC=cxOf(R), sC=2*Math.PI*R/L;
   const fitWhole=(W*.94)/(L+12), fitCluster=(W*.86)/(cl.Wk+24);
-  const sL=o.fit==='whole'?fitWhole:Math.min(sC,Math.max(fitWhole,fitCluster));
+  const sL=o.fit==='whole'?fitWhole:Math.min(2*Math.PI*R0/L,Math.max(fitWhole,fitCluster));
   const e=easeIO(Math.max(0,Math.min(1,m)));
   let ayL=H*(o.lineY||.7),tight=false;
   if(o.lineMin!=null){
@@ -669,7 +673,7 @@ function uAt(g,px,py){const dx=(px-g.ax)/g.s,dy=(py-g.ay)/g.s;if(g.k<1e-6)return
 function rr2(ctx,x,y,w,h,rl,rrt){ctx.beginPath();ctx.moveTo(x+rl,y);ctx.arcTo(x+w,y,x+w,y+h,rrt);ctx.arcTo(x+w,y+h,x,y+h,rrt);ctx.arcTo(x,y+h,x,y,rl);ctx.arcTo(x,y,x+w,y,rl);ctx.closePath();}
 
 function drawStrapCurve(ctx,g,st){
-  const m=metalOf(st.m),s=g.s,half=g.L/2,u0=-half+5,u1=half-5,STEP=.6,TAU=Math.PI*2;
+  const m=metalOf(st.m),s=g.s,half=g.L/2,uE=st.kind==='braid'?half-BR_TL*(g.e||0):half-5,u0=-uE,u1=uE,STEP=.6,TAU=Math.PI*2;
   const path=(off,dy)=>{ctx.beginPath();for(let u=u0,i=0;;u+=STEP,i++){const uu=Math.min(u,u1),p=curvePt(g,uu),x=p.x+p.nx*off*s,y=p.y+p.ny*off*s+(dy||0);if(i)ctx.lineTo(x,y);else ctx.moveTo(x,y);if(uu>=u1)break;}};
   const along=(pitch,fn)=>{let i=0;for(let u=u0+pitch/2;u<u1;u+=pitch)fn(curvePt(g,u),u,i++);};
   const P=(p,off)=>[p.x+p.nx*off*s,p.y+p.ny*off*s];
@@ -714,23 +718,70 @@ function drawStrapCurve(ctx,g,st){
   ctx.restore();
   drawEnds(ctx,g,st,tex,tex2||tex);
 }
-/* khoá: mỗi đầu dây giữ một nửa, khi đeo tròn hai nửa khép lại thành một khoá (dây đan: nút rút) */
+/* Dây đan: mỗi đầu là một đoạn đuôi thẳng nối tiếp cuối vòng: sợi trần → quấn chỉ vàng → đầu cắt.
+   Đeo (Tròn): hai đuôi cùng xuyên qua hạt nút rút ở đỉnh vòng rồi chĩa ra hai bên, như vòng thật.
+   Trải ngang: đuôi nằm ở hai đầu dây, hạt nút rút ở đầu bên phải. Đuôi tính trong 23 cm. */
+const BR={bare:4.4,wrap:12,tip:1.5,splay:.12},BR_TL=BR.bare+BR.wrap+BR.tip;
+function braidJoint(g,side){
+  const e=g.e||0,uE=g.L/2-BR_TL*e,p=curvePt(g,side*uE);
+  return{x:p.x,y:p.y,a:p.a,dir:p.a+(side>0?0:Math.PI)+side*BR.splay*(1-e)};
+}
+/* hệ toạ độ dọc một đoạn thẳng, xoay sao cho mặt sáng luôn ở phía trên màn hình; trả về chiều trục x */
+function lineFrame(ctx,x,y,dir,s){const flip=Math.cos(dir)<-1e-6;ctx.translate(x,y);ctx.rotate(flip?dir+Math.PI:dir);ctx.scale(s,s);return flip?-1:1;}
+function braidTail(ctx,g,st,side,J,tex,strip){
+  const s=g.s,T=st.thick||3,h=T*1.16,G=METAL.gold,base=tex&&tex.avg?tex.avg:(st.c||metalOf(st.m).b);
+  const span=(t0,t1)=>{const x0=sg*t0,x1=sg*t1;return[Math.min(x0,x1),Math.abs(t1-t0)];};
+  ctx.save();const sg=lineFrame(ctx,J.x,J.y,J.dir,s);
+  /* sợi trần giữa hạt và chỉ vàng (vân nối tiếp từ ảnh dây) */
+  shadowOn(ctx);
+  if(strip){
+    ctx.save();if(side*sg<0)ctx.scale(-1,1);
+    const pp=strip.ppm,w=BR.bare+.3,sx=side>0?(g.L-BR_TL)*pp:(BR_TL-w)*pp;
+    ctx.drawImage(strip,sx,0,w*pp,strip.height,side>0?0:-w,-T/2,w,T);
+    ctx.restore();
+  }else{const[x0,w]=span(0,BR.bare+.3);ctx.fillStyle=base;ctx.fillRect(x0,-T/2,w,T);}
+  /* quấn chỉ vàng */
+  const[xa,wa]=span(BR.bare,BR.bare+BR.wrap);
+  ctx.fillStyle=mgrad(ctx,G,h);ctx.fillRect(xa,-h/2,wa,h);
+  shadowOff(ctx);
+  if(s>=1.8){
+    ctx.strokeStyle=rgba(G.d,.5);ctx.lineWidth=Math.max(.5/s,.11);ctx.beginPath();
+    for(let x=xa+.25;x<xa+wa-.1;x+=.42){ctx.moveTo(x-.1,-h/2*.92);ctx.lineTo(x+.1,h/2*.92);}ctx.stroke();
+    ctx.strokeStyle=rgba(G.l,.55);ctx.lineWidth=Math.max(.5/s,.08);ctx.beginPath();
+    for(let x=xa+.46;x<xa+wa-.1;x+=.42){ctx.moveTo(x-.1,-h/2*.8);ctx.lineTo(x,-h*.05);}ctx.stroke();
+  }
+  ctx.fillStyle=rgba(G.e,.35);ctx.fillRect(xa,-h/2,.18,h);ctx.fillRect(xa+wa-.18,-h/2,.18,h);
+  /* đầu sợi cắt gọn, bo tròn phía ngoài */
+  const[xt]=span(BR.bare+BR.wrap,BR_TL);
+  body(ctx,()=>rr2(ctx,xt-.15,-T*.47,BR.tip+.3,T*.94,sg>0?.12:T*.42,sg>0?T*.42:.12),shade(base,-.42));
+  ctx.restore();
+}
+/* hạt nút rút: thân màu dây, hai viền chỉ vàng; nằm ở chỗ nối giữa vòng và đuôi bên phải */
+function slideBead(ctx,g,J,st,tex){
+  const s=g.s,T=st.thick||3,bw=7.2,bh=T*2.05,G=METAL.gold,TAU=Math.PI*2,base=tex&&tex.avg?tex.avg:(st.c||metalOf(st.m).b);
+  ctx.save();lineFrame(ctx,J.x,J.y,J.a,s);
+  const gr=ctx.createLinearGradient(0,-bh/2,0,bh/2);gr.addColorStop(0,shade(base,.28));gr.addColorStop(.45,base);gr.addColorStop(1,shade(base,-.42));
+  body(ctx,()=>rr(ctx,-bw/2,-bh/2,bw,bh,bh*.36),gr);
+  ctx.save();rr(ctx,-bw/2,-bh/2,bw,bh,bh*.36);ctx.clip();
+  ctx.lineWidth=.34;ctx.strokeStyle=rgba(shade(base,-.55),.5);
+  for(let x=-bw/2-bh;x<bw/2+bh;x+=.95){ctx.beginPath();ctx.moveTo(x,-bh/2);ctx.lineTo(x+bh*.5,bh/2);ctx.stroke();}
+  ctx.lineWidth=.22;ctx.strokeStyle=rgba(shade(base,.6),.4);
+  for(let x=-bw/2-bh+.47;x<bw/2+bh;x+=.95){ctx.beginPath();ctx.moveTo(x,-bh/2);ctx.lineTo(x+bh*.5,bh/2);ctx.stroke();}
+  ctx.restore();
+  for(const sx of[-1,1]){const x=sx*(bw/2-.8);ctx.fillStyle=mgrad(ctx,G,bh*.94);rr(ctx,x-.45,-bh*.47,.9,bh*.94,.45);ctx.fill();
+    ctx.fillStyle=rgba(G.e,.5);for(let y=-bh*.42;y<bh*.43;y+=.52){ctx.beginPath();ctx.arc(x,y,.14,0,TAU);ctx.fill();}}
+  ctx.save();ctx.globalAlpha=.32;ctx.fillStyle='#fff';ctx.beginPath();ctx.ellipse(-.4,-bh*.3,bw*.3,.32,0,0,TAU);ctx.fill();ctx.restore();
+  ctx.restore();
+}
+/* khoá: mỗi đầu dây giữ một nửa, khi đeo tròn hai nửa khép lại thành một khoá (dây kim loại, da, dù) */
 function drawEnds(ctx,g,st,tex,texR){
   const half=g.L/2,s=g.s,TAU=Math.PI*2;
   if(st.kind==='braid'){
-    const T=st.thick||3,kh=T*1.85,w=5,fb=st.c||metalOf(st.m).b;
-    for(const side of[-1,1]){
-      const tt=side<0?tex:texR,base=tt&&tt.avg?shade(tt.avg,.12):fb;
-      const p=curvePt(g,side*(half-2.5));
-      ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.a);ctx.scale(s,s);
-      const gr=ctx.createLinearGradient(0,-kh/2,0,kh/2);gr.addColorStop(0,shade(base,.38));gr.addColorStop(.45,base);gr.addColorStop(1,shade(base,-.32));
-      body(ctx,()=>rr2(ctx,-w/2,-kh/2,w,kh,side>0?kh*.42:.35,side>0?.35:kh*.42),gr);
-      ctx.strokeStyle=rgba(shade(base,-.42),.5);ctx.lineWidth=.22;ctx.beginPath();
-      for(let xx=-w/2+.75;xx<w/2-.2;xx+=.9){ctx.moveTo(xx,-kh/2+.4);ctx.quadraticCurveTo(xx+.32,0,xx,kh/2-.4);}
-      ctx.stroke();
-      ctx.save();ctx.globalAlpha=.42;ctx.fillStyle='#fff';ctx.beginPath();ctx.ellipse(-side*.3,-kh*.27,1.5,.38,0,0,TAU);ctx.fill();ctx.restore();
-      ctx.restore();
-    }
+    const SA=tex?texStrip(st,tex,g.L):null,SB=texR?texStrip(st,texR,g.L):SA;
+    const JL=braidJoint(g,-1),JR=braidJoint(g,1);
+    braidTail(ctx,g,st,-1,JL,tex,SA);
+    braidTail(ctx,g,st,1,JR,texR,SB);
+    slideBead(ctx,g,JR,st,texR||tex);
     return;
   }
   const m=metalOf(st.m),cm=(st.kind==='leather'||st.kind==='cord')&&typeof st.m==='string'&&st.m[0]==='#'?METAL.silver:m;
@@ -800,7 +851,7 @@ function drawScene(ctx,W,H,o){
 function renderStage(){
   const T=tokens();
   cx2.setTransform(dpr,0,0,dpr,0,0);cx2.clearRect(0,0,CW,S);
-  LAY=drawScene(cx2,CW,S,{bg:T.stage,k:dpr,m:VIEW.m,pan:VIEW.pan,lineMin:specsBottom+8,nums:showNums,sel,drag:drag&&drag.moved?drag.uid:null,dragU:drag&&drag.moved?drag.u:null,anim:ANIM,ring:T.fg,numBg:T.fg,numFg:T.bg,empty:T.muted});
+  LAY=drawScene(cx2,CW,S,{bg:T.stage,k:dpr,m:VIEW.m,pan:VIEW.pan,lineMin:specsBottom+8,avoid:CORNER,nums:showNums,sel,drag:drag&&drag.moved?drag.uid:null,dragU:drag&&drag.moved?drag.u:null,anim:ANIM,ring:T.fg,numBg:T.fg,numFg:T.bg,empty:T.muted});
   VIEW.pan=LAY.g.pan;
   syncPanUI();
 }
@@ -826,6 +877,7 @@ function sizeStage(){
   S=Math.max(LAND?170:220,Math.floor(Math.min(avail-reserveR,maxH)));
   CW=Math.max(S,avail);
   const sp=document.querySelector('.specs');specsBottom=sp?sp.offsetTop+sp.offsetHeight:0;
+  const co=document.querySelector('.corner');CORNER=co?{r:co.offsetLeft+co.offsetWidth,b:co.offsetTop+co.offsetHeight}:null;
   dpr=Math.min(3,window.devicePixelRatio||1);
   cv.style.width=CW+'px';cv.style.height=S+'px';cv.width=Math.round(CW*dpr);cv.height=Math.round(S*dpr);
   panUI='';renderStage();
@@ -904,7 +956,7 @@ cv.addEventListener('pointermove',e=>{
   if(!drag.moved){drag.moved=true;sel=drag.uid;cv.style.cursor='grabbing';refreshSel();}
   if(canPanNow()){const edge=44;if(x<edge)VIEW.pan-=(edge-x)/edge*3;else if(x>CW-edge)VIEW.pan+=(x-(CW-edge))/edge*3;}
   /* charm đi theo ngón tay dọc sợi dây; các charm khác dạt ra nhường chỗ */
-  const g=geom(CW,S,VIEW.m,{pan:VIEW.pan,lineMin:specsBottom+8,nums:showNums});
+  const g=geom(CW,S,VIEW.m,{pan:VIEW.pan,lineMin:specsBottom+8,avoid:CORNER,nums:showNums});
   drag.u=uAt(g,x,y);
   const cP=drag.u+LAY.Wk/2;
   const from=state.items.findIndex(i=>i.uid===drag.uid);
@@ -996,10 +1048,9 @@ function renderCatalog(animate){
     grid.innerHTML=list.map((e,i)=>`<button class="card" data-charm="${esc(e.code)}" style="--i:${Math.min(i,14)}" aria-label="${esc(charmLabel(e,cn[e.code]))}"><span class="ph"><img src="${esc(charmThumb(e.code))}" alt="" loading="lazy" decoding="async"${e.img?' crossorigin="anonymous"':''}></span><span class="nm">${esc(e.name)}</span>${e.vname?`<span class="tag">${esc(e.vname)}</span>`:''}<span class="pr">${fmt(e.price)}</span>${cn[e.code]?`<span class="used" aria-hidden="true">×${cn[e.code]}</span>`:''}</button>`).join('');
     gridNote.textContent=CAT.source==='sheet'?'Bấm vào charm là charm được gắn lên vòng.':'Bấm vào charm là charm được gắn lên vòng. Đang hiện hình minh hoạ và giá mẫu.';
   }else{
-    side.hidden=true;gridHead.hidden=false;
-    gridHead.innerHTML=`<div class="gh-row"><span class="gh-t" id="szLbl">Size dây (cm)</span><span class="gh-h">Cổ tay + 2 cm</span></div><div class="size-chips" role="radiogroup" aria-labelledby="szLbl">${SIZES.map(n=>`<button class="chip" role="radio" aria-checked="${n===state.size}" aria-label="${n} cm" data-size="${n}">${n}</button>`).join('')}</div>`;
+    side.hidden=true;gridHead.hidden=true;gridHead.innerHTML='';
     grid.innerHTML=CAT.straps.map((e,i)=>{const on=state.strap===e.code;return`<button class="card${on?' on':''}" data-strap="${esc(e.code)}" style="--i:${Math.min(i,14)}" aria-pressed="${on}" aria-label="${esc(e.name+(e.vname?' – '+e.vname:'')+', '+fmt(e.price))}"><span class="ph"><img src="${esc(strapThumb(e.code))}" alt=""></span><span class="nm">${esc(e.name)}</span>${e.vname?`<span class="tag">${esc(e.vname)}</span>`:''}<span class="pr">${fmt(e.price)}</span>${on?CHECK:''}</button>`;}).join('');
-    gridNote.textContent='Bấm vào dây để đổi dây cho vòng.';
+    gridNote.textContent='Tất cả dây dài 23 cm, có nút rút để chỉnh vừa cổ tay. Bấm vào dây để đổi dây cho vòng.';
   }
   if(animate&&!reduceMotion()){grid.classList.remove('enter');void grid.offsetWidth;grid.classList.add('enter');clearTimeout(renderCatalog.t);renderCatalog.t=setTimeout(()=>grid.classList.remove('enter'),900);}
 }
@@ -1011,13 +1062,11 @@ function syncCatalog(){
     if(n){if(!u){u=document.createElement('span');u.className='used';u.setAttribute('aria-hidden','true');b.appendChild(u);}u.textContent='×'+n;}else if(u)u.remove();
     if(e)b.setAttribute('aria-label',charmLabel(e,n));});
   grid.querySelectorAll('[data-strap]').forEach(b=>{const on=b.dataset.strap===state.strap;if(b.classList.contains('on')===on)return;b.classList.toggle('on',on);b.setAttribute('aria-pressed',String(on));const u=b.querySelector('.used');if(on&&!u)b.insertAdjacentHTML('beforeend',CHECK);else if(!on&&u)u.remove();});
-  gridHead.querySelectorAll('[data-size]').forEach(b=>b.setAttribute('aria-checked',String(+b.dataset.size===state.size)));
 }
 grid.addEventListener('error',e=>{const im=e.target;if(im&&im.tagName==='IMG'&&im.hasAttribute('crossorigin')){im.removeAttribute('crossorigin');const s=im.getAttribute('src');im.setAttribute('src','');im.setAttribute('src',s);}},true);
 
 /* ---------- specs / selection ---------- */
 function renderSpecs(){
-  $('spSize').textContent=state.size+' cm';
   $('spCount').textContent=state.items.length;
   $('spUsed').textContent=(usedMM()/10).toLocaleString('vi-VN',{maximumFractionDigits:1})+' / '+state.size+' cm';
   $('spTotal').textContent=CAT.straps.length?fmt(total()):'–';
@@ -1043,14 +1092,13 @@ function refreshSel(){
 function stageLabel(){
   const st=strapE(),n=state.items.length;
   const names=state.items.slice(0,12).map((it,i)=>{const e=CE[it.code];return`${i+1}. ${e.name}${e.vname?' '+e.vname:''}`;}).join(', ');
-  return`Vòng tay đang mix: ${st?st.name+(st.vname?' '+st.vname:''):'dây'}, size ${state.size} cm, ${n} charm${n?': '+names+(n>12?`, và ${n-12} charm khác`:''):''}. Phím mũi tên để chọn charm, Shift cộng mũi tên để đổi chỗ, Delete để xoá.`;
+  return`Vòng tay đang mix: ${st?st.name+(st.vname?' '+st.vname:''):'dây'}, dài ${STRAP_CM} cm, ${n} charm${n?': '+names+(n>12?`, và ${n-12} charm khác`:''):''}. Phím mũi tên để chọn charm, Shift cộng mũi tên để đổi chỗ, Delete để xoá.`;
 }
-function changed(){if(!CAT.loading)saveDraft();renderSpecs();syncCatalog();refreshSel();ensureSelVisible();if(CAT.straps.length)cv.setAttribute('aria-label',stageLabel());if(sheetKind==='done'||sheetKind==='size')renderSheet();}
+function changed(){if(!CAT.loading)saveDraft();renderSpecs();syncCatalog();refreshSel();ensureSelVisible();if(CAT.straps.length)cv.setAttribute('aria-label',stageLabel());}
 
 /* ---------- tools ---------- */
 function tool(t){
   const i=selIndex();
-  if(t==='size')return openSheet('size');
   if(t==='undo'){
     if(!hist.length)return;const from=posSnap();const s=JSON.parse(hist.pop());
     state={strap:s.strap,size:s.size,items:s.items};fitState();sel=s.sel!=null&&state.items.some(x=>x.uid===s.sel)?s.sel:null;
@@ -1134,43 +1182,11 @@ function renderSheet(){
   if(!sheetKind)return;
   const d=sheetData, sig=focusSig(document.activeElement), top=sheet.scrollTop;
   sheet.className='sheet';
-  if(sheetKind==='size'){
-    sheet.innerHTML=`${head('Size dây')}
-      <p class="small">Đo vòng cổ tay rồi cộng thêm khoảng 2 cm. Ví dụ cổ tay 15 cm thì chọn dây 17 cm.</p>
-      <div class="chips" role="radiogroup" aria-label="Size dây">${SIZES.map(n=>`<button class="chip" role="radio" aria-checked="${n===state.size}" data-size="${n}">${n} cm</button>`).join('')}</div>
-      <p class="small">Đang dùng ${(usedMM()/10).toLocaleString('vi-VN',{maximumFractionDigits:1})} cm cho ${state.items.length} charm.</p>`;
-  }else if(sheetKind==='confirmClear'){
+  if(sheetKind==='confirmClear'){
     const n=state.items.length;
     sheet.innerHTML=`${head('Xoá hết charm?')}
       <p class="small">Bỏ ${n} charm khỏi vòng. Dây và size vẫn giữ nguyên, và bạn bấm Hoàn tác được ngay sau đó.</p>
       <div class="confirm-actions"><button class="btn" data-close data-autofocus>Huỷ</button><button class="btn danger" data-act="clearYes">Xoá hết</button></div>`;
-  }else if(sheetKind==='done'){
-    sheet.className='sheet tall';
-    const keep={open:!!sheet.querySelector('details.open-code[open]'),val:($('codeInput')||{}).value||''};
-    const st=strapE();
-    const groups=[];const gm={};state.items.forEach(it=>{if(!gm[it.code]){gm[it.code]={code:it.code,q:0};groups.push(gm[it.code]);}gm[it.code].q++;});
-    const rows=state.items.map((it,i)=>{const e=CE[it.code];return`<button class="row" data-pick="${it.uid}" aria-label="Chọn charm số ${i+1}: ${label(e)}"><span class="num" aria-hidden="true">${i+1}</span><img src="${esc(charmThumb(it.code,80))}" alt=""><span class="t"><b>${esc(e.name)}</b><span>${esc(e.vname)}${e.vname?' · ':''}${esc(e.code)}</span></span><span class="p">${fmt(e.price)}</span></button>`;}).join('');
-    const grows=groups.map(g=>{const e=CE[g.code];return`<div class="row nonum"><img src="${esc(charmThumb(g.code,80))}" alt=""><span class="t"><b>${label(e)}</b><span>${esc(e.code)} · ${fmt(e.price)} × ${g.q}</span></span><span class="p">${fmt(e.price*g.q)}</span></div>`;}).join('');
-    sheet.innerHTML=`${head('Thiết kế của bạn','Lưu ảnh rồi gửi cho PunPun qua chat Shopee hoặc TikTok Shop. Shop làm đúng thứ tự từ trái sang phải như trên vòng.')}
-      <div class="sum-actions">
-        <button class="btn primary" data-act="image"><svg aria-hidden="true" focusable="false" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0-4-4m4 4 4-4M5 21h14"/></svg>Lưu ảnh thiết kế</button>
-        <button class="btn" data-act="link">Copy link</button>
-        <button class="btn" data-act="text">Copy nội dung đơn</button>
-      </div>
-      <div class="sec-t"><span>Dây</span></div>
-      <div class="sum-box"><div class="row nonum"><img src="${esc(strapThumb(st.code,80))}" alt=""><span class="t"><b>${label(st)}</b><span>Size ${state.size} cm · ${esc(st.code)}</span></span><span class="p">${fmt(st.price)}</span></div></div>
-      <div class="sec-t"><span>Charm theo thứ tự (trái → phải)</span><span>${state.items.length} cái</span></div>
-      <div class="sum-box">${rows||'<div class="row nonum"><span></span><span class="t"><span>Chưa có charm nào.</span></span><span></span></div>'}</div>
-      ${groups.length?`<div class="sec-t"><span>Gom theo phân loại (để lên đơn)</span><span>${groups.length} phân loại</span></div><div class="sum-box">${grows}</div>`:''}
-      <div class="total"><span>Tạm tính</span><b>${fmt(total())}</b></div>
-      <p class="small">Giá tạm tính, chưa gồm phí ship và khuyến mãi của sàn.</p>
-      <details class="open-code"${keep.open?' open':''}><summary>Mở thiết kế từ mã hoặc link</summary>
-        <label class="field-l" for="codeInput">Mã hoặc link thiết kế</label>
-        <div class="code-form"><input id="codeInput" placeholder="pp2~… hoặc link" autocomplete="off" autocapitalize="off" spellcheck="false" aria-describedby="codeErr"><button class="btn" data-act="openCode">Mở</button></div>
-        <p class="err" id="codeErr" role="alert" hidden></p>
-        <p class="small" style="margin-top:10px">Mã của thiết kế này: <span style="font-family:var(--mono);word-break:break-all">${esc(encode())}</span></p>
-      </details>`;
-    if(keep.val)$('codeInput').value=keep.val;
   }else if(sheetKind==='image'){
     sheet.className='sheet tall';
     const msg=d.error?esc(d.error):(d.url?'Điện thoại: nhấn giữ ảnh rồi chọn Lưu ảnh. Máy tính: chuột phải → Lưu hình ảnh.':'Đang tạo ảnh…');
@@ -1178,35 +1194,24 @@ function renderSheet(){
       ${d.url?`<img class="img-out" src="${d.url}" alt="Ảnh thiết kế vòng PunPun">`:(d.error?'':'<div class="img-skel sk" aria-hidden="true"></div>')}
       ${d.url&&(DL||STANDALONE)?`<div class="sh-foot"><span class="small">Hoặc tải thẳng về máy</span><button class="btn primary" data-act="download">Tải ảnh</button></div>`:''}`;
   }else if(sheetKind==='copy'){
-    sheet.innerHTML=`${head(esc(d.title),'Không copy tự động được ở đây. Bạn chọn hết đoạn bên dưới rồi copy nhé.')}<textarea class="copybox" readonly aria-label="${esc(d.title)}">${esc(d.text)}</textarea>`;
+    sheet.innerHTML=`${head(esc(d.title),'Không copy tự động được ở đây. Bạn chọn hết đoạn bên dưới rồi copy nhé.')}<textarea class="copybox" readonly aria-label="${esc(d.title)}"${d.text.length<300?' style="min-height:110px"':''}>${esc(d.text)}</textarea>`;
     const ta=sheet.querySelector('textarea');setTimeout(()=>{ta.focus();ta.select();},50);
   }
   sheet.scrollTop=top;
   if(sig){const el=sheet.querySelector(sig);if(el)el.focus({preventScroll:true});}
 }
-function openCode(){
-  const inp=$('codeInput'),err=$('codeErr');if(!inp)return;
-  const s=decode(inp.value);
-  if(!s){inp.setAttribute('aria-invalid','true');err.hidden=false;err.textContent=inp.value.trim()?'Mã không hợp lệ. Kiểm tra lại đoạn đã dán nhé.':'Dán mã hoặc link thiết kế vào ô trên nhé.';inp.focus();return;}
-  commit(()=>{state={strap:s.strap,size:s.size,items:s.items};sel=null;});closeAllSheets();
-  toast(s.missing?`Đã mở thiết kế, ${s.missing} charm không còn bán nên đã bỏ ra`:'Đã mở thiết kế');
-}
-sheet.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='codeInput'){e.preventDefault();openCode();}});
-sheet.addEventListener('input',e=>{if(e.target.id==='codeInput'&&e.target.hasAttribute('aria-invalid')){e.target.removeAttribute('aria-invalid');$('codeErr').hidden=true;}});
-
 /* ---------- output ---------- */
-function orderText(){
-  const st=strapE();
-  const lines=['ĐƠN MIX VÒNG – PunPun Tinygold Charm',`Dây: ${st.name}${st.vname?' – '+st.vname:''} – size ${state.size}cm [${st.code}] (${fmt(st.price)})`,`Charm (${state.items.length}), thứ tự từ trái sang phải:`];
-  state.items.forEach((it,i)=>{const e=CE[it.code];lines.push(`${i+1}. ${e.name}${e.vname?' – '+e.vname:''} [${e.code}] ${fmt(e.price)}`);});
-  const gm={},order=[];state.items.forEach(it=>{if(!gm[it.code]){gm[it.code]=0;order.push(it.code);}gm[it.code]++;});
-  if(order.length){lines.push('','Gom theo phân loại:');order.forEach(code=>{const e=CE[code];lines.push(`- ${e.name}${e.vname?' – '+e.vname:''} [${code}] × ${gm[code]}`);});}
-  lines.push('',`Tạm tính: ${fmt(total())}`,`Mã thiết kế: ${encode()}`);
-  if(APP_URL)lines.push(`Xem thiết kế: ${shareLink()}`);
-  return lines.join('\n');
+/* copy: thử Clipboard API, rồi cách cũ execCommand (webview TikTok/Shopee), cuối cùng mở ô cho khách tự chọn */
+function copyLegacy(text){try{const ta=document.createElement('textarea');ta.value=text;ta.setAttribute('readonly','');ta.style.cssText='position:fixed;top:0;left:0;opacity:0;font-size:16px';document.body.appendChild(ta);ta.select();ta.setSelectionRange(0,text.length);const ok=document.execCommand('copy');ta.remove();return ok;}catch(e){return false;}}
+async function copy(text,title,okMsg,ms){
+  let ok=false;try{if(navigator.clipboard&&window.isSecureContext!==false){await navigator.clipboard.writeText(text);ok=true;}}catch(e){}
+  if(!ok)ok=copyLegacy(text);
+  if(ok)toast(okMsg,{ms});else openSheet('copy',{text,title});
 }
-async function copy(text,title,okMsg){
-  try{await navigator.clipboard.writeText(text);toast(okMsg);}catch(e){openSheet('copy',{text,title});}
+function copyLink(){
+  if(!CAT.straps.length){toast('Đang tải danh mục, bạn đợi chút nhé');return;}
+  const l=shareLink();
+  return l?copy(l,'Link thiết kế','Đã copy link. Gửi link này cho PunPun qua chat Shopee hoặc TikTok nhé',4200):copy(encode(),'Mã thiết kế','Đã copy mã thiết kế. Gửi mã này cho PunPun nhé',4200);
 }
 const FONT='"Be Vietnam Pro", system-ui, sans-serif';
 function fitText(x,t,w){if(x.measureText(t).width<=w)return t;while(t.length>1&&x.measureText(t+'…').width>w)t=t.slice(0,-1);return t+'…';}
@@ -1258,7 +1263,7 @@ async function buildImage(){
   x.fillStyle=MUTE;x.font='600 16px '+FONT;x.fillText('DÂY',P,y);
   await drawFit(x,strapThumb(st.code,80),P,y+14,64);
   x.fillStyle=INK;x.font='600 25px '+FONT;x.fillText(fitText(x,`${st.name}${st.vname?' – '+st.vname:''}`,inner-84-160),P+84,y+42);
-  x.fillStyle=MUTE;x.font='400 19px '+FONT;x.fillText(`Size ${state.size} cm · ${st.code}`,P+84,y+70);
+  x.fillStyle=MUTE;x.font='400 19px '+FONT;x.fillText(`Dài ${STRAP_CM} cm · ${st.code}`,P+84,y+70);
   x.textAlign='right';x.fillStyle=INK;x.font='500 22px '+FONT;x.fillText(fmt(st.price),W-P,y+42);x.textAlign='left';
   y+=110;
   x.fillStyle=MUTE;x.font='600 16px '+FONT;x.fillText(`CHARM · ${n} CÁI · THỨ TỰ TỪ TRÁI SANG PHẢI`,P,y);
@@ -1326,7 +1331,7 @@ function toast(m,opt){
   t.dataset.h=opt.undo?String(hist.length):'';
   t.hidden=false;t.classList.remove('show');void t.offsetWidth;t.classList.add('show');
   $('live').textContent=m+(opt.undo?'. Bấm Hoàn tác để lấy lại.':'');
-  clearTimeout(tt);tt=setTimeout(hideToast,opt.undo?5000:2600);
+  clearTimeout(tt);tt=setTimeout(hideToast,opt.ms||(opt.undo?5000:2600));
 }
 function hideToast(){const t=$('toast');t.hidden=true;t.dataset.h='';}
 
@@ -1345,22 +1350,17 @@ document.addEventListener('click',e=>{
   if(ds.charm){
     const en=CE[ds.charm];if(!en)return;const i=selIndex(),n={uid:newUid(),code:en.code};
     commit(()=>{if(i>=0)state.items.splice(i+1,0,n);else state.items.push(n);sel=n.uid;});
-    toast(`Đã gắn ${en.name}${en.vname?' · '+en.vname:''} (#${selIndex()+1})`);return;
+    $('live').textContent=`Đã gắn ${en.name}${en.vname?' '+en.vname:''}, vị trí ${selIndex()+1}`;return;
   }
   if(ds.strap){
     const en=SE[ds.strap];if(!en||state.strap===en.code)return;
     commit(()=>{state.strap=en.code;});toast(`Đã đổi sang ${en.name}${en.vname?' · '+en.vname:''}`);return;
   }
-  if(ds.size){const n=+ds.size;if(n!==state.size)commit(()=>{state.size=n;});return;}
-  if(ds.pick){sel=+ds.pick;closeAllSheets();refreshSel();ensureSelVisible();return;}
   const a=ds.act;if(!a)return;
-  if(a==='done'){if(!CAT.straps.length){toast('Đang tải danh mục, bạn đợi chút nhé');return;}return openSheet('done');}
   if(a==='image'){if(!CAT.straps.length){toast('Đang tải danh mục, bạn đợi chút nhé');return;}return exportImage();}
   if(a==='download')return download();
-  if(a==='text')return copy(orderText(),'Nội dung đơn','Đã copy nội dung đơn');
-  if(a==='link'){const l=shareLink();return l?copy(l,'Link thiết kế','Đã copy link thiết kế'):copy(encode(),'Mã thiết kế','Đã copy mã thiết kế');}
+  if(a==='link')return copyLink();
   if(a==='clearYes'){const n=state.items.length;closeSheet();commit(()=>{state.items=[];sel=null;});toast(`Đã xoá ${n} charm`,{undo:true});return;}
-  if(a==='openCode')return openCode();
 });
 $('numBtn').addEventListener('click',()=>{showNums=!showNums;$('numBtn').setAttribute('aria-pressed',String(showNums));renderStage();});
 /* phím mũi tên cho nhóm Tròn/Ngang và tab Charm/Dây */
@@ -1388,7 +1388,7 @@ function initState(announce){
   if(cached&&cached.cr)applyTables(cached.cr,cached.sr||[]);
   else if(STANDALONE){setCatalog([],[],'demo');CAT.loading=true;}
   else{const d=demoCatalog();setCatalog(d.charms,d.straps,'demo');}
-  if(!CAT.loading)initState(true);else state={strap:'',size:17,items:[]};
+  if(!CAT.loading)initState(true);else state={strap:'',size:STRAP_CM,items:[]};
   sizeStage();renderCatalog();changed();
   try{if(localStorage.getItem('punpun-view')==='line')setView('line',true);}catch(e){}
   if(document.fonts&&document.fonts.load){Promise.all([document.fonts.load('700 20px "Be Vietnam Pro"'),document.fonts.load('600 20px "Be Vietnam Pro"')]).then(()=>{thumbCache.clear();renderCatalog();renderStage();}).catch(()=>{});}
