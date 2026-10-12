@@ -180,7 +180,12 @@ mark{background:var(--hl); color:var(--on-hl); border-radius:3px; padding:0 1px;
 .cgrid{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px 8px}
 .card{display:flex; flex-direction:column; align-items:center; gap:3px; padding:0 0 4px; border-radius:14px; text-align:center; min-width:0}
 .card .ph{width:100%; aspect-ratio:1; border-radius:14px; background:var(--stage); display:grid; place-items:center; overflow:hidden; margin-bottom:5px; transition:transform var(--fast) var(--ease), box-shadow var(--fast)}
-.card .ph img{width:84%; height:84%; object-fit:contain; display:block}
+.card .ph img{width:84%; height:84%; object-fit:contain; display:block; transition:opacity 220ms var(--ease)}
+/* ảnh charm chưa tải xong: ô ảnh là khung xương (nền xám + vệt sáng chạy), ảnh hiện mờ dần khi tải xong */
+.card .ph.ld{background:var(--soft)}
+.card .ph.ld img{opacity:0}
+.card .ph.err img{display:none}
+.card .ph.err::before{content:attr(data-fb); font-size:22px; font-weight:700; color:var(--muted)}
 .card:active .ph{transform:scale(.96)}
 @media (hover:hover){ .card:hover .ph{box-shadow:inset 0 0 0 1px var(--muted)} }
 .card .nm{font-size:12.5px; font-weight:600; line-height:1.3; width:100%; padding:0 2px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; overflow-wrap:anywhere}
@@ -1239,7 +1244,7 @@ const charmLabel=(e,n)=>`Thêm ${e.name}${e.vname?' – '+e.vname:''}, ${e.stop?
 /* ô danh mục (dùng chung cho tab và kết quả tìm kiếm); toks = từ khoá để tô vàng */
 function charmCard(e,i,cn,toks){
   const T=t=>toks?hl(t,toks):esc(t),codeHit=toks&&!toks.every(t=>sNorm([e.name,e.vname].join(' ')).n.includes(t));
-  return`<button class="card" data-charm="${esc(e.code)}" style="--i:${Math.min(i,14)}" aria-label="${esc(charmLabel(e,cn[e.code]))}"><span class="ph"><img src="${esc(charmThumb(e.code))}" alt="" loading="lazy" decoding="async"${e.img?' crossorigin="anonymous"':''}></span><span class="nm">${T(e.name)}</span>${e.vname?`<span class="tag">${T(e.vname)}</span>`:''}${codeHit?`<span class="cd">${T(e.code)}</span>`:''}${e.stop?`<span class="pr free">${FREE}</span>`:`<span class="pr">${fmt(e.price)}</span>`}${cn[e.code]?`<span class="used" aria-hidden="true">×${cn[e.code]}</span>`:''}</button>`;
+  return`<button class="card" data-charm="${esc(e.code)}" style="--i:${Math.min(i,14)}" aria-label="${esc(charmLabel(e,cn[e.code]))}"><span class="ph${e.img?' ld sk':''}"${e.img?` data-fb="${esc(((e.name||'?').trim()[0]||'?').toUpperCase())}"`:''}><img src="${esc(charmThumb(e.code))}" alt="" loading="lazy" decoding="async"${e.img?' crossorigin="anonymous"':''}></span><span class="nm">${T(e.name)}</span>${e.vname?`<span class="tag">${T(e.vname)}</span>`:''}${codeHit?`<span class="cd">${T(e.code)}</span>`:''}${e.stop?`<span class="pr free">${FREE}</span>`:`<span class="pr">${fmt(e.price)}</span>`}${cn[e.code]?`<span class="used" aria-hidden="true">×${cn[e.code]}</span>`:''}</button>`;
 }
 function strapCard(e,i,toks){
   const T=t=>toks?hl(t,toks):esc(t),on=state.strap===e.code,codeHit=toks&&!toks.every(t=>sNorm([e.name,e.vname].join(' ')).n.includes(t));
@@ -1274,6 +1279,7 @@ function renderCatalog(animate){
     grid.innerHTML=CAT.straps.map((e,i)=>strapCard(e,i)).join('');
     gridNote.textContent='Tất cả dây dài 23 cm, có nút rút để chỉnh vừa cổ tay. Bấm vào dây để đổi dây cho vòng.';
   }
+  sweepThumbs();
   if(animate&&!reduceMotion()){grid.classList.remove('enter');void grid.offsetWidth;grid.classList.add('enter');clearTimeout(renderCatalog.t);renderCatalog.t=setTimeout(()=>grid.classList.remove('enter'),900);}
 }
 
@@ -1433,7 +1439,11 @@ function syncCatalog(){
     if(e)b.setAttribute('aria-label',charmLabel(e,n));});
   grid.querySelectorAll('[data-strap]').forEach(b=>{const on=b.dataset.strap===state.strap;if(b.classList.contains('on')===on)return;b.classList.toggle('on',on);b.setAttribute('aria-pressed',String(on));const u=b.querySelector('.used');if(on&&!u)b.insertAdjacentHTML('beforeend',CHECK);else if(!on&&u)u.remove();});
 }
-grid.addEventListener('error',e=>{const im=e.target;if(im&&im.tagName==='IMG'&&im.hasAttribute('crossorigin')){im.removeAttribute('crossorigin');const s=im.getAttribute('src');im.setAttribute('src','');im.setAttribute('src',s);}},true);
+/* khung xương ảnh charm: tắt khi ảnh đã tải xong (ảnh có sẵn trong cache thì tắt ngay lúc vẽ lưới) */
+function thumbDone(im,failed){const ph=im.parentNode;if(!ph||!ph.classList||!ph.classList.contains('ld'))return;ph.classList.remove('ld','sk');if(failed)ph.classList.add('err');}
+function sweepThumbs(){grid.querySelectorAll('.ph.ld img').forEach(im=>{if(im.complete&&im.naturalWidth)thumbDone(im);});}
+grid.addEventListener('load',e=>{const im=e.target;if(im&&im.tagName==='IMG'&&im.naturalWidth)thumbDone(im);},true);
+grid.addEventListener('error',e=>{const im=e.target;if(!im||im.tagName!=='IMG')return;if(im.hasAttribute('crossorigin')){im.removeAttribute('crossorigin');im.setAttribute('src',im.getAttribute('src'));}else thumbDone(im,true);},true);
 
 /* ---------- specs / selection ---------- */
 function renderSpecs(){
