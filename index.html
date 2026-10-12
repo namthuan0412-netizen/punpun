@@ -139,7 +139,14 @@ button:disabled{cursor:default}
    trượt ra từ sau nút kính lúp sang trái tới đủ chiều dài — cùng thời lượng, cùng nhịp nên tab vừa đi hết là ô nhập vừa đủ dài.
    Kính lúp biến thành X. Chỉ chạy transform (GPU) nên vẫn mượt trên iPhone lúc bàn phím đang bật lên. Đóng thì chạy ngược lại. */
 .cbar{position:relative; display:flex; align-items:flex-end; justify-content:space-between; gap:8px; padding:1px 6px 0 16px; border-bottom:1px solid var(--line); --s-dur:380ms; --s-ease:cubic-bezier(.45,0,.2,1); --s-delay:0ms}
-.ctabs{display:flex; gap:24px; min-width:0; transition:transform var(--s-dur) var(--s-ease)}
+.ctabs{position:relative; display:flex; gap:24px; min-width:0; transition:transform var(--s-dur) var(--s-ease)}
+/* thanh gạch dưới tab đang chọn (12/10, shop yêu cầu): MỘT thanh chung trượt qua lại giữa các tab thay cho viền dưới của từng tab.
+   JS (syncTabBar) đặt --tab-x / --tab-k theo tab đang chọn; chỉ chạy transform (GPU) nên vẫn mượt lúc lưới danh mục đang vẽ lại.
+   Cùng nhịp với nút Tròn/Ngang: 600ms cubic-bezier(.3,.7,.2,1). Gốc rộng 100px, scaleX = bề ngang tab / 100 (thanh vuông, không bo nên co giãn không méo) */
+.ctabs::after{content:""; position:absolute; left:0; bottom:-1px; width:100px; height:2px; background:var(--fg); transform-origin:0 50%; transform:translate3d(var(--tab-x,0px),0,0) scaleX(var(--tab-k,0)); pointer-events:none}
+.ctabs.ready::after{transition:transform 600ms cubic-bezier(.3,.7,.2,1)}
+.ctabs.tb-now::after{transition:none}
+.ctabs:not(.ready)::after{opacity:0}
 .cbar.searching .ctabs{transform:translate3d(var(--tabs-out,-120%),0,0); pointer-events:none; transition:transform var(--s-dur) var(--s-ease) var(--s-delay)}
 /* ẩn hẳn (cho trình đọc màn hình / phím Tab) khi đã trượt ra hết; ô nhập lúc đóng cũng ẩn hẳn khi đã lùi xong — gắn bằng JS, không dùng transition visibility */
 .cbar.s-gone .ctabs{visibility:hidden}
@@ -203,9 +210,11 @@ button:disabled{cursor:default}
 mark{background:var(--hl); color:var(--on-hl); border-radius:3px; padding:0 1px; -webkit-box-decoration-break:clone; box-decoration-break:clone}
 .card .cd{font-size:12px; color:var(--muted); font-variant-numeric:tabular-nums}
 /* chữ tab nhỏ lại (12/10: 15px → 13px) nhưng vùng bấm giữ nguyên: cao 44px, nới ngang ra hết nửa khoảng cách giữa 2 tab */
-.ctab{min-height:44px; padding:8px 0; font-weight:600; font-size:13px; color:var(--muted); border-bottom:2px solid transparent; margin-bottom:-1px; transition:color var(--fast)}
+.ctab{min-height:44px; padding:8px 0; font-weight:600; font-size:13px; color:var(--muted); border-bottom:2px solid transparent; margin-bottom:-1px; transition:color 400ms var(--ease)}
 .ctab::after{content:""; position:absolute; top:0; bottom:0; left:-12px; right:-12px}
-.ctab[aria-selected="true"]{color:var(--fg); border-color:var(--fg)}
+.ctab[aria-selected="true"]{color:var(--fg)}
+/* chưa đặt được vị trí thanh trượt (lần vẽ đầu) thì tab đang chọn tự có viền dưới như cũ */
+.ctabs:not(.ready) .ctab[aria-selected="true"]{border-color:var(--fg)}
 .cbody{flex:1; min-height:0; display:flex}
 .cside{flex:none; width:92px; overflow-y:auto; overscroll-behavior:contain; background:var(--soft); padding:6px 0 calc(12px + env(safe-area-inset-bottom,0px)); scrollbar-width:none}
 .cside::-webkit-scrollbar{display:none}
@@ -1171,7 +1180,7 @@ function sizeStage(){
   dpr=Math.min(3,window.devicePixelRatio||1);
   cv.style.width=CW+'px';cv.style.height=S+'px';cv.width=Math.round(CW*dpr);cv.height=Math.round(S*dpr);
   panUI='';renderStage();
-  syncSeg();
+  syncSeg();syncTabBar();
   syncLift();
 }
 function updateHint(){} /* bỏ dòng gợi ý dưới vòng (shop yêu cầu 12/10) */
@@ -1181,7 +1190,18 @@ function syncSeg(){
   segEl.style.setProperty('--seg-x',b.offsetLeft+'px');segEl.style.setProperty('--seg-w',b.offsetWidth+'px');
   if(!segEl.classList.contains('ready'))requestAnimationFrame(()=>requestAnimationFrame(()=>segEl.classList.add('ready')));
 }
-try{document.fonts.ready.then(()=>syncSeg());}catch(e){}
+/* thanh gạch dưới tab Charm / Hạt chặn / Dây: đổi tab thì trượt sang tab mới; còn lại (lần đầu, font tải xong, đổi cỡ màn hình) thì đặt ngay, không trượt */
+const TABBAR={on:''};
+function syncTabBar(){
+  const el=$('ctabs'),b=el&&el.querySelector('[aria-selected="true"]');if(!b||!b.offsetWidth)return;
+  const anim=el.classList.contains('ready')&&!!TABBAR.on&&TABBAR.on!==b.dataset.ctab;
+  TABBAR.on=b.dataset.ctab;
+  if(!anim)el.classList.add('tb-now');
+  el.style.setProperty('--tab-x',b.offsetLeft+'px');el.style.setProperty('--tab-k',(b.offsetWidth/100).toFixed(4));
+  if(!anim){void el.offsetWidth;el.classList.remove('tb-now');}
+  if(!el.classList.contains('ready'))requestAnimationFrame(()=>requestAnimationFrame(()=>el.classList.add('ready')));
+}
+try{document.fonts.ready.then(()=>{syncSeg();syncTabBar();});}catch(e){}
 function setView(mode,instant){
   const target=mode==='line'?1:0;
   document.querySelectorAll('[data-view]').forEach(b=>{const on=b.dataset.view===mode;b.setAttribute('aria-checked',String(on));b.tabIndex=on?0:-1;});
@@ -1346,6 +1366,7 @@ function strapCard(e,i,toks){
 }
 function renderCatalog(animate){
   document.querySelectorAll('[data-ctab]').forEach(b=>{const on=b.dataset.ctab===ctab;b.setAttribute('aria-selected',String(on));b.tabIndex=on?0:-1;});
+  syncTabBar();
   $('cpanel').setAttribute('aria-labelledby',ctab==='charm'?'tabCharm':ctab==='stop'?'tabStop':'tabStrap');
   if(CAT.loading&&!CAT.charms.length){
     side.hidden=false;side.innerHTML='<div class="sk"></div><div class="sk"></div><div class="sk"></div>';
@@ -1911,10 +1932,10 @@ function toggleInfo(open){
 document.addEventListener('click',e=>{if(!$('specs').hidden&&e.target.closest&&!e.target.closest('#specs,#infoBtn'))toggleInfo(false);});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('specs').hidden&&!sheetKind){toggleInfo(false);$('infoBtn').focus();}});
 /* bấm bất kỳ đâu ngoài charm trên vòng (trừ các nút thao tác charm đang chọn) là bỏ chọn, hàng công cụ về Undo / Reset / Copy link.
-   Nút Tròn/Ngang không bỏ chọn (12/10, shop yêu cầu): đổi kiểu xem vẫn giữ charm đang chọn */
+   Nút Tròn/Ngang và nút ‹ › xem hai đầu dây (Ngang) không bỏ chọn (12/10, shop yêu cầu): đổi kiểu xem / trượt dây vẫn giữ charm đang chọn */
 document.addEventListener('click',e=>{
   if(sel===null||!e.target||!e.target.closest)return;
-  if(e.target===cv||e.target.closest('.tool[data-ctx="sel"],#viewSeg,#numBtn,#infoBtn,#specs,#overlay,#toast'))return;
+  if(e.target===cv||e.target.closest('.tool[data-ctx="sel"],#viewSeg,.pan-btn,#numBtn,#infoBtn,#specs,#overlay,#toast'))return;
   sel=null;refreshSel();
 });
 $('numBtn').addEventListener('click',()=>{showNums=!showNums;$('numBtn').setAttribute('aria-pressed',String(showNums));renderStage();});
