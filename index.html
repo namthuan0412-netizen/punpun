@@ -56,6 +56,10 @@ button:disabled{cursor:default}
 .shell{height:100%; display:flex; flex-direction:column; max-width:1200px; margin:0 auto;
   padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) 0 env(safe-area-inset-left,0px)}
 @supports (height:100dvh){ .shell{height:100dvh} }
+/* điện thoại dọc: lúc gõ tìm kiếm, đẩy header + khung vòng lên khỏi màn hình để ô nhập không bị thanh địa chỉ/bàn phím che */
+.shell{overflow:hidden}
+.top{transition:margin-top 300ms var(--ease-out)}
+.shell.lift .top{margin-top:calc(-1 * var(--lift,0px))}
 .top{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:8px 16px 8px}
 .brand{display:flex; align-items:baseline; gap:8px; min-width:0}
 .brand b{font-size:19px; font-weight:700; letter-spacing:-.02em}
@@ -1285,16 +1289,24 @@ function runSearch(){
 function openSearch(){
   if(SEARCH.open)return;SEARCH.open=true;
   cbar.classList.add('searching');sBtn.setAttribute('aria-expanded','true');sBtn.setAttribute('aria-label','Đóng tìm kiếm');
-  qIn.focus({preventScroll:true});
+  qIn.focus({preventScroll:true});liftShell(true);
 }
 function closeSearch(){
   if(!SEARCH.open)return;SEARCH.open=false;clearTimeout(SEARCH.t);SEARCH.t=0;
   cbar.classList.remove('searching','typing');sBtn.setAttribute('aria-expanded','false');sBtn.setAttribute('aria-label','Tìm kiếm');
+  liftShell(false);
   if(document.activeElement===qIn)sBtn.focus({preventScroll:true});
   qIn.value='';const had=!!SEARCH.shown;SEARCH.shown='';
   if(had){renderCatalog(true);$('gridWrap').scrollTop=0;}
 }
 sBtn.addEventListener('click',()=>SEARCH.open?closeSearch():openSearch());
+function liftShell(on){
+  if(on&&(WIDE||LAND))on=false;
+  if(on)shell.style.setProperty('--lift',(document.querySelector('.top').offsetHeight+document.querySelector('.work').offsetHeight)+'px');
+  shell.classList.toggle('lift',on);
+}
+qIn.addEventListener('focus',()=>liftShell(true));
+qIn.addEventListener('blur',()=>liftShell(false));
 qIn.addEventListener('input',()=>{
   const v=qIn.value.trim();clearTimeout(SEARCH.t);SEARCH.t=0;cbar.classList.remove('typing');
   if(!v){if(SEARCH.shown){SEARCH.shown='';renderCatalog(true);$('gridWrap').scrollTop=0;}return;}
