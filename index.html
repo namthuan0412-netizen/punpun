@@ -1190,12 +1190,21 @@ function setView(mode,instant){
   if(VIEW.raf){cancelAnimationFrame(VIEW.raf);VIEW.raf=0;}
   stopPan();drag=null;panDrag=null;
   VIEW.target=target;
-  if(target===1&&VIEW.m===0)VIEW.pan=0;
+  if(target===1&&VIEW.m===0)VIEW.pan=selPan();
   const finish=()=>{VIEW.raf=0;if(VIEW.target===0)VIEW.pan=0;renderStage();updateHint();ensureSelVisible();};
   if(instant||reduceMotion()||VIEW.m===target){VIEW.m=target;finish();return;}
   const from=VIEW.m,dur=1300*Math.abs(target-from),t0=performance.now();
   const step=now=>{const t=Math.min(1,(now-t0)/dur);VIEW.m=from+(target-from)*t;renderStage();if(t<1)VIEW.raf=requestAnimationFrame(step);else finish();};
   VIEW.raf=requestAnimationFrame(step);
+}
+/* đổi Tròn → Ngang lúc đang chọn charm (12/10, shop yêu cầu): giữ charm đó trong khung khi dây trải ra.
+   Charm đã nằm trong khung thì giữ dây ở giữa như cũ; nằm ngoài thì trải sao cho charm ở giữa (không vượt quá 2 đầu dây) */
+function selPan(){
+  if(sel==null||!LAY)return 0;
+  const x=LAY.list.find(en=>en.it.uid===sel);if(!x)return 0;
+  const g=LAY.g,px=CW/2+x.u1*g.sL,m=Math.max(48,g.sL*7);
+  if(px>=m&&px<=CW-m)return 0;
+  return Math.max(-g.panMax,Math.min(g.panMax,x.u1));
 }
 /* trượt dây khi đang trải ngang */
 function stopPan(){if(VIEW.praf){cancelAnimationFrame(VIEW.praf);VIEW.praf=0;}}
@@ -1901,10 +1910,11 @@ function toggleInfo(open){
 }
 document.addEventListener('click',e=>{if(!$('specs').hidden&&e.target.closest&&!e.target.closest('#specs,#infoBtn'))toggleInfo(false);});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('specs').hidden&&!sheetKind){toggleInfo(false);$('infoBtn').focus();}});
-/* bấm bất kỳ đâu ngoài charm trên vòng (trừ các nút thao tác charm đang chọn) là bỏ chọn, hàng công cụ về Undo / Reset / Copy link */
+/* bấm bất kỳ đâu ngoài charm trên vòng (trừ các nút thao tác charm đang chọn) là bỏ chọn, hàng công cụ về Undo / Reset / Copy link.
+   Nút Tròn/Ngang không bỏ chọn (12/10, shop yêu cầu): đổi kiểu xem vẫn giữ charm đang chọn */
 document.addEventListener('click',e=>{
   if(sel===null||!e.target||!e.target.closest)return;
-  if(e.target===cv||e.target.closest('.tool[data-ctx="sel"],#numBtn,#infoBtn,#specs,#overlay,#toast'))return;
+  if(e.target===cv||e.target.closest('.tool[data-ctx="sel"],#viewSeg,#numBtn,#infoBtn,#specs,#overlay,#toast'))return;
   sel=null;refreshSel();
 });
 $('numBtn').addEventListener('click',()=>{showNums=!showNums;$('numBtn').setAttribute('aria-pressed',String(showNums));renderStage();});
