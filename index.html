@@ -216,11 +216,21 @@ mark{background:var(--hl); color:var(--on-hl); border-radius:3px; padding:0 1px;
 /* chưa đặt được vị trí thanh trượt (lần vẽ đầu) thì tab đang chọn tự có viền dưới như cũ */
 .ctabs:not(.ready) .ctab[aria-selected="true"]{border-color:var(--fg)}
 .cbody{flex:1; min-height:0; display:flex}
-.cside{flex:none; width:92px; overflow-y:auto; overscroll-behavior:contain; background:var(--soft); padding:6px 0 calc(12px + env(safe-area-inset-bottom,0px)); scrollbar-width:none}
+.cside{position:relative; flex:none; width:92px; overflow-y:auto; overscroll-behavior:contain; background:var(--soft); padding:6px 0 calc(12px + env(safe-area-inset-bottom,0px)); scrollbar-width:none}
 .cside::-webkit-scrollbar{display:none}
-.cside button{display:block; width:100%; min-height:44px; text-align:left; padding:11px 8px 11px 12px; font-size:13px; line-height:1.3; color:var(--muted); transition:background-color var(--fast), color var(--fast)}
+.cside button{display:block; width:100%; min-height:44px; text-align:left; padding:11px 8px 11px 12px; font-size:13px; line-height:1.3; color:var(--muted); transition:background-color var(--fast), color 400ms var(--ease)}
 .cside button[aria-current="true"]{background:var(--surface); color:var(--fg); font-weight:600}
 .cside button[aria-current="true"]::before{content:""; position:absolute; left:0; top:12px; bottom:12px; width:3px; border-radius:0 3px 3px 0; background:var(--fg)}
+/* cột nhóm (12/10, shop yêu cầu): nền sáng + vạch trắng của nhóm đang chọn là 2 lớp chung (.cside::before / ::after) trượt lên / xuống
+   giữa các nhóm, cùng nhịp thanh tab và nút Tròn/Ngang (600ms cubic-bezier(.3,.7,.2,1)). JS (syncSideBar) đặt vị trí + chiều cao theo nút đang chọn
+   (nhóm 2 dòng như "Butter Bear" cao hơn thì lớp nền / vạch cũng giãn theo). Lần vẽ đầu (chưa .ready) hoặc không có nhóm đang chọn thì nút tự vẽ như cũ */
+.cside::before{content:""; position:absolute; left:0; right:0; top:0; height:var(--cs-h,0px); transform:translate3d(0,var(--cs-y,0px),0); background:var(--surface); pointer-events:none}
+.cside::after{content:""; position:absolute; left:0; top:0; width:3px; height:var(--cs-bh,0px); transform:translate3d(0,var(--cs-by,0px),0); border-radius:0 3px 3px 0; background:var(--fg); pointer-events:none}
+.cside.ready::before,.cside.ready::after{transition:transform 600ms cubic-bezier(.3,.7,.2,1), height 600ms cubic-bezier(.3,.7,.2,1)}
+.cside.cs-now::before,.cside.cs-now::after{transition:none}
+.cside:not(.ready)::before,.cside:not(.ready)::after,.cside.cs-off::before,.cside.cs-off::after{opacity:0}
+.cside.ready:not(.cs-off) button[aria-current="true"]{background:transparent}
+.cside.ready:not(.cs-off) button[aria-current="true"]::before{display:none}
 .cside .sk{height:14px; margin:15px 12px; border-radius:7px}
 .cgrid-wrap{flex:1; min-width:0; overflow-y:auto; overscroll-behavior:contain; padding:12px 12px calc(24px + env(safe-area-inset-bottom,0px))}
 .cgrid{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px 8px}
@@ -892,8 +902,10 @@ function geom(W,H,m,o){
     /* đang chọn charm: vòng cách nút Tròn/Ngang thêm 6px (shop yêu cầu 12/10) */
     cyC+=6*lift;}
   const cxC=cxOf(R), sC=2*Math.PI*R/L;
-  const fitWhole=(W*.94)/(L+12), fitCluster=(W*.86)/(cl.Wk+24);
-  const sL=o.fit==='whole'?fitWhole:Math.min(2*Math.PI*R0/L,Math.max(fitWhole,fitCluster));
+  const fitWhole=(W*.94)/(L+12);
+  /* Ngang trên khung vòng: luôn giữ một cỡ (bằng cỡ vòng lúc Tròn), gắn nhiều charm cũng không thu nhỏ dây — xem phần còn lại bằng vuốt / nút ‹ › (12/10, shop yêu cầu).
+     Ảnh xuất (fit 'whole') vẫn thu cả sợi dây vào khung */
+  const sL=o.fit==='whole'?fitWhole:2*Math.PI*R0/L;
   const e=easeIO(Math.max(0,Math.min(1,m)));
   let ayL=H*(o.lineY||.7),tight=false;
   if(o.lineMin!=null){
@@ -1180,7 +1192,7 @@ function sizeStage(){
   dpr=Math.min(3,window.devicePixelRatio||1);
   cv.style.width=CW+'px';cv.style.height=S+'px';cv.width=Math.round(CW*dpr);cv.height=Math.round(S*dpr);
   panUI='';renderStage();
-  syncSeg();syncTabBar();
+  syncSeg();syncTabBar();syncSideBar();
   syncLift();
 }
 function updateHint(){} /* bỏ dòng gợi ý dưới vòng (shop yêu cầu 12/10) */
@@ -1201,7 +1213,24 @@ function syncTabBar(){
   if(!anim){void el.offsetWidth;el.classList.remove('tb-now');}
   if(!el.classList.contains('ready'))requestAnimationFrame(()=>requestAnimationFrame(()=>el.classList.add('ready')));
 }
-try{document.fonts.ready.then(()=>{syncSeg();syncTabBar();});}catch(e){}
+/* nền + vạch của nhóm đang chọn ở cột nhóm bên trái: đổi nhóm trong cùng một tab thì trượt; đổi tab (danh sách nhóm khác), lần đầu, font tải xong, đổi cỡ màn hình thì đặt ngay */
+const SIDEBAR={key:''};
+function syncSideBar(){
+  const el=$('cside'),b=el&&!el.hidden?el.querySelector('button[aria-current="true"]'):null;
+  if(!el)return;
+  if(!b||!b.offsetHeight){el.classList.add('cs-off');SIDEBAR.key='';return;}
+  const key=ctab+'|'+(b.dataset.cat!=null?b.dataset.cat:b.dataset.scat),last=SIDEBAR.key;
+  const anim=el.classList.contains('ready')&&!el.classList.contains('cs-off')&&!!last&&last.split('|')[0]===ctab&&last!==key;
+  SIDEBAR.key=key;
+  if(!anim)el.classList.add('cs-now');
+  const y=b.offsetTop,h=b.offsetHeight;
+  el.style.setProperty('--cs-y',y+'px');el.style.setProperty('--cs-h',h+'px');
+  el.style.setProperty('--cs-by',(y+12)+'px');el.style.setProperty('--cs-bh',Math.max(8,h-24)+'px');
+  el.classList.remove('cs-off');
+  if(!anim){void el.offsetWidth;el.classList.remove('cs-now');}
+  if(!el.classList.contains('ready'))requestAnimationFrame(()=>requestAnimationFrame(()=>el.classList.add('ready')));
+}
+try{document.fonts.ready.then(()=>{syncSeg();syncTabBar();syncSideBar();});}catch(e){}
 function setView(mode,instant){
   const target=mode==='line'?1:0;
   document.querySelectorAll('[data-view]').forEach(b=>{const on=b.dataset.view===mode;b.setAttribute('aria-checked',String(on));b.tabIndex=on?0:-1;});
@@ -1372,7 +1401,7 @@ function renderCatalog(animate){
     side.hidden=false;side.innerHTML='<div class="sk"></div><div class="sk"></div><div class="sk"></div>';
     gridHead.hidden=true;
     grid.innerHTML=Array.from({length:9},()=>'<div class="card skel" aria-hidden="true"><span class="ph sk"></span><span class="l1 sk"></span><span class="l2 sk"></span></div>').join('');
-    grid.setAttribute('aria-busy','true');gridNote.textContent='Đang tải danh mục…';return;
+    grid.setAttribute('aria-busy','true');gridNote.textContent='Đang tải danh mục…';syncSideBar();return;
   }
   grid.removeAttribute('aria-busy');
   const cn=countsOf();
@@ -1394,6 +1423,7 @@ function renderCatalog(animate){
     grid.innerHTML=CAT.straps.map((e,i)=>strapCard(e,i)).join('');
     gridNote.textContent='Tất cả dây dài 23 cm, có nút rút để chỉnh vừa cổ tay. Bấm vào dây để đổi dây cho vòng.';
   }
+  syncSideBar();
   sweepThumbs();
   if(animate&&!reduceMotion()){grid.classList.remove('enter');void grid.offsetWidth;grid.classList.add('enter');clearTimeout(renderCatalog.t);renderCatalog.t=setTimeout(()=>grid.classList.remove('enter'),900);}
 }
@@ -1557,6 +1587,32 @@ function expSet(on){
   else if(!(SEARCH.open&&document.activeElement===qIn))liftTo(false);
 }
 xBtn.addEventListener('click',()=>{if(!SEARCH.open)expSet(!EXP.on);});
+/* đang mở rộng mà kéo xuống ở đầu danh mục (lưới đã cuộn lên hết, hoặc cột nhóm) → tự thu gọn (12/10, shop yêu cầu: đỡ phải với lên nút khi dùng 1 tay).
+   Tính quãng kéo từ lúc danh sách đã ở đầu: đang cuộn lên rồi chạm đầu và kéo tiếp cũng được. Chỉ kéo cố tình (≥ 64px, chủ yếu theo chiều dọc) mới thu gọn;
+   cuộn nảy (quán tính) không tính vì không có ngón tay trên màn hình. Chỉ điện thoại dọc, không áp dụng lúc đang tìm kiếm. */
+const PULL={sc:null,x0:0,y0:0,base:null,done:false};
+const PULL_MIN=64;
+function pullStart(e){
+  if(e.touches.length!==1||!EXP.on||SEARCH.open){PULL.sc=null;return;}
+  const t=e.touches[0];PULL.sc=e.currentTarget;PULL.x0=t.clientX;PULL.y0=t.clientY;PULL.done=false;
+  PULL.base=PULL.sc.scrollTop<=0?t.clientY:null;
+}
+function pullMove(e){
+  if(!PULL.sc||PULL.done||e.touches.length!==1)return;
+  if(!EXP.on||SEARCH.open){PULL.sc=null;return;}
+  const t=e.touches[0];
+  if(PULL.sc.scrollTop>0){PULL.base=null;return;}
+  if(PULL.base==null||t.clientY<PULL.base)PULL.base=t.clientY;
+  const dy=t.clientY-PULL.base,dx=Math.abs(t.clientX-PULL.x0);
+  if(dy>=PULL_MIN&&dy>dx*1.5){PULL.done=true;expSet(false);}
+}
+function pullEnd(){PULL.sc=null;}
+[gridWrap,$('cside')].forEach(el=>{
+  el.addEventListener('touchstart',pullStart,{passive:true});
+  el.addEventListener('touchmove',pullMove,{passive:true});
+  el.addEventListener('touchend',pullEnd,{passive:true});
+  el.addEventListener('touchcancel',pullEnd,{passive:true});
+});
 /* bấm lại vào ô nhập (sau khi Enter) thì đẩy lên lại; rời ô nhập (Enter, bấm ra ngoài) thì hạ xuống */
 qIn.addEventListener('focus',()=>{if(SEARCH.open)liftTo(true);});
 qIn.addEventListener('blur',()=>{caretShow(false);if(SEARCH.open&&!EXP.on)liftTo(false);});
