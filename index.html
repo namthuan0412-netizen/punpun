@@ -22,7 +22,7 @@
   --accent:#8C6A1F; --soft:#F1EFEB; --scrim:rgba(18,16,14,.45);
   --danger:#B3261E; --on-danger:#FFFFFF; --toast-act:#E6C670; --shine:rgba(255,255,255,.6);
   --hl:#FFE066; --on-hl:#1C1B19;
-  --on-accent:#FFFFFF; --chip:rgba(255,255,255,.94); --chip-line:#E2DFDA; --chip-shadow:0 6px 18px rgba(40,30,15,.10);
+  --on-accent:#FFFFFF; --chip:rgba(255,255,255,.94); --chip-line:#E2DFDA; --chip-shadow:0 6px 18px rgba(40,30,15,.10); --pill-shadow:0 -3px 12px rgba(40,30,15,.08);
   --font:"Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --mono:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --ease:cubic-bezier(.2,.7,.2,1); --fast:120ms; --med:200ms;
@@ -33,13 +33,13 @@
   --accent:#D8B868; --soft:#262523; --scrim:rgba(0,0,0,.62);
   --danger:#F28B82; --on-danger:#2B0B08; --toast-act:#6E5110; --shine:rgba(255,255,255,.07);
   --hl:#F5D451; --on-hl:#1B1A17;
-  --on-accent:#1B1A17; --chip:rgba(48,47,44,.94); --chip-line:#45433F; --chip-shadow:0 6px 18px rgba(0,0,0,.36); color-scheme:dark } }
+  --on-accent:#1B1A17; --chip:rgba(48,47,44,.94); --chip-line:#45433F; --chip-shadow:0 6px 18px rgba(0,0,0,.36); --pill-shadow:0 -3px 12px rgba(0,0,0,.28); color-scheme:dark } }
 :root[data-theme="dark"]{
   --bg:#131312; --surface:#1B1B19; --stage:#222120; --fg:#F2F1EE; --muted:#A39F98; --line:#34332F;
   --accent:#D8B868; --soft:#262523; --scrim:rgba(0,0,0,.62);
   --danger:#F28B82; --on-danger:#2B0B08; --toast-act:#6E5110; --shine:rgba(255,255,255,.07);
   --hl:#F5D451; --on-hl:#1B1A17;
-  --on-accent:#1B1A17; --chip:rgba(48,47,44,.94); --chip-line:#45433F; --chip-shadow:0 6px 18px rgba(0,0,0,.36); color-scheme:dark }
+  --on-accent:#1B1A17; --chip:rgba(48,47,44,.94); --chip-line:#45433F; --chip-shadow:0 6px 18px rgba(0,0,0,.36); --pill-shadow:0 -3px 12px rgba(0,0,0,.28); color-scheme:dark }
 
 *{box-sizing:border-box}
 [hidden]{display:none!important}
@@ -94,7 +94,10 @@ button:disabled{cursor:default}
 .seg button::after{content:""; position:absolute; inset:-8px 0}
 .seg button[aria-checked="true"]{background:var(--fg); color:var(--bg)}
 
-.sel-pill{position:absolute; left:50%; bottom:8px; transform:translateX(-50%); max-width:calc(100% - 16px); height:30px; display:flex; align-items:center; gap:6px; padding:0 12px; border-radius:999px; background:var(--chip); border:1px solid var(--chip-line); box-shadow:var(--chip-shadow); -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); color:var(--fg); font-size:11px; white-space:nowrap; pointer-events:none}
+/* viên thông tin charm nằm sát đáy khung vòng: bo 2 góc trên 16px, 2 góc dưới vuông, không viền dưới, bóng đổ hắt lên (không lem xuống hàng công cụ) */
+.sel-pill{position:absolute; left:50%; bottom:0; transform:translateX(-50%); transform-origin:50% 100%; max-width:calc(100% - 16px); height:30px; display:flex; align-items:center; gap:6px; padding:0 12px; border-radius:16px 16px 0 0; background:var(--chip); border:1px solid var(--chip-line); border-bottom:0; box-shadow:var(--pill-shadow); -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); color:var(--fg); font-size:11px; white-space:nowrap; pointer-events:none}
+/* khung cắt ở đáy khung vòng: viên trượt lên từ mép đáy (phần chưa lên bị cắt), biến mất thì mờ nhoè tan đi */
+.sel-clip{position:absolute; left:0; right:0; bottom:0; height:56px; overflow:hidden; pointer-events:none; border-radius:0 0 18px 18px}
 .sel-pill .sc-name{font-weight:600; overflow:hidden; text-overflow:ellipsis; min-width:0}
 .sel-pill .sc-v{flex:none; color:var(--muted)}
 .sel-pill .sc-p{flex:none; font-weight:600; font-variant-numeric:tabular-nums; padding-left:7px; border-left:1px solid var(--chip-line)}
@@ -115,7 +118,7 @@ button:disabled{cursor:default}
 @media (max-width:350px){
   .seg button{padding:0 8px; gap:4px}
   .tool{min-width:54px}
-  .sel-pill{height:28px; bottom:6px; gap:5px; padding:0 10px}
+  .sel-pill{height:28px; gap:5px; padding:0 10px}
 }
 
 /* catalog */
@@ -337,10 +340,12 @@ textarea.copybox{width:100%; min-height:240px; border-radius:12px; border:1px so
   @keyframes swap{from{opacity:0; transform:translateY(4px)} to{opacity:1; transform:none}}
   .cgrid.enter .card{animation:cardIn .26s var(--ease) both; animation-delay:calc(var(--i,0) * 22ms)}
   @keyframes cardIn{from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none}}
-  .sel-pill:not([hidden]){animation:chipIn 260ms var(--ease-out)}
+  .sel-pill:not([hidden]){animation:pillIn 340ms var(--ease-out)}
+  .sel-pill.out{animation:pillOut 280ms var(--ease-in) forwards}
   .specs:not([hidden]){animation:popIn 200ms var(--ease-out)}
   @keyframes popIn{from{opacity:0; transform:translateY(-4px) scale(.96)} to{opacity:1; transform:none}}
-  @keyframes chipIn{from{opacity:0; transform:translate(-50%,8px) scale(.96)} to{opacity:1; transform:translate(-50%,0)}}
+  @keyframes pillIn{from{transform:translate(-50%,100%)} to{transform:translate(-50%,0)}}
+  @keyframes pillOut{from{opacity:1; filter:blur(0)} to{opacity:0; filter:blur(8px); transform:translateX(-50%) scale(1.04)}}
   .sk::after{content:""; position:absolute; inset:0; transform:translateX(-100%); background:linear-gradient(90deg,transparent,var(--shine),transparent); animation:shimmer 1.3s infinite}
   @keyframes shimmer{to{transform:translateX(100%)}}
 }
@@ -372,7 +377,7 @@ textarea.copybox{width:100%; min-height:240px; border-radius:12px; border:1px so
         </div>
         <button class="pan-btn l" id="panL" data-pan="-1" aria-label="Xem đoạn dây bên trái" hidden><svg aria-hidden="true" focusable="false" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 5-7 7 7 7"/></svg></button>
         <button class="pan-btn r" id="panR" data-pan="1" aria-label="Xem đoạn dây bên phải" hidden><svg aria-hidden="true" focusable="false" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg></button>
-        <div class="sel-pill" id="selPill" role="status" aria-atomic="true" hidden><span class="vh" id="selNum"></span><span class="sc-name" id="selName"></span><span class="sc-v" id="selVar"></span><span class="sc-p" id="selPrice"></span></div>
+        <div class="sel-clip"><div class="sel-pill" id="selPill" role="status" aria-atomic="true" hidden><span class="vh" id="selNum"></span><span class="sc-name" id="selName"></span><span class="sc-v" id="selVar"></span><span class="sc-p" id="selPrice"></span></div></div>
       </div>
       <button class="stage-btn num-btn" id="numBtn" aria-pressed="false" aria-label="STT: hiện số thứ tự charm trên vòng" title="Hiện số thứ tự"><svg aria-hidden="true" focusable="false" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 9h15M4 15h15M10 4 8 20M16 4l-2 16"/></svg></button>
       <button class="stage-btn info-btn" id="infoBtn" aria-expanded="false" aria-controls="specs" aria-label="Thông tin vòng: số charm, độ dài đã dùng, tạm tính"><svg aria-hidden="true" focusable="false" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5"/><path d="M12 7.6v.1"/></svg></button>
@@ -1548,6 +1553,16 @@ function renderSpecs(){
   $('spUsed').textContent=(usedMM()/10).toLocaleString('vi-VN',{maximumFractionDigits:1})+' / '+state.size+' cm';
   $('spTotal').textContent=CAT.straps.length?fmt(total()):'–';
 }
+/* viên thông tin charm: hiện thì trượt lên từ đáy khung (CSS pillIn); ẩn thì chạy pillOut (mờ nhoè + tan đi) xong mới gắn hidden */
+const PILL={t:0,out:false};
+function pillShow(on){
+  const p=$('selPill');
+  if(on){if(PILL.out){clearTimeout(PILL.t);PILL.out=false;p.classList.remove('out');}p.hidden=false;return;}
+  if(p.hidden||PILL.out)return;
+  if(reduceMotion()){p.hidden=true;return;}
+  PILL.out=true;p.classList.add('out');
+  PILL.t=setTimeout(()=>{PILL.out=false;p.classList.remove('out');p.hidden=true;},290);
+}
 function refreshSel(){
   if(sel&&!selItem())sel=null;
   const it=selItem(),has=!!it,tb=$('toolbar'),mode=has?'sel':'idle';
@@ -1560,7 +1575,7 @@ function refreshSel(){
   }
   /* đang kéo một charm từ trạng thái chưa chọn: giữ vòng đứng yên, chưa hiện viên thông tin; thả tay mới hiện và nhích vòng lên */
   const quiet=!!(drag&&drag.moved&&drag.fromIdle);
-  $('selPill').hidden=!has||quiet;setLift(has&&!quiet?1:0);
+  pillShow(has&&!quiet);setLift(has&&!quiet?1:0);
   if(has){const e=CE[it.code],i=selIndex();$('selNum').textContent=`Vị trí ${i+1}:`;$('selName').textContent=e.name;$('selVar').textContent=e.vname||'';$('selVar').hidden=!e.vname;$('selPrice').textContent=e.stop?FREE:fmt(e.price);
     document.querySelector('[data-tool="left"]').disabled=i<=0;document.querySelector('[data-tool="right"]').disabled=i>=state.items.length-1;}
   $('undoBtn').disabled=!hist.length;
