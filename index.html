@@ -21,6 +21,7 @@
   --bg:#FAFAF9; --surface:#FFFFFF; --stage:#F3F2EF; --fg:#1C1B19; --muted:#6B6761; --line:#E7E5E1;
   --accent:#8C6A1F; --soft:#F1EFEB; --scrim:rgba(18,16,14,.45);
   --danger:#B3261E; --on-danger:#FFFFFF; --toast-act:#E6C670; --shine:rgba(255,255,255,.6);
+  --hl:#FFE066; --on-hl:#1C1B19;
   --on-accent:#FFFFFF; --chip:rgba(255,255,255,.94); --chip-line:#E2DFDA; --chip-shadow:0 6px 18px rgba(40,30,15,.10);
   --font:"Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --mono:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -31,11 +32,13 @@
   --bg:#131312; --surface:#1B1B19; --stage:#222120; --fg:#F2F1EE; --muted:#A39F98; --line:#34332F;
   --accent:#D8B868; --soft:#262523; --scrim:rgba(0,0,0,.62);
   --danger:#F28B82; --on-danger:#2B0B08; --toast-act:#6E5110; --shine:rgba(255,255,255,.07);
+  --hl:#F5D451; --on-hl:#1B1A17;
   --on-accent:#1B1A17; --chip:rgba(48,47,44,.94); --chip-line:#45433F; --chip-shadow:0 6px 18px rgba(0,0,0,.36); color-scheme:dark } }
 :root[data-theme="dark"]{
   --bg:#131312; --surface:#1B1B19; --stage:#222120; --fg:#F2F1EE; --muted:#A39F98; --line:#34332F;
   --accent:#D8B868; --soft:#262523; --scrim:rgba(0,0,0,.62);
   --danger:#F28B82; --on-danger:#2B0B08; --toast-act:#6E5110; --shine:rgba(255,255,255,.07);
+  --hl:#F5D451; --on-hl:#1B1A17;
   --on-accent:#1B1A17; --chip:rgba(48,47,44,.94); --chip-line:#45433F; --chip-shadow:0 6px 18px rgba(0,0,0,.36); color-scheme:dark }
 
 *{box-sizing:border-box}
@@ -56,7 +59,6 @@ button:disabled{cursor:default}
 .top{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:8px 16px 8px}
 .brand{display:flex; align-items:baseline; gap:8px; min-width:0}
 .brand b{font-size:19px; font-weight:700; letter-spacing:-.02em}
-.brand span{font-size:11px; font-weight:600; letter-spacing:.16em; text-transform:uppercase; color:var(--accent); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
 .pill-btn{height:40px; padding:0 16px; border-radius:999px; border:1px solid var(--fg); font-weight:600; font-size:14px; display:inline-flex; align-items:center; gap:6px; white-space:nowrap; flex:none; transition:background-color var(--fast)}
 .pill-btn::after{content:""; position:absolute; inset:-3px}
 .pill-btn:active{background:var(--soft)}
@@ -110,7 +112,39 @@ button:disabled{cursor:default}
 
 /* catalog */
 .catalog{flex:1; min-height:0; display:flex; flex-direction:column; background:var(--surface); border-top:1px solid var(--line); border-radius:20px 20px 0 0}
-.ctabs{display:flex; gap:24px; padding:4px 16px 0; border-bottom:1px solid var(--line)}
+/* hàng tab + nút tìm kiếm (tab bên trái, kính lúp bên phải). Mở tìm kiếm: ô nhập nở ra từ nút, tab mờ đi, kính lúp biến thành X */
+.cbar{position:relative; display:flex; align-items:flex-end; justify-content:space-between; gap:8px; padding:4px 6px 0 16px; border-bottom:1px solid var(--line)}
+.ctabs{display:flex; gap:24px; min-width:0; transition:opacity 180ms var(--ease-out), transform 320ms var(--ease-out), visibility 0s}
+.cbar.searching .ctabs{opacity:0; transform:translateX(-10px); visibility:hidden; pointer-events:none; transition:opacity 140ms var(--ease-in), transform 320ms var(--ease-out), visibility 0s 320ms}
+.sbtn{flex:none; align-self:center; width:40px; height:40px; margin-bottom:1px; border-radius:50%; display:grid; place-items:center; color:var(--fg); transition:background-color var(--fast)}
+.sbtn::after{content:""; position:absolute; inset:-2px}
+.sbtn:active{background:var(--soft)}
+.sbtn svg{overflow:visible}
+.sbtn .s-ring{stroke-dashoffset:0; opacity:1; transition:stroke-dashoffset 300ms var(--ease-out), opacity 0s}
+.sbtn .s-a{stroke-dashoffset:-11.2px; transform:translate(1.5px,1.5px); transition:stroke-dashoffset 300ms var(--ease-out), transform 300ms var(--ease-out)}
+.sbtn .s-b{stroke-dashoffset:17px; opacity:0; transition:stroke-dashoffset 220ms var(--ease-in), opacity 0s 220ms}
+.cbar.searching .sbtn .s-ring{stroke-dashoffset:37.7px; opacity:0; transition:stroke-dashoffset 280ms var(--ease-in), opacity 0s 280ms}
+.cbar.searching .sbtn .s-a{stroke-dashoffset:0; transform:none}
+.cbar.searching .sbtn .s-b{stroke-dashoffset:0; opacity:1; transition:stroke-dashoffset 260ms var(--ease-out) 90ms, opacity 0s 90ms}
+.csearch{position:absolute; left:12px; right:52px; top:5px; bottom:5px; border-radius:19px; background:var(--soft); overflow:hidden; opacity:0; visibility:hidden;
+  -webkit-clip-path:inset(0 0 0 calc(100% - 38px) round 19px); clip-path:inset(0 0 0 calc(100% - 38px) round 19px);
+  transition:clip-path 320ms var(--ease-out), -webkit-clip-path 320ms var(--ease-out), opacity 160ms var(--ease-in), visibility 0s 320ms}
+.cbar.searching .csearch{opacity:1; visibility:visible; -webkit-clip-path:inset(0 0 0 0 round 19px); clip-path:inset(0 0 0 0 round 19px);
+  transition:clip-path 340ms var(--ease-out), -webkit-clip-path 340ms var(--ease-out), opacity 120ms var(--ease-out), visibility 0s}
+.csearch input{width:100%; height:100%; border:0; background:transparent; color:var(--fg); font:inherit; font-size:16px; padding:0 14px; outline:none; -webkit-appearance:none; appearance:none; border-radius:19px}
+.csearch input::placeholder{color:var(--muted); opacity:1}
+.csearch input::-webkit-search-cancel-button,.csearch input::-webkit-search-decoration{-webkit-appearance:none; appearance:none; display:none}
+.csearch:focus-within{box-shadow:inset 0 0 0 1.5px var(--accent)}
+/* đang đợi 1,5 giây sau khi ngưng gõ: vạch vàng mảnh chạy dưới ô nhập */
+.qbar{position:absolute; left:14px; right:14px; bottom:3px; height:2px; border-radius:1px; background:var(--accent); transform:scaleX(0); transform-origin:left; opacity:0; pointer-events:none}
+.cbar.typing .qbar{opacity:.85; animation:qfill 1.5s linear forwards}
+@keyframes qfill{from{transform:scaleX(0)} to{transform:scaleX(1)}}
+.grid-head{font-size:13px; color:var(--muted); padding:0 2px 10px}
+.grid-head b{color:var(--fg); font-weight:700}
+.gsec{grid-column:1 / -1; margin:6px 0 -2px; font-size:12px; font-weight:600; letter-spacing:.02em; color:var(--muted)}
+.gsec:first-child{margin-top:0}
+mark{background:var(--hl); color:var(--on-hl); border-radius:3px; padding:0 1px; -webkit-box-decoration-break:clone; box-decoration-break:clone}
+.card .cd{font-size:12px; color:var(--muted); font-variant-numeric:tabular-nums}
 .ctab{min-height:44px; padding:8px 0; font-weight:600; font-size:15px; color:var(--muted); border-bottom:2px solid transparent; margin-bottom:-1px; transition:color var(--fast)}
 .ctab[aria-selected="true"]{color:var(--fg); border-color:var(--fg)}
 .cbody{flex:1; min-height:0; display:flex}
@@ -130,7 +164,7 @@ button:disabled{cursor:default}
 .card .nm{font-size:12.5px; font-weight:600; line-height:1.3; width:100%; padding:0 2px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; overflow-wrap:anywhere}
 .card .tag{font-size:12px; color:var(--muted); background:var(--soft); border-radius:6px; padding:1px 8px; max-width:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
 .card .pr{font-size:12.5px; font-variant-numeric:tabular-nums; margin-top:auto; padding-top:1px}
-.card .pr small{font-size:12px; font-weight:400; color:var(--muted); margin-left:1px}
+.card .pr.free{color:var(--accent); font-weight:600}
 .card .used{position:absolute; top:6px; right:6px; font-size:12px; font-weight:700; background:var(--fg); color:var(--bg); border-radius:999px; min-width:22px; height:22px; padding:0 6px; display:grid; place-items:center; line-height:1}
 .card.on .ph{box-shadow:inset 0 0 0 2px var(--fg)}
 .card.on .tag{background:var(--fg); color:var(--bg)}
@@ -139,6 +173,7 @@ button:disabled{cursor:default}
 .card.skel .l1,.card.skel .l2{height:11px; border-radius:6px; margin-top:4px}
 .card.skel .l1{width:72%} .card.skel .l2{width:44%}
 .note{font-size:12.5px; color:var(--muted); padding:16px 4px 0; margin:0}
+.cgrid:empty + .note{padding-top:0}
 .sk{background:var(--soft); position:relative; overflow:hidden}
 
 /* sheets */
@@ -256,7 +291,7 @@ textarea.copybox{width:100%; min-height:240px; border-radius:12px; border:1px so
 
 <div class="shell">
   <header class="top">
-    <div class="brand"><b>PunPun</b><span>Tinygold Charm</span></div>
+    <div class="brand"><b>PunPun</b></div>
     <button class="pill-btn" data-act="image" id="topSave">
       <svg aria-hidden="true" focusable="false" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0-4-4m4 4 4-4M5 21h14"/></svg>
       Lưu ảnh
@@ -300,10 +335,24 @@ textarea.copybox{width:100%; min-height:240px; border-radius:12px; border:1px so
   </section>
 
   <section class="catalog" aria-label="Danh mục">
-    <div class="ctabs" id="ctabs" role="tablist" aria-label="Danh mục">
-      <button class="ctab" role="tab" id="tabCharm" data-ctab="charm" aria-selected="true" aria-controls="cpanel" tabindex="0">Charm</button>
-      <button class="ctab" role="tab" id="tabStop" data-ctab="stop" aria-selected="false" aria-controls="cpanel" tabindex="-1">Hạt chặn</button>
-      <button class="ctab" role="tab" id="tabStrap" data-ctab="strap" aria-selected="false" aria-controls="cpanel" tabindex="-1">Dây</button>
+    <div class="cbar" id="cbar">
+      <div class="ctabs" id="ctabs" role="tablist" aria-label="Danh mục">
+        <button class="ctab" role="tab" id="tabCharm" data-ctab="charm" aria-selected="true" aria-controls="cpanel" tabindex="0">Charm</button>
+        <button class="ctab" role="tab" id="tabStop" data-ctab="stop" aria-selected="false" aria-controls="cpanel" tabindex="-1">Hạt chặn</button>
+        <button class="ctab" role="tab" id="tabStrap" data-ctab="strap" aria-selected="false" aria-controls="cpanel" tabindex="-1">Dây</button>
+      </div>
+      <div class="csearch" id="csearch" role="search">
+        <input id="q" type="search" inputmode="search" enterkeyhint="search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Tìm charm, hạt chặn, dây…" aria-label="Tìm trong danh mục" aria-describedby="qHint">
+        <span class="vh" id="qHint">Ngưng gõ một chút là có kết quả, hoặc bấm Enter</span>
+        <span class="qbar" aria-hidden="true"></span>
+      </div>
+      <button class="sbtn" id="searchBtn" type="button" aria-label="Tìm kiếm" aria-expanded="false" aria-controls="csearch">
+        <svg aria-hidden="true" focusable="false" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <circle class="s-ring" cx="10.5" cy="10.5" r="6" stroke-dasharray="37.7 40" transform="rotate(45 10.5 10.5)"/>
+          <line class="s-a" x1="6" y1="6" x2="18" y2="18" stroke-dasharray="17 20"/>
+          <line class="s-b" x1="18" y1="6" x2="6" y2="18" stroke-dasharray="17 20"/>
+        </svg>
+      </button>
     </div>
     <div class="cbody" id="cpanel" role="tabpanel" aria-labelledby="tabCharm">
       <nav class="cside" id="cside" aria-label="Nhóm charm"></nav>
@@ -492,11 +541,12 @@ function buildFromSheet(cr,sr,hr){
   sr.forEach((r,i)=>{if(!shown(r.hien))return;const name=r.tenday||r.ten||'';if(!name)return;let code=cleanCode(r.ma)||('D'+(i+2));while(seenS.has(code))code+='-2';seenS.add(code);
     const img=normImg(r.linkanh,1600),img2=normImg(r.linkanhnuaphai||r.anhnuaphai,1600),kind=r.kieuday?strapKind(r.kieuday):(img?'braid':'snake'),col=strapColor(r.mau);
     straps.push({code,name,vname:r.phanloai||'',price:money(r.gia),img,img2:img?img2:null,kind,m:col,c:(kind==='leather'||kind==='cord'||kind==='braid')?metalOf(col).b:null,c2:null,thick:num(r.daymm)||THICK[kind]||3});});
-  /* hạt chặn: giá ghi theo 1 cặp, mỗi hạt gắn lên vòng tính nửa giá; có Cao (mm) thì ảnh ép theo Rộng × Cao (vòng chặn nhìn nghiêng) */
+  /* hạt chặn: tặng miễn phí khi mua vòng mix charm (giá trong sheet chỉ là giá bán lẻ trên sàn, app không tính).
+     Trên vòng chỉ thấy hạt nhìn nghiêng: một vạch ngang dây, Rộng (mm) = bề dày dọc theo dây, Cao (mm) = đường kính. */
   const stops=[];
   (hr||[]).forEach((r,i)=>{if(!shown(r.hien))return;const name=r.ten||r.tenhatchan||'';if(!name)return;let code=cleanCode(r.ma)||('H'+(i+2));while(seen.has(code))code+='-2';seen.add(code);
-    const pair=money(r.gia1cap||r.giacap||r.gia),w=num(r.rongmm)||6,cao=num(r.caomm);
-    stops.push(sizeEntry({code,name,vname:r.phanloai||'',cat:r.nhom||'Hạt chặn',price:Math.round(pair/2),pairPrice:pair,stop:true,kind:kindOf(r.kieu),w,ar:cao?cao/w:1,fixedAr:!!cao,img:normImg(r.linkanh,480),demo:null}));});
+    const w=num(r.rongmm)||3,cao=num(r.caomm)||8,hx=/^#[0-9a-f]{6}$/i.test((r.mau||'').trim())?r.mau.trim():null;
+    stops.push(sizeEntry({code,name,vname:r.phanloai||'',cat:r.nhom||'Hạt chặn',price:0,listPrice:money(r.gia1cap||r.giacap||r.gia),stop:true,kind:'bead',w,ar:cao/w,fixedAr:true,hex:hx,img:normImg(r.linkanh,480),demo:null}));});
   return{charms,straps,stops};
 }
 function applyTables(cr,sr,hr){
@@ -536,11 +586,46 @@ function charmImg(e){
 }
 function drawEntry(ctx,e){
   if(e.demo){drawCharm(ctx,e.demo.p,e.demo.v);return;}
+  if(e.stop){drawStop(ctx,e);return;}
   const rec=e.img?charmImg(e):null;
   if(rec&&rec.ok){shadowOn(ctx);ctx.drawImage(rec.el,-e.w/2,e.top,e.w,e.h);shadowOff(ctx);return;}
   const w=e.strapW,h=Math.min(e.h,w*1.1),m=METAL.silver;
   body(ctx,()=>rr(ctx,-w/2,-h/2,w,h,Math.min(w,h)*.42),mgrad(ctx,m,h));
   ctx.fillStyle=m.e;ctx.font=`700 ${Math.min(w,h)*.5}px "Be Vietnam Pro", system-ui, sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(((e.name||'?').trim()[0]||'?').toUpperCase(),0,.3);
+}
+
+/* Hạt chặn trên vòng: hạt xỏ vào dây nên mặt hạt vuông góc với dây, nhìn từ trên xuống chỉ thấy cạnh của hạt —
+   một vạch bo tròn cắt ngang dây (rộng = bề dày hạt dọc theo dây, cao = đường kính). Màu lấy từ ảnh của hạt
+   (vùng ngoài của hạt, bỏ lỗ / nhuỵ hoa ở giữa), đổ bóng như mặt cong của vòng để có khối. */
+const TONE_WAIT={b:'#CFCAC2',l:'#E6E2DC',d:'#A9A49C',e:'#8F8A82'};
+const toneSet=b=>({b,l:shade(b,.42),d:shade(b,-.32),e:shade(b,-.55)});
+function imgTone(im){
+  try{
+    const n=48,c=document.createElement('canvas');c.width=c.height=n;const x=c.getContext('2d',{willReadFrequently:true});
+    const k=Math.min(n/im.naturalWidth,n/im.naturalHeight),w=im.naturalWidth*k,h=im.naturalHeight*k;x.drawImage(im,(n-w)/2,(n-h)/2,w,h);
+    const d=x.getImageData(0,0,n,n).data,R=Math.min(w,h)/2,px=[];
+    for(let j=0;j<n;j++)for(let i=0;i<n;i++){const o=(j*n+i)*4;if(d[o+3]<200)continue;if(Math.hypot(i+.5-n/2,j+.5-n/2)<R*.58)continue;px.push([d[o],d[o+1],d[o+2],.299*d[o]+.587*d[o+1]+.114*d[o+2]]);}
+    if(px.length<12)return null;
+    px.sort((a,b)=>a[3]-b[3]);const m=px.slice(Math.floor(px.length*.3),Math.ceil(px.length*.7));
+    return'#'+[0,1,2].map(q=>Math.round(m.reduce((a,p)=>a+p[q],0)/m.length).toString(16).padStart(2,'0')).join('');
+  }catch(err){return null;}
+}
+function stopTone(e){
+  if(e.col)return e.col;
+  let b=e.hex;
+  if(!b&&e.img){const rec=charmImg(e);if(!rec.ok&&!rec.failed)return TONE_WAIT;if(rec.ok)b=imgTone(rec.el);}
+  e.col=toneSet(b||'#B9B3AA');return e.col;
+}
+function drawStop(ctx,e){
+  const c=stopTone(e),w=e.w,h=e.h,r=Math.min(w*.46,h/2),path=()=>rr(ctx,-w/2,-h/2,w,h,r);
+  path();shadowOn(ctx);ctx.fillStyle=c.b;ctx.fill();shadowOff(ctx);
+  let g=ctx.createLinearGradient(0,-h/2,0,h/2);
+  g.addColorStop(0,c.d);g.addColorStop(.16,c.b);g.addColorStop(.34,c.l);g.addColorStop(.5,c.b);g.addColorStop(.84,c.b);g.addColorStop(1,c.e);
+  ctx.fillStyle=g;ctx.fill();
+  g=ctx.createLinearGradient(-w/2,0,w/2,0);
+  g.addColorStop(0,'rgba(0,0,0,.26)');g.addColorStop(.3,'rgba(0,0,0,0)');g.addColorStop(.7,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(0,0,0,.3)');
+  ctx.fillStyle=g;ctx.fill();
+  ctx.lineWidth=.16;ctx.strokeStyle=rgba(c.e,.6);ctx.stroke();
 }
 
 /* Dây ảnh thật: ảnh là một đoạn dây thẳng nằm ngang (nền trong suốt). App lặp đoạn đó thành cả sợi
@@ -921,7 +1006,18 @@ function charmSprite(e,rec,px){
   if(SPRITES.size>160)SPRITES.delete(SPRITES.keys().next().value);
   return sp;
 }
+function stopSprite(e,px){
+  const c=stopTone(e),sh=SH||{c:'transparent',b:0,y:0},key='S|'+e.code+'|'+c.b+'|'+px.toFixed(1)+'|'+sh.b+'|'+sh.y+'|'+sh.c;
+  let sp=SPRITES.get(key);if(sp)return sp;
+  const pad=Math.ceil(sh.b*1.6+Math.abs(sh.y)+2),cv2=document.createElement('canvas');
+  cv2.width=Math.ceil(e.w*px)+2*pad;cv2.height=Math.ceil(e.h*px)+2*pad;const x=cv2.getContext('2d');
+  x.translate(cv2.width/2,cv2.height/2);x.scale(px,px);drawStop(x,e);
+  sp={c:cv2,pad,px};SPRITES.set(key,sp);
+  if(SPRITES.size>160)SPRITES.delete(SPRITES.keys().next().value);
+  return sp;
+}
 function drawEntryFast(ctx,e,k,dpr){
+  if(e.stop){const px=Math.max(1,Math.round(k*dpr*10)/10),sp=stopSprite(e,px);ctx.drawImage(sp.c,-sp.c.width/px/2,-sp.c.height/px/2,sp.c.width/px,sp.c.height/px);return;}
   const rec=e.img&&!e.demo?charmImg(e):null;
   if(!rec||!rec.ok){drawEntry(ctx,e);return;}
   const px=Math.max(1,Math.round(k*dpr*10)/10),sp=charmSprite(e,rec,px),pm=sp.pad/px;
@@ -1103,7 +1199,17 @@ function refreshStrapThumbs(){document.querySelectorAll('[data-strap] img').forE
 const grid=$('grid'), side=$('cside'), gridNote=$('gridNote'), gridHead=$('gridHead');
 const CHECK=`<span class="used" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7"/></svg></span>`;
 const countsOf=()=>{const c={};state.items.forEach(i=>{c[i.code]=(c[i.code]||0)+1;});return c;};
-const charmLabel=(e,n)=>`Thêm ${e.name}${e.vname?' – '+e.vname:''}, ${e.stop?`${fmt(e.price)} một hạt, ${fmt(e.pairPrice)} một cặp`:fmt(e.price)}${n?`, đã gắn ${n}`:''}`;
+const FREE='Miễn phí';
+const charmLabel=(e,n)=>`Thêm ${e.name}${e.vname?' – '+e.vname:''}, ${e.stop?'miễn phí':fmt(e.price)}${n?`, đã gắn ${n}`:''}`;
+/* ô danh mục (dùng chung cho tab và kết quả tìm kiếm); toks = từ khoá để tô vàng */
+function charmCard(e,i,cn,toks){
+  const T=t=>toks?hl(t,toks):esc(t),codeHit=toks&&!toks.every(t=>sNorm([e.name,e.vname].join(' ')).n.includes(t));
+  return`<button class="card" data-charm="${esc(e.code)}" style="--i:${Math.min(i,14)}" aria-label="${esc(charmLabel(e,cn[e.code]))}"><span class="ph"><img src="${esc(charmThumb(e.code))}" alt="" loading="lazy" decoding="async"${e.img?' crossorigin="anonymous"':''}></span><span class="nm">${T(e.name)}</span>${e.vname?`<span class="tag">${T(e.vname)}</span>`:''}${codeHit?`<span class="cd">${T(e.code)}</span>`:''}${e.stop?`<span class="pr free">${FREE}</span>`:`<span class="pr">${fmt(e.price)}</span>`}${cn[e.code]?`<span class="used" aria-hidden="true">×${cn[e.code]}</span>`:''}</button>`;
+}
+function strapCard(e,i,toks){
+  const T=t=>toks?hl(t,toks):esc(t),on=state.strap===e.code,codeHit=toks&&!toks.every(t=>sNorm([e.name,e.vname].join(' ')).n.includes(t));
+  return`<button class="card${on?' on':''}" data-strap="${esc(e.code)}" style="--i:${Math.min(i,14)}" aria-pressed="${on}" aria-label="${esc(e.name+(e.vname?' – '+e.vname:'')+', '+fmt(e.price))}"><span class="ph"><img src="${esc(strapThumb(e.code))}" alt=""></span><span class="nm">${T(e.name)}</span>${e.vname?`<span class="tag">${T(e.vname)}</span>`:''}${codeHit?`<span class="cd">${T(e.code)}</span>`:''}<span class="pr">${fmt(e.price)}</span>${on?CHECK:''}</button>`;
+}
 function renderCatalog(animate){
   document.querySelectorAll('[data-ctab]').forEach(b=>{const on=b.dataset.ctab===ctab;b.setAttribute('aria-selected',String(on));b.tabIndex=on?0:-1;});
   $('cpanel').setAttribute('aria-labelledby',ctab==='charm'?'tabCharm':ctab==='stop'?'tabStop':'tabStrap');
@@ -1115,25 +1221,90 @@ function renderCatalog(animate){
   }
   grid.removeAttribute('aria-busy');
   const cn=countsOf();
-  if(ctab==='charm'){
+  if(SEARCH.open&&SEARCH.shown){renderResults(cn);}
+  else if(ctab==='charm'){
     side.hidden=false;gridHead.hidden=true;gridHead.innerHTML='';
     side.innerHTML=`<button data-cat="all" aria-current="${catId==='all'}">Tất cả</button>`+CAT.cats.map((c,i)=>`<button data-cat="${i}" aria-current="${c===catId}">${esc(c)}</button>`).join('');
     const list=CAT.charms.filter(e=>catId==='all'||e.cat===catId);
-    grid.innerHTML=list.map((e,i)=>`<button class="card" data-charm="${esc(e.code)}" style="--i:${Math.min(i,14)}" aria-label="${esc(charmLabel(e,cn[e.code]))}"><span class="ph"><img src="${esc(charmThumb(e.code))}" alt="" loading="lazy" decoding="async"${e.img?' crossorigin="anonymous"':''}></span><span class="nm">${esc(e.name)}</span>${e.vname?`<span class="tag">${esc(e.vname)}</span>`:''}<span class="pr">${fmt(e.price)}</span>${cn[e.code]?`<span class="used" aria-hidden="true">×${cn[e.code]}</span>`:''}</button>`).join('');
+    grid.innerHTML=list.map((e,i)=>charmCard(e,i,cn)).join('');
     gridNote.textContent=CAT.source==='sheet'?'Bấm vào charm là charm được gắn lên vòng.':'Bấm vào charm là charm được gắn lên vòng. Đang hiện hình minh hoạ và giá mẫu.';
   }else if(ctab==='stop'){
     const cats=CAT.stopCats;side.hidden=!cats.length;gridHead.hidden=true;gridHead.innerHTML='';
     side.innerHTML=`<button data-scat="all" aria-current="${stopCatId==='all'}">Tất cả</button>`+cats.map((c,i)=>`<button data-scat="${i}" aria-current="${c===stopCatId}">${esc(c)}</button>`).join('');
     const list=CAT.stops.filter(e=>stopCatId==='all'||e.cat===stopCatId);
-    grid.innerHTML=list.map((e,i)=>`<button class="card" data-charm="${esc(e.code)}" style="--i:${Math.min(i,14)}" aria-label="${esc(charmLabel(e,cn[e.code]))}"><span class="ph"><img src="${esc(charmThumb(e.code))}" alt="" loading="lazy" decoding="async"${e.img?' crossorigin="anonymous"':''}></span><span class="nm">${esc(e.name)}</span>${e.vname?`<span class="tag">${esc(e.vname)}</span>`:''}<span class="pr">${fmt(e.pairPrice)}<small>/cặp</small></span>${cn[e.code]?`<span class="used" aria-hidden="true">×${cn[e.code]}</span>`:''}</button>`).join('');
-    gridNote.textContent=list.length?'Hạt chặn bán theo cặp. Bấm 1 lần gắn 1 hạt (tính nửa giá cặp), thường gắn 2 hạt ở hai đầu cụm charm để giữ charm.':'Chưa có hạt chặn.';
+    grid.innerHTML=list.map((e,i)=>charmCard(e,i,cn)).join('');
+    gridNote.textContent=list.length?'Hạt chặn được tặng miễn phí khi mua vòng mix charm. Bấm 1 lần gắn 1 hạt, thường gắn 2 hạt ở hai đầu cụm charm để giữ charm.':'Chưa có hạt chặn.';
   }else{
     side.hidden=true;gridHead.hidden=true;gridHead.innerHTML='';
-    grid.innerHTML=CAT.straps.map((e,i)=>{const on=state.strap===e.code;return`<button class="card${on?' on':''}" data-strap="${esc(e.code)}" style="--i:${Math.min(i,14)}" aria-pressed="${on}" aria-label="${esc(e.name+(e.vname?' – '+e.vname:'')+', '+fmt(e.price))}"><span class="ph"><img src="${esc(strapThumb(e.code))}" alt=""></span><span class="nm">${esc(e.name)}</span>${e.vname?`<span class="tag">${esc(e.vname)}</span>`:''}<span class="pr">${fmt(e.price)}</span>${on?CHECK:''}</button>`;}).join('');
+    grid.innerHTML=CAT.straps.map((e,i)=>strapCard(e,i)).join('');
     gridNote.textContent='Tất cả dây dài 23 cm, có nút rút để chỉnh vừa cổ tay. Bấm vào dây để đổi dây cho vòng.';
   }
   if(animate&&!reduceMotion()){grid.classList.remove('enter');void grid.offsetWidth;grid.classList.add('enter');clearTimeout(renderCatalog.t);renderCatalog.t=setTimeout(()=>grid.classList.remove('enter'),900);}
 }
+
+/* ---------- tìm kiếm ----------
+   Bấm kính lúp → nút đổi thành X, ô nhập mở ra phủ lên hàng tab. Gõ tới đâu, ngưng gõ 1,5 giây mới tìm
+   (đỡ nháy kết quả liên tục); Enter là tìm ngay. Không phân biệt dấu (gõ "hong" ra "Hồng"), các chữ đã gõ tô vàng. */
+const SEARCH={open:false,shown:'',t:0};
+const cbar=$('cbar'),qIn=$('q'),sBtn=$('searchBtn');
+function sNorm(str){
+  str=String(str||'');let n='';const map=[];
+  for(let i=0;i<str.length;i++){const c=str[i];let k=(c==='đ'||c==='Đ')?'d':c.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();for(const ch of k){n+=ch;map.push(i);}}
+  return{n,map};
+}
+const sToks=q=>sNorm(q).n.split(/\s+/).filter(Boolean);
+function hl(text,toks){
+  text=String(text||'');const{n,map}=sNorm(text),on=new Array(text.length).fill(false);
+  toks.forEach(t=>{let p=0;while((p=n.indexOf(t,p))>-1){for(let j=p;j<p+t.length;j++)on[map[j]]=true;p+=t.length;}});
+  let out='',open=false;
+  for(let i=0;i<text.length;i++){if(on[i]!==open){out+=on[i]?'<mark>':'</mark>';open=on[i];}out+=esc(text[i]);}
+  return open?out+'</mark>':out;
+}
+function sMatch(e,toks){
+  const h=sNorm([e.name,e.vname,e.cat,e.code].filter(Boolean).join(' ')).n,h2=h.replace(/[^a-z0-9]/g,'');
+  return toks.every(t=>h.includes(t)||h2.includes(t.replace(/[^a-z0-9]/g,'')||'\u0000'));
+}
+function renderResults(cn){
+  const q=SEARCH.shown,toks=sToks(q);
+  const cs=CAT.charms.filter(e=>sMatch(e,toks)),ss=CAT.stops.filter(e=>sMatch(e,toks)),ds=CAT.straps.filter(e=>sMatch(e,toks)),n=cs.length+ss.length+ds.length;
+  side.hidden=true;gridHead.hidden=false;
+  gridHead.innerHTML=n?`<b>${n}</b> kết quả cho “${esc(q)}”`:`Không tìm thấy “${esc(q)}”`;
+  let i=0;const sec=(t,k)=>`<p class="gsec">${t} · ${k}</p>`;
+  grid.innerHTML=(cs.length?sec('Charm',cs.length)+cs.map(e=>charmCard(e,i++,cn,toks)).join(''):'')
+    +(ss.length?sec('Hạt chặn',ss.length)+ss.map(e=>charmCard(e,i++,cn,toks)).join(''):'')
+    +(ds.length?sec('Dây',ds.length)+ds.map(e=>strapCard(e,i++,toks)).join(''):'');
+  gridNote.textContent=n?'':'Thử gõ tên khác, màu (vd. hồng, xanh) hoặc mã (vd. HK-12).';
+  $('live').textContent=n?`${n} kết quả cho ${q}`:`Không tìm thấy ${q}`;
+}
+function runSearch(){
+  clearTimeout(SEARCH.t);SEARCH.t=0;cbar.classList.remove('typing');
+  const q=qIn.value.trim();if(q===SEARCH.shown)return;
+  SEARCH.shown=q;renderCatalog(true);$('gridWrap').scrollTop=0;
+}
+function openSearch(){
+  if(SEARCH.open)return;SEARCH.open=true;
+  cbar.classList.add('searching');sBtn.setAttribute('aria-expanded','true');sBtn.setAttribute('aria-label','Đóng tìm kiếm');
+  qIn.focus({preventScroll:true});
+}
+function closeSearch(){
+  if(!SEARCH.open)return;SEARCH.open=false;clearTimeout(SEARCH.t);SEARCH.t=0;
+  cbar.classList.remove('searching','typing');sBtn.setAttribute('aria-expanded','false');sBtn.setAttribute('aria-label','Tìm kiếm');
+  if(document.activeElement===qIn)sBtn.focus({preventScroll:true});
+  qIn.value='';const had=!!SEARCH.shown;SEARCH.shown='';
+  if(had){renderCatalog(true);$('gridWrap').scrollTop=0;}
+}
+sBtn.addEventListener('click',()=>SEARCH.open?closeSearch():openSearch());
+qIn.addEventListener('input',()=>{
+  const v=qIn.value.trim();clearTimeout(SEARCH.t);SEARCH.t=0;cbar.classList.remove('typing');
+  if(!v){if(SEARCH.shown){SEARCH.shown='';renderCatalog(true);$('gridWrap').scrollTop=0;}return;}
+  if(v===SEARCH.shown)return;
+  void cbar.offsetWidth;cbar.classList.add('typing');
+  SEARCH.t=setTimeout(runSearch,1500);
+});
+qIn.addEventListener('keydown',e=>{
+  if(e.key==='Enter'){e.preventDefault();runSearch();qIn.blur();}
+  else if(e.key==='Escape'){e.preventDefault();e.stopPropagation();closeSearch();}
+});
 /* cập nhật số lượng / dây đang dùng tại chỗ, không vẽ lại cả lưới (đỡ nháy ảnh) */
 function syncCatalog(){
   if(CAT.loading&&!CAT.charms.length)return;
@@ -1165,7 +1336,7 @@ function refreshSel(){
   /* đang kéo một charm từ trạng thái chưa chọn: giữ vòng đứng yên, chưa hiện viên thông tin; thả tay mới hiện và nhích vòng lên */
   const quiet=!!(drag&&drag.moved&&drag.fromIdle);
   $('selPill').hidden=!has||quiet;setLift(has&&!quiet?1:0);
-  if(has){const e=CE[it.code],i=selIndex();$('selNum').textContent=`Vị trí ${i+1}:`;$('selName').textContent=e.name;$('selVar').textContent=e.vname||'';$('selVar').hidden=!e.vname;$('selPrice').textContent=e.stop?fmt(e.price)+' / hạt':fmt(e.price);
+  if(has){const e=CE[it.code],i=selIndex();$('selNum').textContent=`Vị trí ${i+1}:`;$('selName').textContent=e.name;$('selVar').textContent=e.vname||'';$('selVar').hidden=!e.vname;$('selPrice').textContent=e.stop?FREE:fmt(e.price);
     document.querySelector('[data-tool="left"]').disabled=i<=0;document.querySelector('[data-tool="right"]').disabled=i>=state.items.length-1;}
   $('undoBtn').disabled=!hist.length;
   $('clearBtn').disabled=!state.items.length;
@@ -1361,8 +1532,8 @@ async function buildImage(){
     await drawFit(x,charmThumb(it.code,80),x0+38,y0+8,60);
     const priceW=110;
     x.fillStyle=INK;x.font='600 21px '+FONT;x.fillText(fitText(x,e.name,colW-110-priceW),x0+108,y0+33);
-    x.fillStyle=MUTE;x.font='400 17px '+FONT;x.fillText(fitText(x,`${e.vname?e.vname+' · ':''}${e.code}${e.stop?' · 1 hạt (½ cặp)':''}`,colW-110-priceW),x0+108,y0+58);
-    x.textAlign='right';x.fillStyle=INK;x.font='500 19px '+FONT;x.fillText(fmt(e.price),x0+colW,y0+33);x.textAlign='left';
+    x.fillStyle=MUTE;x.font='400 17px '+FONT;x.fillText(fitText(x,`${e.vname?e.vname+' · ':''}${e.code}${e.stop?' · tặng kèm':''}`,colW-110-priceW),x0+108,y0+58);
+    x.textAlign='right';x.fillStyle=INK;x.font='500 19px '+FONT;x.fillText(e.stop?FREE:fmt(e.price),x0+colW,y0+33);x.textAlign='left';
   }
   if(!n){x.fillStyle=MUTE;x.font='400 19px '+FONT;x.fillText('Chưa có charm nào.',P,y+40);}
   y+=rows*rowH+30;
