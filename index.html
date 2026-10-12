@@ -783,7 +783,7 @@ const charmCount=()=>state.items.reduce((a,it)=>a+(CE[it.code]&&!CE[it.code].sto
 const atLimit=e=>!!e&&!e.stop&&charmCount()>=MAX_CHARMS;
 /* báo đủ charm: toast + ô charm vừa bấm (nếu có) nháy viền đỏ; bấm tiếp thì nháy lại từ đầu */
 function limitHit(card){
-  toast('Đã đạt giới hạn charm trong 1 vòng',{sub:'Chạm vào charm trong vòng trên để xoá',ms:4000});
+  toast('Đã đạt giới hạn charm trong 1 vòng',{sub:'Chạm vào charm trong vòng trên rồi xoá bớt',ms:4000});
   if(!card)return;
   card.classList.remove('limit');void card.offsetWidth;card.classList.add('limit');
   clearTimeout(card._lt);card._lt=setTimeout(()=>card.classList.remove('limit'),1050);
