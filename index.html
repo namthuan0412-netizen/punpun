@@ -867,7 +867,9 @@ function geom(W,H,m,o){
     const cx0=cxOf(R),hit=cx0+R*.6>(o.avoid.l||0)&&cx0-R*.6<o.avoid.r;
     if(hit&&cyC-R*ext<top){cyC=top+R*ext;if(cyC+R>bot){R=Math.max(R0*.8,(bot-top)/(1+ext));cyC=Math.min(cyC,bot-R);}}
     /* chưa chọn charm: dời vòng xuống giữa khung (từ dưới nút Tròn/Ngang tới đáy khung); đang chọn: vòng nhích lên chừa chỗ cho viên thông tin charm */
-    let below=1.6;cl.ents.forEach(en=>{below=Math.max(below,en.bottom);});
+    /* phần charm nhô dưới dây tính theo một mức cố định (~charm hạt 12 mm), không theo charm đang gắn:
+       vòng trống hay gắn charm đầu tiên / charm treo dài thì vòng vẫn đứng yên một chỗ (shop yêu cầu 12/10) */
+    const below=6;
     const s0=2*Math.PI*R/L,dy=((top+H-10)-((cyC-R*ext)+(cyC+R+below*s0)))/2,lift=o.lift!=null?o.lift:1;
     if(dy>0)cyC+=dy*(1-lift);
     /* đang chọn charm: vòng cách nút Tròn/Ngang thêm 6px (shop yêu cầu 12/10) */
