@@ -56,10 +56,13 @@ button:disabled{cursor:default}
 .shell{height:100%; display:flex; flex-direction:column; max-width:1200px; margin:0 auto;
   padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) 0 env(safe-area-inset-left,0px)}
 @supports (height:100dvh){ .shell{height:100dvh} }
-/* điện thoại dọc: lúc gõ tìm kiếm, đẩy header + khung vòng lên khỏi màn hình để ô nhập không bị thanh địa chỉ/bàn phím che */
-.shell{overflow:hidden}
-.top{transition:margin-top 300ms var(--ease-out)}
-.shell.lift .top{margin-top:calc(-1 * var(--lift,0px))}
+/* điện thoại dọc: lúc gõ tìm kiếm, đẩy header + khung vòng lên khỏi màn hình để ô nhập không bị thanh địa chỉ/bàn phím che.
+   Bố cục chỉ đổi MỘT lần (header + khung vòng nằm trên mép màn hình, danh mục cao hết màn hình); phần chạy là transform
+   của 3 khối (GPU lo) nên không phải tính lại bố cục mỗi khung hình như khi chạy margin-top. */
+.shell{overflow:hidden; --lift-ms:360ms; --lift-ease:cubic-bezier(.3,.6,.1,1)}
+.shell.lifted > .top{margin-top:calc(-1 * var(--lift,0px))}
+.shell.lifted > .top,.shell.lifted > .work,.shell.lifted > .catalog{transform:translate3d(0,var(--ly,0px),0)}
+.shell.lift-anim > .top,.shell.lift-anim > .work,.shell.lift-anim > .catalog{transition:transform var(--lift-ms) var(--lift-ease); will-change:transform}
 .top{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:8px 16px 8px}
 .brand{display:flex; align-items:baseline; gap:8px; min-width:0}
 .brand b{font-size:19px; font-weight:700; letter-spacing:-.02em}
@@ -115,12 +118,17 @@ button:disabled{cursor:default}
 }
 
 /* catalog */
-.catalog{flex:1; min-height:0; display:flex; flex-direction:column; background:var(--surface); border-top:1px solid var(--line); border-radius:20px 20px 0 0}
-/* hàng tab + nút tìm kiếm (tab bên trái, kính lúp bên phải). Mở tìm kiếm: ô nhập nở ra từ nút, tab mờ đi, kính lúp biến thành X */
-.cbar{position:relative; display:flex; align-items:flex-end; justify-content:space-between; gap:8px; padding:4px 6px 0 16px; border-bottom:1px solid var(--line)}
-.ctabs{display:flex; gap:24px; min-width:0; transition:opacity 180ms var(--ease-out), transform 320ms var(--ease-out), visibility 0s}
-.cbar.searching .ctabs{opacity:0; transform:translateX(-10px); visibility:hidden; pointer-events:none; transition:opacity 140ms var(--ease-in), transform 320ms var(--ease-out), visibility 0s 320ms}
-.sbtn{flex:none; align-self:center; width:40px; height:40px; margin-bottom:1px; border-radius:50%; display:grid; place-items:center; color:var(--fg); transition:background-color var(--fast)}
+.catalog{flex:1; min-height:0; display:flex; flex-direction:column; background:var(--surface); border-top:1px solid var(--line); border-radius:20px 20px 0 0; overflow:hidden; overflow:clip}
+/* hàng tab + nút tìm kiếm (tab bên trái, kính lúp bên phải).
+   Mở tìm kiếm: (điện thoại dọc) header + khung vòng đẩy lên trước; rồi tab trượt hẳn qua trái ra khỏi khung, CÙNG LÚC ô nhập
+   trượt ra từ sau nút kính lúp sang trái tới đủ chiều dài — cùng thời lượng, cùng nhịp nên tab vừa đi hết là ô nhập vừa đủ dài.
+   Kính lúp biến thành X. Chỉ chạy transform (GPU) nên vẫn mượt trên iPhone lúc bàn phím đang bật lên. Đóng thì chạy ngược lại. */
+.cbar{position:relative; display:flex; align-items:flex-end; justify-content:space-between; gap:8px; padding:4px 6px 0 16px; border-bottom:1px solid var(--line); --s-dur:380ms; --s-ease:cubic-bezier(.45,0,.2,1); --s-delay:0ms}
+.ctabs{display:flex; gap:24px; min-width:0; transition:transform var(--s-dur) var(--s-ease)}
+.cbar.searching .ctabs{transform:translate3d(var(--tabs-out,-120%),0,0); pointer-events:none; transition:transform var(--s-dur) var(--s-ease) var(--s-delay)}
+/* ẩn hẳn (cho trình đọc màn hình / phím Tab) khi đã trượt ra hết; ô nhập lúc đóng cũng ẩn hẳn khi đã lùi xong — gắn bằng JS, không dùng transition visibility */
+.cbar.s-gone .ctabs{visibility:hidden}
+.sbtn{flex:none; align-self:center; width:40px; height:40px; margin-bottom:1px; border-radius:50%; display:grid; place-items:center; color:var(--fg); background:var(--surface); z-index:1; transition:background-color var(--fast)}
 .sbtn::after{content:""; position:absolute; inset:-2px}
 .sbtn:active{background:var(--soft)}
 .sbtn svg{overflow:visible}
@@ -130,16 +138,24 @@ button:disabled{cursor:default}
 .cbar.searching .sbtn .s-ring{stroke-dashoffset:37.7px; opacity:0; transition:stroke-dashoffset 280ms var(--ease-in), opacity 0s 280ms}
 .cbar.searching .sbtn .s-a{stroke-dashoffset:0; transform:none}
 .cbar.searching .sbtn .s-b{stroke-dashoffset:0; opacity:1; transition:stroke-dashoffset 260ms var(--ease-out) 90ms, opacity 0s 90ms}
-.csearch{position:absolute; left:12px; right:52px; top:5px; bottom:5px; border-radius:19px; background:var(--soft); overflow:hidden; opacity:0; visibility:hidden;
-  -webkit-clip-path:inset(0 0 0 calc(100% - 38px) round 19px); clip-path:inset(0 0 0 calc(100% - 38px) round 19px);
-  transition:clip-path 320ms var(--ease-out), -webkit-clip-path 320ms var(--ease-out), opacity 160ms var(--ease-in), visibility 0s 320ms}
-.cbar.searching .csearch{opacity:1; visibility:visible; -webkit-clip-path:inset(0 0 0 0 round 19px); clip-path:inset(0 0 0 0 round 19px);
-  transition:clip-path 340ms var(--ease-out), -webkit-clip-path 340ms var(--ease-out), opacity 120ms var(--ease-out), visibility 0s}
+/* ô nhập: khung .csearch cắt ở giữa nút kính lúp; viên .cfield lúc đóng lùi sang phải, nấp sau nút (nút có nền đặc, tâm trùng tâm đầu tròn của viên) */
+.csearch{position:absolute; left:12px; right:26px; top:6px; height:38px; overflow:hidden; overflow:clip; visibility:hidden; pointer-events:none}
+.cbar.searching .csearch{visibility:visible; pointer-events:auto}
+.cbar.s-closing .csearch{visibility:visible}
+.cfield{position:absolute; top:0; bottom:0; left:0; right:26px; border-radius:19px; background:var(--soft); overflow:hidden; transform:translate3d(calc(100% + 7px),0,0); transition:transform var(--s-dur) var(--s-ease), box-shadow 160ms linear}
+.cbar.searching .cfield{transform:translate3d(0,0,0); transition:transform var(--s-dur) var(--s-ease) var(--s-delay), box-shadow 160ms linear}
+/* lúc mở: focus khi mọi thứ đã ở trạng thái cuối (iPhone đặt con trỏ đúng chỗ, không tự đẩy trang), rồi mới quay về hình lúc đầu và chạy */
+.cbar.s-from .ctabs{transform:translate3d(0,0,0)}
+.cbar.s-from .cfield{transform:translate3d(calc(100% + 7px),0,0)}
+.cbar.s-instant .ctabs,.cbar.s-instant .cfield{transition:none}
+/* con trỏ của iPhone không chạy theo hiệu ứng: ẩn con trỏ trong lúc ô nhập đang di chuyển */
+.cbar.moving .csearch input{caret-color:transparent}
 /* chữ trong ô tìm nhìn như 14px nhưng vẫn là 16px thật (iPhone tự phóng to trang khi ô nhập dưới 16px) */
 .csearch input{width:calc(100% / .875); height:calc(100% / .875); transform:scale(.875); transform-origin:0 0; border:0; background:transparent; color:var(--fg); font:inherit; font-size:16px; padding:0 16px; outline:none; -webkit-appearance:none; appearance:none; border-radius:22px}
 .csearch input::placeholder{color:var(--muted); opacity:1}
 .csearch input::-webkit-search-cancel-button,.csearch input::-webkit-search-decoration{-webkit-appearance:none; appearance:none; display:none}
-.csearch:focus-within{box-shadow:inset 0 0 0 1.5px var(--accent)}
+.cfield:focus-within{box-shadow:inset 0 0 0 1.5px var(--accent)}
+.cbar.moving .cfield{box-shadow:none}
 /* đang đợi 0,5 giây sau khi ngưng gõ: vạch vàng mảnh chạy dưới ô nhập */
 .qbar{position:absolute; left:14px; right:14px; bottom:3px; height:2px; border-radius:1px; background:var(--accent); transform:scaleX(0); transform-origin:left; opacity:0; pointer-events:none}
 .cbar.typing .qbar{opacity:.85; animation:qfill .5s linear forwards}
@@ -252,14 +268,15 @@ textarea.copybox{width:100%; min-height:240px; border-radius:12px; border:1px so
 .toast button:active{background:rgba(128,128,128,.25)}
 
 /* điện thoại xoay ngang: vòng bên trái, danh mục bên phải */
+/* :root:not(.kb) — webview Android thu nhỏ trang khi bàn phím bật: không nhảy sang bố cục ngang */
 @media (orientation:landscape) and (max-height:520px){
-  .shell{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); grid-template-rows:auto minmax(0,1fr); column-gap:16px;
+  :root:not(.kb) .shell{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); grid-template-rows:auto minmax(0,1fr); column-gap:16px;
     padding-left:max(16px,env(safe-area-inset-left,0px)); padding-right:max(16px,env(safe-area-inset-right,0px))}
-  .top{grid-column:1 / -1; padding:6px 0}
-  .work{padding:0; grid-row:2; grid-column:1; align-self:start}
-  .catalog{grid-row:2; grid-column:2; border:1px solid var(--line); border-bottom:0; border-radius:18px 18px 0 0; min-height:0}
-  .toolbar{padding:6px 0 8px}
-  .toast{bottom:auto; top:calc(8px + env(safe-area-inset-top,0px)); --toast-off:calc(-100% - 16px - env(safe-area-inset-top,0px))}
+  :root:not(.kb) .top{grid-column:1 / -1; padding:6px 0}
+  :root:not(.kb) .work{padding:0; grid-row:2; grid-column:1; align-self:start}
+  :root:not(.kb) .catalog{grid-row:2; grid-column:2; border:1px solid var(--line); border-bottom:0; border-radius:18px 18px 0 0; min-height:0}
+  :root:not(.kb) .toolbar{padding:6px 0 8px}
+  :root:not(.kb) .toast{bottom:auto; top:calc(8px + env(safe-area-inset-top,0px)); --toast-off:calc(-100% - 16px - env(safe-area-inset-top,0px))}
 }
 @media (min-width:900px) and (min-height:521px){
   .shell{display:grid; grid-template-columns:minmax(0,1.1fr) minmax(0,1fr); grid-template-rows:auto minmax(0,1fr); column-gap:28px; padding:0 24px 24px}
@@ -291,6 +308,7 @@ textarea.copybox{width:100%; min-height:240px; border-radius:12px; border:1px so
 }
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms!important; animation-iteration-count:1!important; transition-duration:.01ms!important}
+  .csearch,.csearch *,.cbar .ctabs,.cbar .ctabs *{transition:none!important}
 }
 </style>
 
@@ -346,11 +364,11 @@ textarea.copybox{width:100%; min-height:240px; border-radius:12px; border:1px so
         <button class="ctab" role="tab" id="tabStop" data-ctab="stop" aria-selected="false" aria-controls="cpanel" tabindex="-1">Hạt chặn</button>
         <button class="ctab" role="tab" id="tabStrap" data-ctab="strap" aria-selected="false" aria-controls="cpanel" tabindex="-1">Dây</button>
       </div>
-      <div class="csearch" id="csearch" role="search">
+      <div class="csearch" id="csearch" role="search"><div class="cfield">
         <input id="q" type="search" inputmode="search" enterkeyhint="search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Tìm charm, hạt chặn, dây…" aria-label="Tìm trong danh mục" aria-describedby="qHint">
         <span class="vh" id="qHint">Ngưng gõ một chút là có kết quả, hoặc bấm Enter</span>
         <span class="qbar" aria-hidden="true"></span>
-      </div>
+      </div></div>
       <button class="sbtn" id="searchBtn" type="button" aria-label="Tìm kiếm" aria-expanded="false" aria-controls="csearch">
         <svg aria-hidden="true" focusable="false" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
           <circle class="s-ring" cx="10.5" cy="10.5" r="6" stroke-dasharray="37.7 40" transform="rotate(45 10.5 10.5)"/>
@@ -1045,15 +1063,25 @@ function syncPanUI(){
   panL.style.top=panR.style.top=Math.round(g.ay)+'px';
   panL.disabled=g.pan<=-g.panMax+.5;panR.disabled=g.pan>=g.panMax-.5;
 }
+/* bàn phím: vài trình duyệt trong app (Android) thu nhỏ cả trang khi bàn phím bật lên.
+   Lúc đang gõ mà chỉ chiều cao co lại thì vẫn tính theo cỡ màn hình lúc chưa có bàn phím: khung vòng không co, không nhảy sang bố cục ngang */
+const VP={w:0,h:0};
+function viewSize(){
+  const a=document.activeElement,typing=!!a&&(a.tagName==='INPUT'||a.tagName==='TEXTAREA');
+  const kb=typing&&VP.w===innerWidth&&innerHeight<VP.h-80;
+  if(!kb){VP.w=innerWidth;VP.h=innerHeight;}
+  document.documentElement.classList.toggle('kb',kb);
+  return VP;
+}
 function sizeStage(){
-  const wrap=$('canvasWrap');
-  LAND=innerWidth>innerHeight&&innerHeight<=520;WIDE=!LAND&&innerWidth>=900;
+  const wrap=$('canvasWrap'),vp=viewSize(),vw=vp.w,vh=vp.h;
+  LAND=vw>vh&&vh<=520;WIDE=!LAND&&vw>=900;
   const avail=Math.floor(wrap.clientWidth);
   reserveR=0;const hRes=WIDE?150:LAND?104:76;
   let maxH;
-  if(WIDE)maxH=Math.min(560,innerHeight-230);
-  else if(LAND)maxH=innerHeight-document.querySelector('.top').offsetHeight-$('toolbar').offsetHeight-14;
-  else maxH=Math.max(240,innerHeight*.38);
+  if(WIDE)maxH=Math.min(560,vh-230);
+  else if(LAND)maxH=vh-document.querySelector('.top').offsetHeight-$('toolbar').offsetHeight-14;
+  else maxH=Math.max(240,vh*.38);
   S=Math.max(LAND?170:220,Math.floor(Math.min(avail-hRes,maxH)));
   CW=Math.max(S,avail);
   const co=document.querySelector('.corner'),wr=wrap.getBoundingClientRect(),cr=co?co.getBoundingClientRect():null;
@@ -1061,6 +1089,7 @@ function sizeStage(){
   dpr=Math.min(3,window.devicePixelRatio||1);
   cv.style.width=CW+'px';cv.style.height=S+'px';cv.width=Math.round(CW*dpr);cv.height=Math.round(S*dpr);
   panUI='';renderStage();
+  syncLift();
 }
 function updateHint(){} /* bỏ dòng gợi ý dưới vòng (shop yêu cầu 12/10) */
 function setView(mode,instant){
@@ -1248,9 +1277,12 @@ function renderCatalog(animate){
 }
 
 /* ---------- tìm kiếm ----------
-   Bấm kính lúp → nút đổi thành X, ô nhập mở ra phủ lên hàng tab. Gõ tới đâu, ngưng gõ 0,5 giây mới tìm
-   (đỡ nháy kết quả liên tục); Enter là tìm ngay. Không phân biệt dấu (gõ "hong" ra "Hồng"), các chữ đã gõ tô vàng. */
-const SEARCH={open:false,shown:'',t:0};
+   Bấm kính lúp → nút đổi thành X; (điện thoại dọc) header + khung vòng đẩy lên, rồi tab trượt qua trái và ô nhập trượt từ phải qua
+   cùng lúc. Gõ tới đâu, ngưng gõ 0,5 giây mới tìm (đỡ nháy kết quả liên tục); Enter là tìm ngay.
+   Không phân biệt dấu (gõ "hong" ra "Hồng"), các chữ đã gõ tô vàng. */
+const SEARCH={open:false,shown:'',t:0,ct:0,vt:0};
+/* nhịp chuyển động (khớp với CSS: --lift-ms, --s-dur); ô nhập + tab bắt đầu chạy khi phần đẩy lên đã đi được ~90% */
+const RAISE_MS=360,S_DUR=380,S_AFTER_LIFT=180,DROP_AFTER=120;
 const cbar=$('cbar'),qIn=$('q'),sBtn=$('searchBtn');
 function sNorm(str){
   str=String(str||'');let n='';const map=[];
@@ -1288,25 +1320,98 @@ function runSearch(){
 }
 function openSearch(){
   if(SEARCH.open)return;SEARCH.open=true;
-  cbar.classList.add('searching');sBtn.setAttribute('aria-expanded','true');sBtn.setAttribute('aria-label','Đóng tìm kiếm');
-  qIn.focus({preventScroll:true});liftShell(true);
+  const tb=$('ctabs'),lift=canLift(),rm=reduceMotion();
+  /* tab đi vừa hết khỏi mép trái đúng lúc ô nhập vừa đủ dài */
+  cbar.style.setProperty('--tabs-out',-(tb.offsetLeft+tb.offsetWidth+24)+'px');
+  cbar.style.setProperty('--s-delay',(lift&&!rm?S_AFTER_LIFT:0)+'ms');
+  sBtn.setAttribute('aria-expanded','true');sBtn.setAttribute('aria-label','Đóng tìm kiếm');
+  /* 1) dựng ngay trạng thái cuối rồi mới focus: iPhone lấy vị trí ô nhập lúc focus để đặt con trỏ và quyết định có tự đẩy trang không */
+  clearTimeout(SEARCH.vt);cbar.classList.remove('s-closing');
+  cbar.classList.add('s-instant','searching','moving');
+  if(lift)liftLayout();
+  qIn.focus({preventScroll:true});
+  if(rm){cbar.classList.remove('s-instant');cbar.classList.add('s-gone');caretShow(false);return;}
+  /* 2) quay về hình lúc đầu (chưa kịp vẽ ra màn hình) rồi cho chạy: đẩy lên trước, sau đó tab qua trái + ô nhập từ phải qua cùng lúc */
+  cbar.classList.add('s-from');if(lift)liftFrom();
+  void cbar.offsetWidth;
+  cbar.classList.remove('s-instant','s-from');if(lift)liftPlay();
+  const total=S_DUR+(lift?S_AFTER_LIFT:0);
+  caretHide(total);
+  SEARCH.vt=setTimeout(()=>{if(SEARCH.open)cbar.classList.add('s-gone');},total+40);
 }
-function closeSearch(){
+function closeSearch(fromKey){
   if(!SEARCH.open)return;SEARCH.open=false;clearTimeout(SEARCH.t);SEARCH.t=0;
-  cbar.classList.remove('searching','typing');sBtn.setAttribute('aria-expanded','false');sBtn.setAttribute('aria-label','Tìm kiếm');
-  liftShell(false);
-  if(document.activeElement===qIn)sBtn.focus({preventScroll:true});
+  caretShow(false);
+  clearTimeout(SEARCH.vt);
+  cbar.classList.remove('searching','typing','s-from','s-instant','s-gone');
+  if(!reduceMotion()){cbar.classList.add('s-closing');SEARCH.vt=setTimeout(()=>cbar.classList.remove('s-closing'),S_DUR+40);}sBtn.setAttribute('aria-expanded','false');sBtn.setAttribute('aria-label','Tìm kiếm');
+  /* đóng: ô nhập lùi về sau nút + tab trượt về trước, khung vòng hạ xuống ngay sau đó */
+  liftTo(false,DROP_AFTER);
+  /* bấm X bằng tay: chỉ rời ô nhập (cụp bàn phím), không dời focus sang nút để khỏi hiện viền focus vàng quanh kính lúp; Esc / bàn phím thì focus về nút */
+  if(document.activeElement===qIn){if(fromKey)sBtn.focus({preventScroll:true});else qIn.blur();}
   qIn.value='';const had=!!SEARCH.shown;SEARCH.shown='';
   if(had){renderCatalog(true);$('gridWrap').scrollTop=0;}
 }
-sBtn.addEventListener('click',()=>SEARCH.open?closeSearch():openSearch());
-function liftShell(on){
-  if(on&&(WIDE||LAND))on=false;
-  if(on)shell.style.setProperty('--lift',(document.querySelector('.top').offsetHeight+document.querySelector('.work').offsetHeight)+'px');
-  shell.classList.toggle('lift',on);
+sBtn.addEventListener('click',e=>SEARCH.open?closeSearch(e.detail===0):openSearch());
+function caretHide(ms){cbar.classList.add('moving');clearTimeout(SEARCH.ct);SEARCH.ct=setTimeout(()=>caretShow(true),ms+40);}
+function caretShow(nudge){
+  clearTimeout(SEARCH.ct);if(!cbar.classList.contains('moving'))return;cbar.classList.remove('moving');
+  /* đổi vùng chọn qua lại một lần để iPhone vẽ lại con trỏ ở chỗ mới */
+  if(nudge&&document.activeElement===qIn){try{const a=qIn.selectionStart,b=qIn.selectionEnd,d=qIn.selectionDirection||'none',n=qIn.value.length;
+    if(n){const z=a===0&&b===0?n:0;qIn.setSelectionRange(z,z);qIn.setSelectionRange(a,b,d);}}catch(e){}}
 }
-qIn.addEventListener('focus',()=>liftShell(true));
-qIn.addEventListener('blur',()=>liftShell(false));
+/* đẩy header + khung vòng lên (điện thoại dọc, lúc đang gõ tìm kiếm).
+   FLIP: đổi bố cục sang trạng thái đã đẩy lên một lần, bù lại bằng transform cho mọi thứ đứng yên tại chỗ, rồi cho transform chạy về 0.
+   Hạ xuống: giữ bố cục đã đẩy lên trong lúc trượt xuống, xong mới trả bố cục cũ (không lộ khoảng trống ở đáy). */
+const RAISE={on:false,x:0,end:0,wait:0};
+const canLift=()=>!WIDE&&!LAND;
+function liftLayout(){
+  clearTimeout(RAISE.end);clearTimeout(RAISE.wait);
+  RAISE.x=document.querySelector('.top').offsetHeight+document.querySelector('.work').offsetHeight;RAISE.on=true;
+  shell.style.setProperty('--lift',RAISE.x+'px');shell.style.setProperty('--ly','0px');
+  shell.classList.remove('lift-anim');shell.classList.add('lifted');
+}
+function liftFrom(){shell.style.setProperty('--ly',RAISE.x+'px');}
+function liftPlay(){
+  void shell.offsetWidth;shell.classList.add('lift-anim');shell.style.setProperty('--ly','0px');
+  clearTimeout(RAISE.end);RAISE.end=setTimeout(liftSettled,RAISE_MS+40);
+}
+function liftSettled(){
+  shell.classList.remove('lift-anim');
+  /* phòng khi iPhone vẫn tự đẩy trang lúc bàn phím bật: kéo trang về đầu để ô nhập không bị lấp mép trên */
+  if(RAISE.on&&(window.scrollY||0)>0){try{window.scrollTo({top:0,behavior:'smooth'});}catch(e){window.scrollTo(0,0);}}
+}
+function liftReset(){
+  clearTimeout(RAISE.end);clearTimeout(RAISE.wait);RAISE.on=false;
+  shell.classList.remove('lifted','lift-anim');shell.style.setProperty('--ly','0px');
+}
+function liftTo(on,delay){
+  on=!!on&&canLift();clearTimeout(RAISE.wait);
+  if(on===RAISE.on)return;
+  const rm=reduceMotion();
+  if(!on&&delay&&!rm){RAISE.wait=setTimeout(()=>liftTo(false),delay);return;}
+  if(rm){if(on)liftLayout();else liftReset();return;}
+  clearTimeout(RAISE.end);
+  if(on){
+    /* đang hạ xuống dở thì quay đầu đi lên từ chỗ đang đứng */
+    if(shell.classList.contains('lifted')){RAISE.on=true;shell.classList.add('lift-anim');shell.style.setProperty('--ly','0px');RAISE.end=setTimeout(liftSettled,RAISE_MS+40);}
+    else{liftLayout();liftFrom();liftPlay();}
+    caretHide(RAISE_MS);return;
+  }
+  RAISE.on=false;shell.classList.add('lift-anim');shell.style.setProperty('--ly',RAISE.x+'px');
+  RAISE.end=setTimeout(liftReset,RAISE_MS+40);
+}
+/* đổi cỡ màn hình / xoay máy lúc đang đẩy lên */
+function syncLift(){
+  if(!shell.classList.contains('lifted'))return;
+  if(!canLift()){liftReset();return;}
+  if(!RAISE.on||shell.classList.contains('lift-anim'))return;
+  RAISE.x=document.querySelector('.top').offsetHeight+document.querySelector('.work').offsetHeight;shell.style.setProperty('--lift',RAISE.x+'px');
+}
+/* bấm lại vào ô nhập (sau khi Enter) thì đẩy lên lại; rời ô nhập (Enter, bấm ra ngoài) thì hạ xuống */
+qIn.addEventListener('focus',()=>{if(SEARCH.open)liftTo(true);});
+qIn.addEventListener('blur',()=>{caretShow(false);if(SEARCH.open)liftTo(false);});
+document.addEventListener('focusout',()=>setTimeout(()=>{if(document.documentElement.classList.contains('kb')&&!/^(INPUT|TEXTAREA)$/.test((document.activeElement||{}).tagName||''))sizeStage();},0));
 qIn.addEventListener('input',()=>{
   const v=qIn.value.trim();clearTimeout(SEARCH.t);SEARCH.t=0;cbar.classList.remove('typing');
   if(!v){if(SEARCH.shown){SEARCH.shown='';renderCatalog(true);$('gridWrap').scrollTop=0;}return;}
@@ -1316,7 +1421,7 @@ qIn.addEventListener('input',()=>{
 });
 qIn.addEventListener('keydown',e=>{
   if(e.key==='Enter'){e.preventDefault();runSearch();qIn.blur();}
-  else if(e.key==='Escape'){e.preventDefault();e.stopPropagation();closeSearch();}
+  else if(e.key==='Escape'){e.preventDefault();e.stopPropagation();closeSearch(true);}
 });
 /* cập nhật số lượng / dây đang dùng tại chỗ, không vẽ lại cả lưới (đỡ nháy ảnh) */
 function syncCatalog(){
