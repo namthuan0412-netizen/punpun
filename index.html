@@ -92,8 +92,8 @@ button:disabled{cursor:default}
 .seg{position:relative; display:inline-flex; padding:2px; gap:2px; border-radius:999px; background:var(--surface); border:1px solid var(--line)}
 /* cục nền đậm của Tròn/Ngang: trượt qua lại giữa 2 nút (JS đặt --seg-x / --seg-w theo nút đang chọn) */
 .seg::before{content:""; position:absolute; top:2px; left:0; height:30px; width:var(--seg-w,0px); border-radius:999px; background:var(--fg); transform:translate3d(var(--seg-x,0px),0,0); pointer-events:none}
-.seg.ready::before{transition:transform 360ms cubic-bezier(.3,.7,.2,1), width 360ms cubic-bezier(.3,.7,.2,1)}
-.seg button{z-index:1; height:30px; padding:0 11px; border-radius:999px; font-size:12.5px; font-weight:600; color:var(--muted); display:inline-flex; align-items:center; gap:5px; transition:color 360ms var(--ease)}
+.seg.ready::before{transition:transform 600ms cubic-bezier(.3,.7,.2,1), width 600ms cubic-bezier(.3,.7,.2,1)}
+.seg button{z-index:1; height:30px; padding:0 11px; border-radius:999px; font-size:12.5px; font-weight:600; color:var(--muted); display:inline-flex; align-items:center; gap:5px; transition:color 600ms var(--ease)}
 .seg button::after{content:""; position:absolute; inset:-8px 0}
 .seg button[aria-checked="true"]{color:var(--bg)}
 .seg:not(.ready) button[aria-checked="true"]{background:var(--fg)}
@@ -347,6 +347,8 @@ textarea.copybox{width:100%; min-height:240px; border-radius:12px; border:1px so
   .sel-pill:not([hidden]){animation:pillIn 340ms var(--ease-out)}
   .sel-pill.out{animation:pillOut 280ms var(--ease-in) forwards}
   .specs:not([hidden]){animation:popIn 600ms var(--ease-out)}
+  .specs.out{animation:specsOut 280ms var(--ease-in) forwards; pointer-events:none}
+  @keyframes specsOut{from{opacity:1; filter:blur(0)} to{opacity:0; filter:blur(8px); transform:scale(1.04)}}
   @keyframes popIn{from{opacity:0; transform:scale(.4)} to{opacity:1; transform:none}}
   @keyframes pillIn{from{transform:translate(-50%,100%)} to{transform:translate(-50%,0)}}
   @keyframes pillOut{from{opacity:1; filter:blur(0)} to{opacity:0; filter:blur(8px); transform:translateX(-50%) scale(1.04)}}
@@ -1885,9 +1887,16 @@ document.addEventListener('click',e=>{
   if(a==='clearYes'){const n=state.items.length;closeSheet();commit(()=>{state.items=[];sel=null;});toast(`Đã xoá ${n} charm`,{undo:true});return;}
 });
 /* nút (i): bật / tắt bảng nhỏ Số charm · Đã dùng · Tạm tính; bấm ra ngoài hoặc Esc là đóng */
+/* mở: phóng 0.4 → 1 (CSS popIn); đóng: mờ nhoè tan đi giống viên thông tin charm (CSS specsOut) xong mới gắn hidden */
+const SPECS={out:false,t:0};
 function toggleInfo(open){
-  const sp=$('specs'),btn=$('infoBtn');open=open==null?sp.hidden:open;
-  sp.hidden=!open;btn.setAttribute('aria-expanded',String(open));
+  const sp=$('specs'),btn=$('infoBtn'),isOpen=btn.getAttribute('aria-expanded')==='true';open=open==null?!isOpen:open;
+  btn.setAttribute('aria-expanded',String(open));
+  if(open){if(SPECS.out){clearTimeout(SPECS.t);SPECS.out=false;sp.classList.remove('out');}sp.hidden=false;return;}
+  if(sp.hidden||SPECS.out)return;
+  if(reduceMotion()){sp.hidden=true;return;}
+  SPECS.out=true;sp.classList.add('out');
+  SPECS.t=setTimeout(()=>{SPECS.out=false;sp.classList.remove('out');sp.hidden=true;},290);
 }
 document.addEventListener('click',e=>{if(!$('specs').hidden&&e.target.closest&&!e.target.closest('#specs,#infoBtn'))toggleInfo(false);});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('specs').hidden&&!sheetKind){toggleInfo(false);$('infoBtn').focus();}});
