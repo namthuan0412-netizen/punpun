@@ -891,7 +891,7 @@ function startReflow(from){
 const WORN_MM=160;
 /* corner: góc gãy ở mũi giọt nước (rad); cornerDir: hướng mũi nhọn tính từ tâm vòng (225° = trên bên trái);
    dA: từ mũi nhọn Q lùi theo cạnh trái tới đầu dây (chân khoen); dP: từ Q tới chỗ bắt đầu gập theo cạnh trên (âm = vượt qua Q) */
-const KN={collar:5.5,eyeLen:9.4,eyeW:6.6,cord:1.4,corner:55*Math.PI/180,cornerDir:225*Math.PI/180,dA:3.4,dP:-.8,knotL:5.2,rimW:1.02,k1:7.1,kinkL:2.5,kink:.42,wrap:8.5,tip:1,minArc:4,pad:.5,gap:.35};
+const KN={collar:5.5,eyeLen:9.4,eyeW:6.6,cord:1.4,corner:55*Math.PI/180,cornerDir:225*Math.PI/180,dA:3.4,dP:-.8,knotL:5.2,rimW:1.02,k1:7.1,kGap:.35,kinkL:2.5,kink:.42,wrap:8.5,tip:1,minArc:4,pad:.5,gap:.35};
 const PH=.25;
 let PM_CACHE={key:'',pm:null};
 function pathModel(st,need){
@@ -953,6 +953,10 @@ function geom(W,H,m,o){
   /* cụm charm: giữa cụm ở đáy vòng (u = 0), không vượt khỏi đoạn gắn được charm (chân khoen → nút rút); quá dài thì ép sát lại */
   const span=pm.uMax-pm.uMin,kc=cl.W>span?span/cl.W:1,Wk=cl.W*kc,u0=Math.max(pm.uMin,Math.min(pm.uMax-Wk,-Wk/2));
   let acc=0;const cs=cl.ws.map(w=>{const c=(acc+w/2)*kc;acc+=w+KN.gap;return c;});
+  /* Ngang (13/10, shop yêu cầu): cụm charm trượt dọc dây vào GIỮA sợi dây trải thẳng — giữa đoạn từ chân khoen tới chốt 1
+     (lúc này chốt 1 đã nằm sát chốt 2 ở đầu đuôi). Trượt theo e nên lúc vòng đang duỗi ra charm tự chạy vào giữa; Tròn không đổi */
+  const dLo=pm.uMin,dHi=pm.braid?pm.uB-KN.knotL*1.5-KN.kGap-KN.pad:pm.uMax,
+    cMid=Math.max(dLo+Wk/2,Math.min(dHi-Wk/2,(dLo+dHi)/2)),shF=cMid-(u0+Wk/2);
   const reserve=o.reserve!=null?o.reserve:reserveR;
   /* cỡ vẽ: vòng đeo mặc định (chu vi WORN_MM) có bán kính R0 = 30% chiều cao khung.
      Gắn nhiều charm vòng nới ra thì vòng trên màn hình to lên, tối đa 12%; quá nữa thì thu cỡ vẽ lại cho vừa khung */
@@ -986,7 +990,7 @@ function geom(W,H,m,o){
   /* trượt ngang: pan (mm) = điểm u nằm giữa khung; giới hạn để luôn thấy được 2 đầu dây (khoen bên trái, đuôi bên phải) */
   const pLo=pm.uS-pm.endX-8+(W/2)/sL,pHi=pm.uE+8-(W/2)/sL,pMid=(pm.uS-pm.endX+pm.uE)/2,fits=pLo>pHi;
   const panLo=fits?pMid:pLo,panHi=fits?pMid:pHi,pan=Math.max(panLo,Math.min(panHi,o.pan||0));
-  return{cl,pm,L,u0,cs,Wk,s:lerp(sC,sL,e),sL,ax:lerp(cxC,W/2-pan*sL,e),ay:lerp(cyC+R,ayL,e),e,W,H,R,cxC,cyC,pan,panLo,panHi,tight,tab:pathTab(pm,e)};
+  return{cl,pm,L,u0:u0+shF*e,sh:shF*e,shF,cs,Wk,s:lerp(sC,sL,e),sL,ax:lerp(cxC,W/2-pan*sL,e),ay:lerp(cyC+R,ayL,e),e,W,H,R,cxC,cyC,pan,panLo,panHi,tight,tab:pathTab(pm,e)};
 }
 function curvePt(g,u){
   const t=g.tab,j=u/PH-t.iS;let X,Y,a;
@@ -1205,7 +1209,9 @@ function drawClosure(ctx,g,st,tex,texR){
   body(ctx,()=>rr2(ctx,-KN.tip/2-.1,-T*.44,KN.tip+.1,T*.88,sg>0?.1:T*.4,sg>0?T*.4:.1),shade(base,-.22));
   ctx.fillStyle=rgba(shade(base,-.55),.5);ctx.fillRect(sg>0?-KN.tip/2-.1:KN.tip/2-.12,-T*.44,.22,T*.88);
   ctx.restore();
-  drawKnot(ctx,g,pm.uK1,st,tx,1,dev);
+  /* Ngang (13/10, shop yêu cầu): chốt 1 trượt dọc dây tới nằm sát bên trái chốt 2 — trải ra thì 2 chốt đứng cạnh nhau ở đầu đuôi */
+  const e=g.e||0,uK1=pm.uK1+(pm.uB-KN.knotL-KN.kGap-pm.uK1)*e;
+  drawKnot(ctx,g,uK1,st,tx,1,dev);
   drawKnot(ctx,g,pm.uB,st,tx,2,dev);
 }
 /* khoá: mỗi đầu dây giữ một nửa, khi đeo tròn hai nửa khép lại thành một khoá (dây kim loại, da, dù) */
@@ -1225,7 +1231,7 @@ function drawEnds(ctx,g,st){
 
 function layout(W,H,m,o){
   const g=geom(W,H,m,o);
-  const A=o.anim&&o.anim.from?o.anim:null,t=A?Math.min(1,(performance.now()-A.t0)/A.dur):1,te=1-Math.pow(1-t,3),lo=g.pm.uMin+3,hi=g.pm.uMax-3;
+  const A=o.anim&&o.anim.from?o.anim:null,t=A?Math.min(1,(performance.now()-A.t0)/A.dur):1,te=1-Math.pow(1-t,3),lo=g.pm.uMin+3+g.sh,hi=g.pm.uMax-3+g.sh;
   const list=g.cl.its.map((it,i)=>{
     const c=g.cs[i],u1=g.u0+c;let u=u1,pop=1;
     if(A&&t<1){if(A.from.has(it.uid))u=lerp(A.from.get(it.uid),u1,te);else pop=.35+.65*backOut(t);}
@@ -1420,13 +1426,21 @@ function setView(mode,instant){
   VIEW.raf=requestAnimationFrame(step);
 }
 /* đổi Tròn → Ngang lúc đang chọn charm (12/10, shop yêu cầu): giữ charm đó trong khung khi dây trải ra.
-   Charm đã nằm trong khung thì giữ dây ở giữa như cũ; nằm ngoài thì trải sao cho charm ở giữa (không vượt quá 2 đầu dây) */
+   Charm đã nằm trong khung (khi cụm charm ở giữa) thì giữ cụm ở giữa; nằm ngoài thì trải sao cho charm ở giữa (không vượt quá 2 đầu dây) */
 function selPan(){
-  if(sel==null||!LAY)return 0;
-  const x=LAY.list.find(en=>en.it.uid===sel);if(!x)return 0;
-  const g=LAY.g,px=CW/2+x.u1*g.sL,m=Math.max(48,g.sL*7);
-  if(px>=m&&px<=CW-m)return 0;
-  return Math.max(g.panLo,Math.min(g.panHi,x.u1));
+  const base=clusterPan();
+  if(sel==null||!LAY)return base;
+  const x=LAY.list.find(en=>en.it.uid===sel);if(!x)return base;
+  const g=LAY.g,u=x.u1-g.sh+g.shF,px=CW/2+(u-base)*g.sL,m=Math.max(48,g.sL*7);
+  if(px>=m&&px<=CW-m)return base;
+  return Math.max(g.panLo,Math.min(g.panHi,u));
+}
+/* Tròn → Ngang (13/10, shop yêu cầu): trải dây sao cho cụm charm (đã trượt vào giữa dây) nằm giữa khung.
+   Chưa gắn charm thì nhìn vào giữa sợi dây */
+function clusterPan(){
+  if(!LAY)return 0;
+  const g=LAY.g,c=g.u0-g.sh+g.shF+g.Wk/2;
+  return Math.max(g.panLo,Math.min(g.panHi,c));
 }
 /* trượt dây khi đang trải ngang */
 function stopPan(){if(VIEW.praf){cancelAnimationFrame(VIEW.praf);VIEW.praf=0;}}
@@ -2199,7 +2213,7 @@ function initState(announce){
   try{if(localStorage.getItem('punpun-view')==='line')setView('line',true);}catch(e){}
   if(document.fonts&&document.fonts.load){Promise.all([document.fonts.load('700 20px "Be Vietnam Pro"'),document.fonts.load('600 20px "Be Vietnam Pro"')]).then(()=>{thumbCache.clear();renderCatalog();renderStage();}).catch(()=>{});}
   if(!STANDALONE)return;
-  const wasLoading=CAT.loading;
+  const wasLoading=CAT.loading,pan0=VIEW.pan;
   try{
     const {cr,sr,hr}=await loadSheet();
     try{localStorage.setItem('punpun-sheet-v1',JSON.stringify({cr,sr,hr}));}catch(e){}
@@ -2211,6 +2225,7 @@ function initState(announce){
     console.warn('Không tải được Google Sheet',err);
   }
   sizeStage();renderCatalog();changed();
+  if(VIEW.target===1&&!VIEW.raf&&!VIEW.praf&&!panDrag&&VIEW.pan===pan0){VIEW.pan=clusterPan();renderStage();}
 })();
 })();
 </script>
