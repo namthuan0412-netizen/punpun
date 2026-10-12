@@ -94,10 +94,10 @@ button:disabled{cursor:default}
 .seg button::after{content:""; position:absolute; inset:-8px 0}
 .seg button[aria-checked="true"]{background:var(--fg); color:var(--bg)}
 
-.sel-pill{position:absolute; left:50%; bottom:8px; transform:translateX(-50%); max-width:calc(100% - 16px); height:36px; display:flex; align-items:center; gap:8px; padding:0 16px; border-radius:999px; background:var(--chip); border:1px solid var(--chip-line); box-shadow:var(--chip-shadow); -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); color:var(--fg); font-size:13px; white-space:nowrap; pointer-events:none}
+.sel-pill{position:absolute; left:50%; bottom:8px; transform:translateX(-50%); max-width:calc(100% - 16px); height:30px; display:flex; align-items:center; gap:6px; padding:0 12px; border-radius:999px; background:var(--chip); border:1px solid var(--chip-line); box-shadow:var(--chip-shadow); -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); color:var(--fg); font-size:12px; white-space:nowrap; pointer-events:none}
 .sel-pill .sc-name{font-weight:600; overflow:hidden; text-overflow:ellipsis; min-width:0}
 .sel-pill .sc-v{flex:none; color:var(--muted)}
-.sel-pill .sc-p{flex:none; font-weight:600; font-variant-numeric:tabular-nums; padding-left:9px; border-left:1px solid var(--chip-line)}
+.sel-pill .sc-p{flex:none; font-weight:600; font-variant-numeric:tabular-nums; padding-left:7px; border-left:1px solid var(--chip-line)}
 .pan-btn{position:absolute; top:0; width:36px; height:36px; margin-top:-18px; border-radius:50%; background:var(--surface); border:1px solid var(--line); display:grid; place-items:center; color:var(--fg); box-shadow:0 1px 4px rgba(0,0,0,.10); transition:opacity var(--med), background-color var(--fast)}
 .pan-btn::after{content:""; position:absolute; inset:-5px}
 .pan-btn.l{left:8px} .pan-btn.r{right:8px}
@@ -115,7 +115,7 @@ button:disabled{cursor:default}
 @media (max-width:350px){
   .seg button{padding:0 8px; gap:4px}
   .tool{min-width:54px}
-  .sel-pill{height:32px; bottom:6px; gap:6px; padding:0 12px}
+  .sel-pill{height:28px; bottom:6px; gap:5px; padding:0 10px}
 }
 
 /* catalog */
