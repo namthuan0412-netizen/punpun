@@ -89,10 +89,14 @@ button:disabled{cursor:default}
 .specs dd{margin:0; font-weight:600; font-size:12.5px; font-variant-numeric:tabular-nums; white-space:nowrap}
 .specs dd.big{font-size:13.5px}
 .corner{position:absolute; top:8px; left:50%; transform:translateX(-50%); display:flex; align-items:center}
-.seg{display:inline-flex; padding:2px; gap:2px; border-radius:999px; background:var(--surface); border:1px solid var(--line)}
-.seg button{height:30px; padding:0 11px; border-radius:999px; font-size:12.5px; font-weight:600; color:var(--muted); display:inline-flex; align-items:center; gap:5px; transition:background-color var(--med) var(--ease), color var(--med) var(--ease)}
+.seg{position:relative; display:inline-flex; padding:2px; gap:2px; border-radius:999px; background:var(--surface); border:1px solid var(--line)}
+/* cục nền đậm của Tròn/Ngang: trượt qua lại giữa 2 nút (JS đặt --seg-x / --seg-w theo nút đang chọn) */
+.seg::before{content:""; position:absolute; top:2px; left:0; height:30px; width:var(--seg-w,0px); border-radius:999px; background:var(--fg); transform:translate3d(var(--seg-x,0px),0,0); pointer-events:none}
+.seg.ready::before{transition:transform 360ms cubic-bezier(.3,.7,.2,1), width 360ms cubic-bezier(.3,.7,.2,1)}
+.seg button{z-index:1; height:30px; padding:0 11px; border-radius:999px; font-size:12.5px; font-weight:600; color:var(--muted); display:inline-flex; align-items:center; gap:5px; transition:color 360ms var(--ease)}
 .seg button::after{content:""; position:absolute; inset:-8px 0}
-.seg button[aria-checked="true"]{background:var(--fg); color:var(--bg)}
+.seg button[aria-checked="true"]{color:var(--bg)}
+.seg:not(.ready) button[aria-checked="true"]{background:var(--fg)}
 
 /* viên thông tin charm nằm sát đáy khung vòng: bo 2 góc trên 16px, 2 góc dưới vuông, không viền dưới, không bóng đổ */
 .sel-pill{position:absolute; left:50%; bottom:0; transform:translateX(-50%); transform-origin:50% 100%; max-width:calc(100% - 16px); height:30px; display:flex; align-items:center; gap:6px; padding:0 12px; border-radius:16px 16px 0 0; background:var(--chip); border:1px solid var(--chip-line); border-bottom:0; -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); color:var(--fg); font-size:11px; white-space:nowrap; pointer-events:none}
@@ -342,8 +346,8 @@ textarea.copybox{width:100%; min-height:240px; border-radius:12px; border:1px so
   @keyframes cardIn{from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none}}
   .sel-pill:not([hidden]){animation:pillIn 340ms var(--ease-out)}
   .sel-pill.out{animation:pillOut 280ms var(--ease-in) forwards}
-  .specs:not([hidden]){animation:popIn 200ms var(--ease-out)}
-  @keyframes popIn{from{opacity:0; transform:translateY(-4px) scale(.96)} to{opacity:1; transform:none}}
+  .specs:not([hidden]){animation:popIn 600ms var(--ease-out)}
+  @keyframes popIn{from{opacity:0; transform:scale(.4)} to{opacity:1; transform:none}}
   @keyframes pillIn{from{transform:translate(-50%,100%)} to{transform:translate(-50%,0)}}
   @keyframes pillOut{from{opacity:1; filter:blur(0)} to{opacity:0; filter:blur(8px); transform:translateX(-50%) scale(1.04)}}
   .sk::after{content:""; position:absolute; inset:0; transform:translateX(-100%); background:linear-gradient(90deg,transparent,var(--shine),transparent); animation:shimmer 1.3s infinite}
@@ -1163,12 +1167,21 @@ function sizeStage(){
   dpr=Math.min(3,window.devicePixelRatio||1);
   cv.style.width=CW+'px';cv.style.height=S+'px';cv.width=Math.round(CW*dpr);cv.height=Math.round(S*dpr);
   panUI='';renderStage();
+  syncSeg();
   syncLift();
 }
 function updateHint(){} /* bỏ dòng gợi ý dưới vòng (shop yêu cầu 12/10) */
+/* cục nền của nút Tròn/Ngang: đặt đúng vị trí + bề ngang của nút đang chọn; lần đầu đặt ngay (chưa có hiệu ứng) rồi mới bật trượt */
+function syncSeg(){
+  const segEl=$('viewSeg'),b=segEl.querySelector('[aria-checked="true"]');if(!b||!b.offsetWidth)return;
+  segEl.style.setProperty('--seg-x',b.offsetLeft+'px');segEl.style.setProperty('--seg-w',b.offsetWidth+'px');
+  if(!segEl.classList.contains('ready'))requestAnimationFrame(()=>requestAnimationFrame(()=>segEl.classList.add('ready')));
+}
+try{document.fonts.ready.then(()=>syncSeg());}catch(e){}
 function setView(mode,instant){
   const target=mode==='line'?1:0;
   document.querySelectorAll('[data-view]').forEach(b=>{const on=b.dataset.view===mode;b.setAttribute('aria-checked',String(on));b.tabIndex=on?0:-1;});
+  syncSeg();
   try{localStorage.setItem('punpun-view',mode);}catch(e){}
   if(VIEW.raf){cancelAnimationFrame(VIEW.raf);VIEW.raf=0;}
   stopPan();drag=null;panDrag=null;
