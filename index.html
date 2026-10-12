@@ -22,7 +22,7 @@
   --accent:#8C6A1F; --soft:#F1EFEB; --scrim:rgba(18,16,14,.45);
   --danger:#B3261E; --on-danger:#FFFFFF; --toast-act:#E6C670; --shine:rgba(255,255,255,.6);
   --hl:#FFE066; --on-hl:#1C1B19;
-  --on-accent:#FFFFFF; --chip:rgba(255,255,255,.94); --chip-line:#E2DFDA; --chip-shadow:0 6px 18px rgba(40,30,15,.10); --pill-shadow:0 -3px 12px rgba(40,30,15,.08);
+  --on-accent:#FFFFFF; --chip:rgba(255,255,255,.94); --chip-line:#E2DFDA; --chip-shadow:0 6px 18px rgba(40,30,15,.10);
   --font:"Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --mono:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --ease:cubic-bezier(.2,.7,.2,1); --fast:120ms; --med:200ms;
@@ -33,13 +33,13 @@
   --accent:#D8B868; --soft:#262523; --scrim:rgba(0,0,0,.62);
   --danger:#F28B82; --on-danger:#2B0B08; --toast-act:#6E5110; --shine:rgba(255,255,255,.07);
   --hl:#F5D451; --on-hl:#1B1A17;
-  --on-accent:#1B1A17; --chip:rgba(48,47,44,.94); --chip-line:#45433F; --chip-shadow:0 6px 18px rgba(0,0,0,.36); --pill-shadow:0 -3px 12px rgba(0,0,0,.28); color-scheme:dark } }
+  --on-accent:#1B1A17; --chip:rgba(48,47,44,.94); --chip-line:#45433F; --chip-shadow:0 6px 18px rgba(0,0,0,.36); color-scheme:dark } }
 :root[data-theme="dark"]{
   --bg:#131312; --surface:#1B1B19; --stage:#222120; --fg:#F2F1EE; --muted:#A39F98; --line:#34332F;
   --accent:#D8B868; --soft:#262523; --scrim:rgba(0,0,0,.62);
   --danger:#F28B82; --on-danger:#2B0B08; --toast-act:#6E5110; --shine:rgba(255,255,255,.07);
   --hl:#F5D451; --on-hl:#1B1A17;
-  --on-accent:#1B1A17; --chip:rgba(48,47,44,.94); --chip-line:#45433F; --chip-shadow:0 6px 18px rgba(0,0,0,.36); --pill-shadow:0 -3px 12px rgba(0,0,0,.28); color-scheme:dark }
+  --on-accent:#1B1A17; --chip:rgba(48,47,44,.94); --chip-line:#45433F; --chip-shadow:0 6px 18px rgba(0,0,0,.36); color-scheme:dark }
 
 *{box-sizing:border-box}
 [hidden]{display:none!important}
@@ -94,8 +94,8 @@ button:disabled{cursor:default}
 .seg button::after{content:""; position:absolute; inset:-8px 0}
 .seg button[aria-checked="true"]{background:var(--fg); color:var(--bg)}
 
-/* viên thông tin charm nằm sát đáy khung vòng: bo 2 góc trên 16px, 2 góc dưới vuông, không viền dưới, bóng đổ hắt lên (không lem xuống hàng công cụ) */
-.sel-pill{position:absolute; left:50%; bottom:0; transform:translateX(-50%); transform-origin:50% 100%; max-width:calc(100% - 16px); height:30px; display:flex; align-items:center; gap:6px; padding:0 12px; border-radius:16px 16px 0 0; background:var(--chip); border:1px solid var(--chip-line); border-bottom:0; box-shadow:var(--pill-shadow); -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); color:var(--fg); font-size:11px; white-space:nowrap; pointer-events:none}
+/* viên thông tin charm nằm sát đáy khung vòng: bo 2 góc trên 16px, 2 góc dưới vuông, không viền dưới, không bóng đổ */
+.sel-pill{position:absolute; left:50%; bottom:0; transform:translateX(-50%); transform-origin:50% 100%; max-width:calc(100% - 16px); height:30px; display:flex; align-items:center; gap:6px; padding:0 12px; border-radius:16px 16px 0 0; background:var(--chip); border:1px solid var(--chip-line); border-bottom:0; -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); color:var(--fg); font-size:11px; white-space:nowrap; pointer-events:none}
 /* khung cắt ở đáy khung vòng: viên trượt lên từ mép đáy (phần chưa lên bị cắt), biến mất thì mờ nhoè tan đi */
 .sel-clip{position:absolute; left:0; right:0; bottom:0; height:56px; overflow:hidden; pointer-events:none; border-radius:0 0 18px 18px}
 .sel-pill .sc-name{font-weight:600; overflow:hidden; text-overflow:ellipsis; min-width:0}
@@ -869,7 +869,9 @@ function geom(W,H,m,o){
     /* chưa chọn charm: dời vòng xuống giữa khung (từ dưới nút Tròn/Ngang tới đáy khung); đang chọn: vòng nhích lên chừa chỗ cho viên thông tin charm */
     let below=1.6;cl.ents.forEach(en=>{below=Math.max(below,en.bottom);});
     const s0=2*Math.PI*R/L,dy=((top+H-10)-((cyC-R*ext)+(cyC+R+below*s0)))/2,lift=o.lift!=null?o.lift:1;
-    if(dy>0)cyC+=dy*(1-lift);}
+    if(dy>0)cyC+=dy*(1-lift);
+    /* đang chọn charm: vòng cách nút Tròn/Ngang thêm 6px (shop yêu cầu 12/10) */
+    cyC+=6*lift;}
   const cxC=cxOf(R), sC=2*Math.PI*R/L;
   const fitWhole=(W*.94)/(L+12), fitCluster=(W*.86)/(cl.Wk+24);
   const sL=o.fit==='whole'?fitWhole:Math.min(2*Math.PI*R0/L,Math.max(fitWhole,fitCluster));
