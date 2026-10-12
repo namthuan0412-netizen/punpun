@@ -877,8 +877,9 @@ function startReflow(from){
    • đầu dây có chân quấn chỉ vàng + khoen chỉ vàng hình giọt nước;
    • lúc đeo, vòng có hình giọt nước, mũi nhọn ở khoen (góc trên bên trái, như ảnh thật): dây chạy từ chân khoen xuống cạnh trái,
      vòng qua đáy, lên cạnh phải, qua nút rút, theo đỉnh vòng tới khoen; ở đó dây XUYÊN NGANG qua lỗ khoen (đè lên một chân khoen),
-     gập lại ra phía ngoài (chỗ gập nằm dưới chân bên kia + đầu khoen), chạy song song sát sợi vòng (đoạn chồng đôi) tới nút rút
-     quấn chỉ vàng ôm cả hai sợi, rồi ra đuôi ngắn quấn chỉ vàng + đầu cắt. Chỉ ở Ngang (dây trải thẳng) mới thấy trọn khoen;
+     gập lại ra phía ngoài (chỗ gập nằm dưới chân bên kia + đầu khoen), chạy song song sát sợi vòng (đoạn chồng đôi): chốt 1 ngay sát
+     khoen, chốt 2 (nút rút) ở cuối đoạn chồng đôi — 2 chốt cùng màu dây, viền chỉ vàng (ảnh mẫu 13/10) — rồi ra đuôi quấn chỉ vàng
+     + đầu cắt. Chỉ ở Ngang (dây trải thẳng) mới thấy trọn khoen;
    • 23 cm = vòng (chu vi lúc đeo C, mặc định WORN_MM = 16 cm) + đoạn chồng đôi + chỗ gập + đuôi. Charm không qua được nút rút
      nên gắn nhiều charm thì vòng nới ra (đoạn chồng đôi ngắn lại), như vòng thật.
    u (mm) chạy dọc sợi dây từ đầu khoen (uS) tới đầu đuôi (uE); u = 0 là đáy vòng (giữa cụm charm).
@@ -890,7 +891,7 @@ function startReflow(from){
 const WORN_MM=160;
 /* corner: góc gãy ở mũi giọt nước (rad); cornerDir: hướng mũi nhọn tính từ tâm vòng (225° = trên bên trái);
    dA: từ mũi nhọn Q lùi theo cạnh trái tới đầu dây (chân khoen); dP: từ Q tới chỗ bắt đầu gập theo cạnh trên (âm = vượt qua Q) */
-const KN={collar:4.5,eyeLen:9.4,eyeW:6.6,cord:1.3,corner:55*Math.PI/180,cornerDir:225*Math.PI/180,dA:3.4,dP:-.8,knotL:9,kinkL:2.5,kink:.42,wrap:6,tip:1.2,minArc:4,pad:.5,gap:.35};
+const KN={collar:5.5,eyeLen:9.4,eyeW:6.6,cord:1.4,corner:55*Math.PI/180,cornerDir:225*Math.PI/180,dA:3.4,dP:-.8,knotL:5.2,rimW:1.02,k1:7.1,kinkL:2.5,kink:.42,wrap:8.5,tip:1,minArc:4,pad:.5,gap:.35};
 const PH=.25;
 let PM_CACHE={key:'',pm:null};
 function pathModel(st,need){
@@ -903,7 +904,7 @@ function pathModel(st,need){
   }else{
     /* ru: bán kính chỗ gập (2 sợi nằm sát nhau); after: nửa nút + chỗ đuôi chĩa ra + đuôi;
        a1: hướng cạnh trái (từ chân khoen đi xuống), sao cho mũi nhọn nằm đúng hướng cornerDir */
-    const ru=T*.51,after=KN.knotL/2+KN.kinkL+KN.wrap+KN.tip,K=KN.corner,tk=Math.tan(K/2),a1=KN.cornerDir-K/2-Math.PI/2;
+    const ru=T*.51,after=KN.knotL/2+KN.wrap+KN.tip,K=KN.corner,tk=Math.tan(K/2),a1=KN.cornerDir-K/2-Math.PI/2;
     /* với chu vi C (đi vòng qua mũi nhọn): r = bán kính cung tròn, Sc = cạnh thẳng (tiếp điểm → Q), Lr = dài sợi chồng đôi
        (từ hết chỗ gập tới giữa nút), arcR = phần cong của sợi chồng đôi, span = đoạn gắn được charm (chân khoen → nút) */
     const geo=C=>{const r=C/(2*tk+2*Math.PI-K),Sc=r*tk,Rp=r+2*ru,uT1=-a1*r,uS=uT1-(Sc-KN.dA),uT2=uT1+r*(2*Math.PI-K),
@@ -918,7 +919,7 @@ function pathModel(st,need){
       else{lo=WORN_MM;hi=Cmax;for(let i=0;i<40;i++){const mid=(lo+hi)/2;if(geo(mid).span<need)lo=mid;else hi=mid;}G=geo(hi);}
     }
     const {C,r,Sc,Rp,uT1,uS,uT2,Lr,arcR}=G,uP=uT2+Sc-KN.dP,uT=uP+Math.PI*ru,uR=uT+Sc-KN.dP,uB=uT+Lr,uK=uB+KN.knotL/2,uW=uK+KN.kinkL,uE=uS+L;
-    pm={braid:true,L,T,C,R:r,Rp,Rref:WORN_MM/(2*tk+2*Math.PI-K),ru,uS,uE,uP,uB,uMin:G.uMin,uMax:G.uMax,
+    pm={braid:true,L,T,C,R:r,Rp,Rref:WORN_MM/(2*tk+2*Math.PI-K),ru,uS,uE,uP,uB,uK,uK1:uT+KN.k1,uMin:G.uMin,uMax:G.uMax,
       topExt:2*ru+T/2+.6,endX:KN.eyeLen,a0:a1,
       segs:[{u0:uS,u1:uT1,k:0},{u0:uT1,u1:uT2,k:-1/r},{u0:uT2,u1:uP,k:0},{u0:uP,u1:uT,k:1/ru},{u0:uT,u1:uR,k:0},{u0:uR,u1:uK,k:1/Rp},{u0:uK,u1:uW,k:-KN.kink/KN.kinkL},{u0:uW,u1:uE,k:0}]};
   }
@@ -1071,25 +1072,63 @@ function drawStrapCurve(ctx,g,st){
 }
 /* hệ toạ độ dọc một đoạn thẳng, xoay sao cho mặt sáng luôn ở phía trên màn hình; trả về chiều trục x */
 function lineFrame(ctx,x,y,dir,s){const flip=Math.cos(dir)<-1e-6;ctx.translate(x,y);ctx.rotate(flip?dir+Math.PI:dir);ctx.scale(s,s);return flip?-1:1;}
-/* chỉ vàng quấn quanh dây, chạy theo đường cong (chân khoen, đuôi): từng lát ngắn, mặt sáng luôn quay lên trên màn hình */
-function goldWrap(ctx,g,u0,u1,hh){
-  const s=g.s,G=METAL.gold,step=Math.max(.25,Math.min(.8,1.6/s));
-  for(let u=u0;u<u1-1e-6;u+=step){const ub=Math.min(u+step,u1),du=ub-u,p=curvePt(g,(u+ub)/2);
-    ctx.save();lineFrame(ctx,p.x,p.y,p.a,s);ctx.fillStyle=mgrad(ctx,G,hh);ctx.fillRect(-du/2-.05,-hh/2,du+.1,hh);ctx.restore();}
-  /* hai mép đoạn quấn hơi tối */
-  for(const u of[u0+.09,u1-.09]){const p=curvePt(g,u);ctx.save();lineFrame(ctx,p.x,p.y,p.a,s);ctx.fillStyle=rgba(G.e,.4);ctx.fillRect(-.09,-hh/2,.18,hh);ctx.restore();}
-  if(s<1.6)return;
-  /* sợi chỉ: vạch mảnh hơi xiên */
-  const pitch=.42;ctx.save();ctx.strokeStyle=rgba(G.d,.5);ctx.lineWidth=Math.max(.5,.11*s);ctx.beginPath();
-  for(let u=Math.ceil((u0+.2)/pitch)*pitch;u<u1-.15;u+=pitch){const p=curvePt(g,u),up=p.ny<0?1:-1,nx=p.nx*up*hh/2*.92*s,ny=p.ny*up*hh/2*.92*s,tx=Math.cos(p.a)*.1*s,ty=Math.sin(p.a)*.1*s;
-    ctx.moveTo(p.x+nx-tx,p.y+ny-ty);ctx.lineTo(p.x-nx+tx,p.y-ny+ty);}
-  ctx.stroke();ctx.restore();
+/* ---------- khoá dây đan, vẽ theo ảnh vòng mẫu shop gửi 13/10 (vòng đỏ, khoen + 2 chốt) ----------
+   • Phần vàng (chân khoen, vòng khoen, đuôi) là CHỈ KIM TUYẾN quấn: vân sợi xiên mảnh, mỗi sợi sáng tối khác nhau, có ánh lấp lánh
+     — không còn tô kim loại trơn (shop chê nhìn như nhựa).
+   • 2 chốt (nút thắt) LUÔN có: thân cùng màu + vân với sợi dây (vân dây quấn ngang quanh chốt), 2 mép viền chỉ vàng xoắn.
+     Chốt 1 nằm sát khoen (giữ chỗ gập), chốt 2 là nút rút ở cuối đoạn chồng đôi; đuôi bọc chỉ vàng mọc ra ngay sau chốt 2.
+     Gắn nhiều charm thì vòng nới ra: chốt 2 trượt lại gần chốt 1 (đoạn chồng đôi ngắn lại), như vòng thật. */
+const GOLD_STRIPS=new Map();
+/* màu chỉ kim tuyến (tươi, tương phản mạnh hơn METAL.gold) */
+const GT={e:'#6A3604',d:'#B8760C',b:'#EBB021',l:'#FFD95C',h:'#FFF3BF'};
+/* dải chỉ vàng quấn (ảnh dài 24 mm, cao hh mm, ppm px/mm), lặp được; sym = sáng ở giữa (dùng cho vòng khoen) */
+function goldStrip(ppm,hh,sym){
+  ppm=Math.max(4,Math.min(30,Math.round(ppm/2)*2));
+  const key=ppm+'|'+hh.toFixed(2)+'|'+(sym?1:0);let S=GOLD_STRIPS.get(key);if(S)return S;
+  const G=GT,LEN=24,n=Math.round(LEN/.3),w=Math.round(LEN*ppm),h=Math.max(3,Math.round(hh*ppm)),pw=w/n,sl=h*.16;
+  S=document.createElement('canvas');S.width=w;S.height=h;const x=S.getContext('2d');
+  let seed=11;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647,V=[];for(let i=0;i<n;i++)V.push(rnd());
+  x.fillStyle=G.e;x.fillRect(0,0,w,h);
+  /* từng vòng chỉ quấn (gần như vuông góc với sợi dây, hơi xiên): mỗi vòng là chuỗi hạt nhỏ so le như sợi kim tuyến xoắn,
+     độ sáng mỗi vòng lệch nhau một chút */
+  x.save();x.transform(1,0,-sl/h,1,0,0);
+  const sg=pw*1.25;
+  for(let i=-2;i<n+Math.ceil(sl/pw)+2;i++){const v=V[((i%n)+n)%n],cx=i*pw+pw/2,b=shade(G.b,(v-.45)*.45),l=shade(G.l,(v-.5)*.3);
+    for(let y=(i&1?-sg/2:0);y<h+sg;y+=sg){
+      x.beginPath();x.ellipse(cx,y,pw*.6,sg*.64,0,0,Math.PI*2);x.fillStyle=b;x.fill();
+      x.beginPath();x.ellipse(cx-pw*.14,y-sg*.14,pw*.24,sg*.28,0,0,Math.PI*2);x.fillStyle=v>.82?G.h:l;x.fill();
+      x.beginPath();x.ellipse(cx+pw*.3,y+sg*.2,pw*.18,sg*.4,0,0,Math.PI*2);x.fillStyle=rgba(G.e,.55);x.fill();}
+  }
+  x.restore();
+  /* bóng ống tròn */
+  x.globalCompositeOperation='source-atop';
+  const sh=x.createLinearGradient(0,0,0,h);
+  if(sym){sh.addColorStop(0,'rgba(60,36,0,.55)');sh.addColorStop(.25,'rgba(255,246,214,.06)');sh.addColorStop(.48,'rgba(255,250,228,.3)');sh.addColorStop(.7,'rgba(0,0,0,0)');sh.addColorStop(1,'rgba(60,36,0,.6)');}
+  else{sh.addColorStop(0,'rgba(60,36,0,.42)');sh.addColorStop(.14,'rgba(255,248,220,.06)');sh.addColorStop(.32,'rgba(255,250,230,.34)');sh.addColorStop(.55,'rgba(0,0,0,0)');sh.addColorStop(.86,'rgba(60,36,0,.24)');sh.addColorStop(1,'rgba(60,36,0,.6)');}
+  x.fillStyle=sh;x.fillRect(0,0,w,h);
+  /* ánh kim tuyến: vài chấm sáng nhỏ ở dải sáng */
+  x.globalCompositeOperation='source-over';
+  const dot=Math.max(1,ppm*.08);
+  for(let i=0;i<n*.7;i++){const px=rnd()*w,py=h*(sym?.35+rnd()*.3:.2+rnd()*.25);x.fillStyle=`rgba(255,253,240,${(.45+rnd()*.5).toFixed(2)})`;x.fillRect(px,py,dot,dot);}
+  S.ppm=w/LEN;GOLD_STRIPS.set(key,S);
+  if(GOLD_STRIPS.size>24)GOLD_STRIPS.delete(GOLD_STRIPS.keys().next().value);
+  return S;
+}
+const devScale=ctx=>{const t=ctx.getTransform();return Math.hypot(t.a,t.b)||1;};
+/* chỉ vàng quấn quanh dây, chạy theo đường cong (chân khoen, đuôi): lát ảnh dải chỉ, mặt sáng luôn quay lên trên màn hình */
+function goldWrap(ctx,g,u0,u1,hh,dev){
+  const s=g.s,S=goldStrip(s*(dev||1),hh,false),pp=S.ppm,step=Math.max(.2,Math.min(1,1.3/s));
+  for(let u=u0;u<u1-1e-6;u+=step){const ub=Math.min(u+step,u1),du=ub-u,p=curvePt(g,(u+ub)/2),sx=Math.min(S.width-2,(u-u0)*pp),sw=Math.max(1,Math.min(du*pp,S.width-sx));
+    ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.a);if(Math.cos(p.a)<-1e-6)ctx.scale(1,-1);
+    ctx.drawImage(S,sx,0,sw,S.height,-du/2*s-.3,-hh/2*s,du*s+.6,hh*s);ctx.restore();}
+  /* hai mép đoạn quấn: gờ tối mảnh */
+  for(const u of[u0+.07,u1-.07]){const p=curvePt(g,u);ctx.save();lineFrame(ctx,p.x,p.y,p.a,s);ctx.fillStyle=rgba(GT.e,.6);ctx.fillRect(-.07,-hh/2,.14,hh);ctx.restore();}
 }
 /* khoen ở đầu dây: vòng chỉ vàng hình giọt nước, chân khoen nằm trong đoạn quấn chỉ ở đầu dây.
    Vẽ 2 lần: part = 'back' (trọn khoen, trước khi vẽ sợi dây) rồi 'front' (sau sợi dây): chỉ chân khoen phía bên kia + đầu khoen,
    nên lúc đeo thấy dây xuyên ngang qua lỗ khoen — đè lên chân khoen phía dây đi tới, chỗ gập nằm dưới chân bên kia + đầu khoen. */
 function drawEye(ctx,g,part){
-  const pm=g.pm,s=g.s,p=curvePt(g,pm.uS),G=METAL.gold,c=KN.cord,x0=-.6,Lc=KN.eyeLen-c/2,Wc=KN.eyeW-c;
+  const pm=g.pm,s=g.s,p=curvePt(g,pm.uS),G=METAL.gold,c=KN.cord,x0=-.6,Lc=KN.eyeLen-c/2,Wc=KN.eyeW-c,dev=devScale(ctx);
   const dir=p.a+Math.PI,flip=Math.cos(dir)<-1e-6;
   let fs=1;
   if(part==='front'){
@@ -1099,42 +1138,75 @@ function drawEye(ctx,g,part){
   }
   ctx.save();ctx.translate(p.x,p.y);ctx.rotate(dir);if(flip)ctx.scale(1,-1);ctx.scale(s,s);
   if(part==='front'){ctx.beginPath();ctx.rect(x0-2,fs>0?-.15:-KN.eyeW,KN.eyeLen+4,KN.eyeW+.15);ctx.rect(Lc-2.2,-KN.eyeW,4,KN.eyeW*2);ctx.clip('nonzero');}
-  const path=()=>{ctx.beginPath();for(let i=0;i<=64;i++){const t=i/64*Math.PI*2,q=(1-Math.cos(t))/2;ctx.lineTo(x0+(Lc-x0)*q,Wc/2*Math.sin(t)*Math.pow(q,.55));}ctx.closePath();};
-  ctx.lineJoin='round';
-  path();shadowOn(ctx);ctx.strokeStyle=G.d;ctx.lineWidth=c;ctx.stroke();shadowOff(ctx);
-  ctx.save();ctx.translate(0,-c*.1);path();ctx.strokeStyle=G.b;ctx.lineWidth=c*.74;ctx.stroke();ctx.restore();
-  ctx.save();ctx.translate(0,-c*.24);path();ctx.strokeStyle=rgba(G.l,.9);ctx.lineWidth=c*.28;ctx.stroke();ctx.restore();
-  if(s>=1.6){path();ctx.setLineDash([.1,.3]);ctx.strokeStyle=rgba(G.e,.42);ctx.lineWidth=c*.9;ctx.stroke();ctx.setLineDash([]);}
+  const N=72,P=[];for(let i=0;i<=N;i++){const t=i/N*Math.PI*2,q=(1-Math.cos(t))/2;P.push([x0+(Lc-x0)*q,Wc/2*Math.sin(t)*Math.pow(q,.55)]);}
+  ctx.lineJoin='round';ctx.beginPath();P.forEach((q,i)=>i?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1]));ctx.closePath();
+  shadowOn(ctx);ctx.strokeStyle=GT.e;ctx.lineWidth=c;ctx.stroke();shadowOff(ctx);
+  /* sợi khoen bọc chỉ vàng: lát dải chỉ đặt dọc đường khoen */
+  const S=goldStrip(s*dev,c,true),pp=S.ppm;let acc=0;
+  for(let i=0;i<N;i++){const a=P[i],b=P[i+1],dl=Math.hypot(b[0]-a[0],b[1]-a[1]);if(dl<1e-4)continue;
+    const sx=Math.min(S.width-2,acc*pp);acc+=dl;
+    ctx.save();ctx.translate((a[0]+b[0])/2,(a[1]+b[1])/2);ctx.rotate(Math.atan2(b[1]-a[1],b[0]-a[0]));
+    ctx.drawImage(S,sx,0,Math.max(1,Math.min(dl*pp,S.width-sx)),S.height,-dl/2-.04,-c/2,dl+.08,c);ctx.restore();}
   ctx.restore();
 }
-/* nút rút: nút thắt bọc chỉ vàng ôm cả 2 sợi (lúc đeo), 3 vòng quấn phồng */
-function drawKnot(ctx,g){
-  const pm=g.pm,f=1-(g.e||0),p=curvePt(g,pm.uB),G=METAL.gold,T=pm.T,Lk=KN.knotL,D=T+2.4+2*pm.ru*f,r=D*.42,n=3,w=Lk/n;
-  const cx=p.x+p.nx*pm.ru*f*g.s,cy=p.y+p.ny*pm.ru*f*g.s;
+/* chốt (nút thắt) ôm cả 2 sợi lúc đeo: thân là dây quấn (vân + màu của sợi dây), 2 mép viền chỉ vàng xoắn như ảnh mẫu */
+function drawKnot(ctx,g,u,st,tex,idx,dev){
+  const pm=g.pm,f=1-(g.e||0),T=pm.T,p=curvePt(g,u),G=GT,Lk=KN.knotL,rw=KN.rimW,
+    D=Math.max(T*2.1,T+2*pm.ru*f+2.2),rc=Math.min(Lk*.4,D*.3),cx=p.x+p.nx*pm.ru*f*g.s,cy=p.y+p.ny*pm.ru*f*g.s,
+    base=(tex&&tex.avg)||st.c||metalOf(st.m).b,fine=g.s*dev>=3.2;
   ctx.save();lineFrame(ctx,cx,cy,p.a,g.s);
-  const shape=()=>rr(ctx,-Lk/2,-D/2,Lk,D,r);
-  body(ctx,shape,mgrad(ctx,G,D));
+  const shape=()=>rr(ctx,-Lk/2,-D/2,Lk,D,rc);
+  body(ctx,shape,shade(base,-.18));
   ctx.save();shape();ctx.clip();
-  for(let i=0;i<n;i++){const xa=-Lk/2+i*w,gr=ctx.createLinearGradient(xa,0,xa+w,0);
-    gr.addColorStop(0,rgba(G.e,.6));gr.addColorStop(.2,rgba(G.d,0));gr.addColorStop(.5,rgba(G.l,.32));gr.addColorStop(.8,rgba(G.d,0));gr.addColorStop(1,rgba(G.e,.6));
-    ctx.fillStyle=gr;ctx.fillRect(xa,-D/2,w,D);}
-  if(g.s>=1.6){ctx.strokeStyle=rgba(G.e,.32);ctx.lineWidth=.1;ctx.beginPath();for(let x=-Lk/2-D;x<Lk/2+D;x+=.36){ctx.moveTo(x,-D/2);ctx.lineTo(x+D*.24,D/2);}ctx.stroke();}
+  /* thân: 2 vòng dây quấn quanh chốt — lát vân dây xoay ngang */
+  const Lb=Lk-rw*1.3,nb=2,wb=Lb/nb,S=tex?texStrip(st,tex,g.L):null;
+  for(let i=0;i<nb;i++){const xb=-Lb/2+wb*(i+.5);
+    if(S){const pp=S.ppm,len=D*1.15,room=Math.max(1,S.width/pp-len-1),o=((idx*13.7+i*5.3)%room);
+      ctx.save();ctx.translate(xb,0);ctx.rotate(Math.PI/2);ctx.drawImage(S,o*pp,0,len*pp,S.height,-len/2,-wb*.66,len,wb*1.32);ctx.restore();}
+    else{ctx.fillStyle=cgrad(ctx,base,D);ctx.fillRect(xb-wb/2,-D/2,wb,D);}
+    /* mỗi vòng quấn là một ống tròn: tối 2 mép, sáng giữa */
+    const tg=ctx.createLinearGradient(xb-wb/2,0,xb+wb/2,0);
+    tg.addColorStop(0,'rgba(25,8,0,.42)');tg.addColorStop(.3,'rgba(255,255,255,.06)');tg.addColorStop(.45,'rgba(255,255,255,.12)');tg.addColorStop(.75,'rgba(25,8,0,.05)');tg.addColorStop(1,'rgba(25,8,0,.42)');
+    ctx.fillStyle=tg;ctx.fillRect(xb-wb/2,-D/2,wb,D);
+  }
+  /* khe giữa 2 vòng quấn + bóng khối tròn (sáng phía trên, tối dần xuống dưới và 2 mép) */
+  ctx.fillStyle='rgba(30,10,5,.28)';ctx.fillRect(-Lb/2+wb-.06,-D/2,.12,D);
+  let gr=ctx.createLinearGradient(0,-D/2,0,D/2);
+  gr.addColorStop(0,'rgba(20,8,0,.62)');gr.addColorStop(.12,'rgba(20,8,0,.16)');gr.addColorStop(.28,'rgba(255,255,255,.2)');gr.addColorStop(.42,'rgba(255,255,255,.04)');gr.addColorStop(.66,'rgba(20,8,0,.1)');gr.addColorStop(.88,'rgba(20,8,0,.38)');gr.addColorStop(1,'rgba(20,8,0,.68)');
+  ctx.fillStyle=gr;ctx.fillRect(-Lk/2,-D/2,Lk,D);
+  gr=ctx.createLinearGradient(-Lk/2,0,Lk/2,0);
+  gr.addColorStop(0,'rgba(20,8,0,.3)');gr.addColorStop(.22,'rgba(20,8,0,0)');gr.addColorStop(.78,'rgba(20,8,0,0)');gr.addColorStop(1,'rgba(20,8,0,.3)');
+  ctx.fillStyle=gr;ctx.fillRect(-Lk/2,-D/2,Lk,D);
   ctx.restore();
-  ctx.save();ctx.globalAlpha=.38;ctx.fillStyle='#fff';ctx.beginPath();ctx.ellipse(-.2,-D*.3,Lk*.36,D*.07,0,0,Math.PI*2);ctx.fill();ctx.restore();
+  /* 2 viền chỉ vàng xoắn ở 2 mép chốt, ôm theo góc bo (lồi ra ngoài một chút như ảnh thật) */
+  const Y=D/2-rw*.3,inset=ay=>{const d=ay-(D/2-rc);return d>0?rc-Math.sqrt(Math.max(0,rc*rc-d*d)):0;};
+  for(const sd of[-1,1]){const xr=sd*(Lk/2-rw*.5);
+    if(!fine){ctx.fillStyle=mgrad(ctx,G,D);rr(ctx,xr-rw/2,-Y,rw,2*Y,rw/2);ctx.fill();continue;}
+    const step=rw*.56;
+    for(let y=-Y+step/2;y<Y;y+=step){const x=xr-sd*inset(Math.abs(y)),lt=(y+Y)/(2*Y);
+      ctx.save();ctx.translate(x,y);ctx.rotate(sd*.7);
+      ctx.beginPath();ctx.ellipse(0,0,rw*.6,rw*.36,0,0,Math.PI*2);
+      ctx.fillStyle=shade(G.b,lt<.35?0:-(lt-.35)*.55);ctx.fill();ctx.strokeStyle=rgba(G.e,.7);ctx.lineWidth=.06;ctx.stroke();
+      ctx.beginPath();ctx.ellipse(-rw*.06,-rw*.1,rw*.4,rw*.13,0,0,Math.PI*2);ctx.fillStyle=rgba(G.l,.98-lt*.5);ctx.fill();
+      if(lt<.45){ctx.beginPath();ctx.ellipse(-rw*.1,-rw*.12,rw*.14,rw*.06,0,0,Math.PI*2);ctx.fillStyle=rgba(G.h,.9);ctx.fill();}
+      ctx.restore();}
+  }
   ctx.restore();
 }
-/* khoá dây đan: khoen + chân quấn chỉ (đầu trái), đuôi quấn chỉ + đầu cắt (đầu phải), nút rút */
+/* khoá dây đan: khoen + chân quấn chỉ (đầu trái); chốt 1 sát khoen, chốt 2 (nút rút) cuối đoạn chồng đôi; đuôi quấn chỉ + đầu cắt */
 function drawClosure(ctx,g,st,tex,texR){
-  const pm=g.pm,T=pm.T,base=texR&&texR.avg?texR.avg:(tex&&tex.avg?tex.avg:(st.c||metalOf(st.m).b));
+  const pm=g.pm,T=pm.T,dev=devScale(ctx),tx=texR||tex,base=tx&&tx.avg?tx.avg:(st.c||metalOf(st.m).b);
   drawEye(ctx,g,'front');
-  goldWrap(ctx,g,pm.uS,pm.uS+KN.collar,T*1.16);
-  goldWrap(ctx,g,pm.uE-KN.tip-KN.wrap,pm.uE-KN.tip,T*1.1);
+  goldWrap(ctx,g,pm.uS,pm.uS+KN.collar,T*1.12,dev);
+  goldWrap(ctx,g,pm.uK+.1,pm.uE-KN.tip,T*1.04,dev);
   /* đầu sợi cắt gọn (thấy màu dây), bo tròn phía ngoài */
   const p=curvePt(g,pm.uE-KN.tip/2);
   ctx.save();const sg=lineFrame(ctx,p.x,p.y,p.a,g.s);
-  body(ctx,()=>rr2(ctx,-KN.tip/2-.1,-T*.46,KN.tip+.1,T*.92,sg>0?.1:T*.4,sg>0?T*.4:.1),shade(base,-.32));
+  body(ctx,()=>rr2(ctx,-KN.tip/2-.1,-T*.44,KN.tip+.1,T*.88,sg>0?.1:T*.4,sg>0?T*.4:.1),shade(base,-.22));
+  ctx.fillStyle=rgba(shade(base,-.55),.5);ctx.fillRect(sg>0?-KN.tip/2-.1:KN.tip/2-.12,-T*.44,.22,T*.88);
   ctx.restore();
-  drawKnot(ctx,g);
+  drawKnot(ctx,g,pm.uK1,st,tx,1,dev);
+  drawKnot(ctx,g,pm.uB,st,tx,2,dev);
 }
 /* khoá: mỗi đầu dây giữ một nửa, khi đeo tròn hai nửa khép lại thành một khoá (dây kim loại, da, dù) */
 function drawEnds(ctx,g,st){
