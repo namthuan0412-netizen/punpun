@@ -1355,11 +1355,11 @@ function renderResults(cn){
 function runSearch(){
   clearTimeout(SEARCH.t);SEARCH.t=0;cbar.classList.remove('typing');
   const q=qIn.value.trim();if(q===SEARCH.shown)return;
-  SEARCH.shown=q;renderCatalog(true);$('gridWrap').scrollTop=0;
+  SEARCH.shown=q;renderCatalog(true);gridTop();
 }
 function openSearch(){
   if(SEARCH.open)return;SEARCH.open=true;
-  const tb=$('ctabs'),lift=canLift(),rm=reduceMotion();
+  const tb=$('ctabs'),lift=canLift()&&!RAISE.on,rm=reduceMotion();
   /* tab đi vừa hết khỏi mép trái đúng lúc ô nhập vừa đủ dài */
   cbar.style.setProperty('--tabs-out',-(tb.offsetLeft+tb.offsetWidth+24)+'px');
   cbar.style.setProperty('--s-delay',(lift&&!rm?S_AFTER_LIFT:0)+'ms');
@@ -1385,11 +1385,11 @@ function closeSearch(fromKey){
   cbar.classList.remove('searching','typing','s-from','s-instant','s-gone');
   if(!reduceMotion()){cbar.classList.add('s-closing');SEARCH.vt=setTimeout(()=>cbar.classList.remove('s-closing'),S_DUR+40);}sBtn.setAttribute('aria-expanded','false');sBtn.setAttribute('aria-label','Tìm kiếm');
   /* đóng: ô nhập lùi về sau nút + tab trượt về trước, khung vòng hạ xuống ngay sau đó */
-  liftTo(false,DROP_AFTER);
+  EXP.on=false;liftTo(false,DROP_AFTER);
   /* bấm X bằng tay: chỉ rời ô nhập (cụp bàn phím), không dời focus sang nút để khỏi hiện viền focus vàng quanh kính lúp; Esc / bàn phím thì focus về nút */
   if(document.activeElement===qIn){if(fromKey)sBtn.focus({preventScroll:true});else qIn.blur();}
   qIn.value='';const had=!!SEARCH.shown;SEARCH.shown='';
-  if(had){renderCatalog(true);$('gridWrap').scrollTop=0;}
+  if(had){renderCatalog(true);gridTop();}
 }
 sBtn.addEventListener('click',e=>SEARCH.open?closeSearch(e.detail===0):openSearch());
 function caretHide(ms){cbar.classList.add('moving');clearTimeout(SEARCH.ct);SEARCH.ct=setTimeout(()=>caretShow(true),ms+40);}
@@ -1421,7 +1421,7 @@ function liftSettled(){
   if(RAISE.on&&(window.scrollY||0)>0){try{window.scrollTo({top:0,behavior:'smooth'});}catch(e){window.scrollTo(0,0);}}
 }
 function liftReset(){
-  clearTimeout(RAISE.end);clearTimeout(RAISE.wait);RAISE.on=false;
+  clearTimeout(RAISE.end);clearTimeout(RAISE.wait);RAISE.on=false;EXP.on=false;
   shell.classList.remove('lifted','lift-anim');shell.style.setProperty('--ly','0px');
 }
 function liftTo(on,delay){
@@ -1435,7 +1435,7 @@ function liftTo(on,delay){
     /* đang hạ xuống dở thì quay đầu đi lên từ chỗ đang đứng */
     if(shell.classList.contains('lifted')){RAISE.on=true;shell.classList.add('lift-anim');shell.style.setProperty('--ly','0px');RAISE.end=setTimeout(liftSettled,RAISE_MS+40);}
     else{liftLayout();liftFrom();liftPlay();}
-    caretHide(RAISE_MS);return;
+    if(SEARCH.open)caretHide(RAISE_MS);return;
   }
   RAISE.on=false;shell.classList.add('lift-anim');shell.style.setProperty('--ly',RAISE.x+'px');
   RAISE.end=setTimeout(liftReset,RAISE_MS+40);
@@ -1447,13 +1447,52 @@ function syncLift(){
   if(!RAISE.on||shell.classList.contains('lift-anim'))return;
   RAISE.x=document.querySelector('.top').offsetHeight+document.querySelector('.work').offsetHeight;shell.style.setProperty('--lift',RAISE.x+'px');
 }
+/* ---------- danh mục mở rộng khi cuộn (điện thoại dọc) ----------
+   Cuộn lưới quá 3,5 hàng → header + khung vòng đẩy lên, danh mục cao hết màn hình (dùng chung cơ chế đẩy lên của tìm kiếm).
+   Cuộn ngược lại tới đầu danh sách (hoặc kéo xuống khi đã ở đầu) → co về như cũ.
+   Đổi tab / nhóm (lưới tự về đầu) thì giữ nguyên trạng thái; đóng tìm kiếm thì co lại. */
+const EXP={on:false,prog:false,raf:0,ty:null,ROWS:3.5};
+const gridWrap=$('gridWrap');
+function gridTop(){if(gridWrap.scrollTop!==0){EXP.prog=true;gridWrap.scrollTop=0;}}
+function rowPitch(){
+  let a=null;
+  for(const c of grid.children){if(!c.classList.contains('card'))continue;if(!a){a=c;continue;}if(c.offsetTop>a.offsetTop+4)return c.offsetTop-a.offsetTop;}
+  return 0;
+}
+function expSet(on){
+  EXP.on=on;
+  if(on)liftTo(true);
+  else if(!(SEARCH.open&&document.activeElement===qIn))liftTo(false);
+}
+function expCheck(){
+  EXP.raf=0;if(!canLift())return;
+  const st=gridWrap.scrollTop;
+  if(EXP.on){if(st<=0)expSet(false);return;}
+  const p=rowPitch();if(!p||st<EXP.ROWS*p)return;
+  /* danh mục cao thêm đúng phần đẩy lên: chỉ mở khi lưới còn đủ dài, để vị trí cuộn không bị kẹp lại (lưới giật) */
+  if(!RAISE.on){const x=document.querySelector('.top').offsetHeight+document.querySelector('.work').offsetHeight;
+    if(gridWrap.scrollHeight-gridWrap.clientHeight-x<st)return;}
+  expSet(true);
+}
+gridWrap.addEventListener('scroll',()=>{
+  if(EXP.prog){EXP.prog=false;if(gridWrap.scrollTop===0)return;}
+  if(!EXP.raf)EXP.raf=requestAnimationFrame(expCheck);
+},{passive:true});
+/* đã ở đầu danh sách mà vẫn kéo xuống (không còn sự kiện cuộn) → co lại */
+gridWrap.addEventListener('touchstart',e=>{EXP.ty=EXP.on&&gridWrap.scrollTop<=0?e.touches[0].clientY:null;},{passive:true});
+gridWrap.addEventListener('touchmove',e=>{
+  if(EXP.ty==null)return;
+  if(!EXP.on||gridWrap.scrollTop>0){EXP.ty=null;return;}
+  if(e.touches[0].clientY-EXP.ty>12){EXP.ty=null;expSet(false);}
+},{passive:true});
+gridWrap.addEventListener('wheel',e=>{if(EXP.on&&e.deltaY<0&&gridWrap.scrollTop<=0)expSet(false);},{passive:true});
 /* bấm lại vào ô nhập (sau khi Enter) thì đẩy lên lại; rời ô nhập (Enter, bấm ra ngoài) thì hạ xuống */
 qIn.addEventListener('focus',()=>{if(SEARCH.open)liftTo(true);});
-qIn.addEventListener('blur',()=>{caretShow(false);if(SEARCH.open)liftTo(false);});
+qIn.addEventListener('blur',()=>{caretShow(false);if(SEARCH.open&&!EXP.on)liftTo(false);});
 document.addEventListener('focusout',()=>setTimeout(()=>{if(document.documentElement.classList.contains('kb')&&!/^(INPUT|TEXTAREA)$/.test((document.activeElement||{}).tagName||''))sizeStage();},0));
 qIn.addEventListener('input',()=>{
   const v=qIn.value.trim();clearTimeout(SEARCH.t);SEARCH.t=0;cbar.classList.remove('typing');
-  if(!v){if(SEARCH.shown){SEARCH.shown='';renderCatalog(true);$('gridWrap').scrollTop=0;}return;}
+  if(!v){if(SEARCH.shown){SEARCH.shown='';renderCatalog(true);gridTop();}return;}
   if(v===SEARCH.shown)return;
   void cbar.offsetWidth;cbar.classList.add('typing');
   SEARCH.t=setTimeout(runSearch,500);
@@ -1775,9 +1814,9 @@ document.addEventListener('click',e=>{
   if(ds.view)return setView(ds.view);
   if(b.id==='infoBtn')return toggleInfo();
   if(ds.tool)return tool(ds.tool);
-  if(ds.ctab){if(ds.ctab!==ctab){ctab=ds.ctab;renderCatalog(true);$('gridWrap').scrollTop=0;}return;}
-  if(ds.cat){const c=ds.cat==='all'?'all':(CAT.cats[+ds.cat]||'all');if(c!==catId){catId=c;renderCatalog(true);$('gridWrap').scrollTop=0;}return;}
-  if(ds.scat){const c=ds.scat==='all'?'all':(CAT.stopCats[+ds.scat]||'all');if(c!==stopCatId){stopCatId=c;renderCatalog(true);$('gridWrap').scrollTop=0;}return;}
+  if(ds.ctab){if(ds.ctab!==ctab){ctab=ds.ctab;renderCatalog(true);gridTop();}return;}
+  if(ds.cat){const c=ds.cat==='all'?'all':(CAT.cats[+ds.cat]||'all');if(c!==catId){catId=c;renderCatalog(true);gridTop();}return;}
+  if(ds.scat){const c=ds.scat==='all'?'all':(CAT.stopCats[+ds.scat]||'all');if(c!==stopCatId){stopCatId=c;renderCatalog(true);gridTop();}return;}
   if(ds.charm){
     const en=CE[ds.charm];if(!en)return;
     if(atLimit(en)){limitHit(b);return;}
@@ -1811,7 +1850,7 @@ document.addEventListener('click',e=>{
 $('numBtn').addEventListener('click',()=>{showNums=!showNums;$('numBtn').setAttribute('aria-pressed',String(showNums));renderStage();});
 /* phím mũi tên cho nhóm Tròn/Ngang và tab Charm/Dây */
 $('viewSeg').addEventListener('keydown',e=>{if(!/^Arrow/.test(e.key))return;const mode=VIEW.target===1?'circle':'line';setView(mode);document.querySelector(`[data-view="${mode}"]`).focus();e.preventDefault();});
-$('ctabs').addEventListener('keydown',e=>{if(e.key!=='ArrowLeft'&&e.key!=='ArrowRight')return;const T=['charm','stop','strap'],i=T.indexOf(ctab);ctab=T[(i+(e.key==='ArrowRight'?1:T.length-1))%T.length];renderCatalog(true);$('gridWrap').scrollTop=0;document.querySelector(`[data-ctab="${ctab}"]`).focus();e.preventDefault();});
+$('ctabs').addEventListener('keydown',e=>{if(e.key!=='ArrowLeft'&&e.key!=='ArrowRight')return;const T=['charm','stop','strap'],i=T.indexOf(ctab);ctab=T[(i+(e.key==='ArrowRight'?1:T.length-1))%T.length];renderCatalog(true);gridTop();document.querySelector(`[data-ctab="${ctab}"]`).focus();e.preventDefault();});
 new ResizeObserver(()=>sizeStage()).observe($('canvasWrap'));
 addEventListener('resize',sizeStage);
 const themeChanged=()=>{TOK=null;renderStage();};
