@@ -123,7 +123,7 @@ button:disabled{cursor:default}
    Mở tìm kiếm: (điện thoại dọc) header + khung vòng đẩy lên trước; rồi tab trượt hẳn qua trái ra khỏi khung, CÙNG LÚC ô nhập
    trượt ra từ sau nút kính lúp sang trái tới đủ chiều dài — cùng thời lượng, cùng nhịp nên tab vừa đi hết là ô nhập vừa đủ dài.
    Kính lúp biến thành X. Chỉ chạy transform (GPU) nên vẫn mượt trên iPhone lúc bàn phím đang bật lên. Đóng thì chạy ngược lại. */
-.cbar{position:relative; display:flex; align-items:flex-end; justify-content:space-between; gap:8px; padding:4px 6px 0 16px; border-bottom:1px solid var(--line); --s-dur:380ms; --s-ease:cubic-bezier(.45,0,.2,1); --s-delay:0ms}
+.cbar{position:relative; display:flex; align-items:flex-end; justify-content:space-between; gap:8px; padding:1px 6px 0 16px; border-bottom:1px solid var(--line); --s-dur:380ms; --s-ease:cubic-bezier(.45,0,.2,1); --s-delay:0ms}
 .ctabs{display:flex; gap:24px; min-width:0; transition:transform var(--s-dur) var(--s-ease)}
 .cbar.searching .ctabs{transform:translate3d(var(--tabs-out,-120%),0,0); pointer-events:none; transition:transform var(--s-dur) var(--s-ease) var(--s-delay)}
 /* ẩn hẳn (cho trình đọc màn hình / phím Tab) khi đã trượt ra hết; ô nhập lúc đóng cũng ẩn hẳn khi đã lùi xong — gắn bằng JS, không dùng transition visibility */
@@ -139,7 +139,8 @@ button:disabled{cursor:default}
 .cbar.searching .sbtn .s-a{stroke-dashoffset:0; transform:none}
 .cbar.searching .sbtn .s-b{stroke-dashoffset:0; opacity:1; transition:stroke-dashoffset 260ms var(--ease-out) 90ms, opacity 0s 90ms}
 /* ô nhập: khung .csearch cắt ở giữa nút kính lúp; viên .cfield lúc đóng lùi sang phải, nấp sau nút (nút có nền đặc, tâm trùng tâm đầu tròn của viên) */
-.csearch{position:absolute; left:12px; right:26px; top:6px; height:38px; overflow:hidden; overflow:clip; visibility:hidden; pointer-events:none}
+/* hàng tab đệm trên 1px (12/10, bớt 3px): ô nhập cách viền trên và đường kẻ dưới đều 3px, tâm trùng tâm nút X */
+.csearch{position:absolute; left:12px; right:26px; top:3px; height:38px; overflow:hidden; overflow:clip; visibility:hidden; pointer-events:none}
 .cbar.searching .csearch{visibility:visible; pointer-events:auto}
 .cbar.s-closing .csearch{visibility:visible}
 .cfield{position:absolute; top:0; bottom:0; left:0; right:26px; border-radius:19px; background:var(--soft); overflow:hidden; transform:translate3d(calc(100% + 7px),0,0); transition:transform var(--s-dur) var(--s-ease), box-shadow 160ms linear}
