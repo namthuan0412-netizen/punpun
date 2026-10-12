@@ -276,6 +276,10 @@ textarea.copybox{width:100%; min-height:240px; border-radius:12px; border:1px so
 /* toast trượt lên từ đáy (giảm tốc khi tới), rút xuống nhanh hơn (tăng tốc khi đi); đang chạy vẫn đổi hướng mượt */
 .toast.show{transform:translate3d(-50%,0,0); opacity:1; visibility:visible; transition:transform 420ms var(--ease-out), opacity 200ms linear, visibility 0s}
 .toast .msg{padding:11px 0}
+/* toast 2 dòng (vd. đạt giới hạn charm): canh giữa, dòng 2 là hướng dẫn, chữ nhẹ hơn */
+.toast.two{border-radius:20px; text-align:center; justify-content:center}
+.toast.two .msg{padding:10px 4px; line-height:1.4}
+.toast .sub{display:block; font-weight:400; opacity:.78}
 .toast.has-act{padding-right:4px}
 .toast button{pointer-events:auto; flex:none; height:36px; padding:0 12px; margin-left:6px; border-radius:18px; font-weight:700; color:var(--toast-act)}
 .toast button::after{content:""; position:absolute; inset:-4px}
@@ -751,7 +755,7 @@ const charmCount=()=>state.items.reduce((a,it)=>a+(CE[it.code]&&!CE[it.code].sto
 const atLimit=e=>!!e&&!e.stop&&charmCount()>=MAX_CHARMS;
 /* báo đủ charm: toast + ô charm vừa bấm (nếu có) nháy viền đỏ; bấm tiếp thì nháy lại từ đầu */
 function limitHit(card){
-  toast('Đã đạt giới hạn charm trên 1 vòng');
+  toast('Đã đạt giới hạn charm trong 1 vòng',{sub:'Chạm vào charm trong vòng trên để xoá',ms:4000});
   if(!card)return;
   card.classList.remove('limit');void card.offsetWidth;card.classList.add('limit');
   clearTimeout(card._lt);card._lt=setTimeout(()=>card.classList.remove('limit'),1050);
@@ -1807,12 +1811,15 @@ function toast(m,opt){
   opt=opt||{};
   const t=$('toast');
   t.innerHTML=`<span class="msg"></span>${opt.undo?'<button type="button" data-toast-undo>Undo</button>':''}`;
-  t.querySelector('.msg').textContent=m;
+  const msg=t.querySelector('.msg');msg.textContent=m;
+  /* dòng phụ (hướng dẫn): toast 2 dòng, canh giữa */
+  if(opt.sub){const s=document.createElement('span');s.className='sub';s.textContent=opt.sub;msg.appendChild(s);}
+  t.classList.toggle('two',!!opt.sub);
   t.classList.toggle('has-act',!!opt.undo);
   t.dataset.h=opt.undo?String(hist.length):'';
   /* đang hiện thì chỉ đổi nội dung; đang ẩn thì đợi 1 khung hình để trượt lên từ vị trí dưới đáy */
   if(!t.classList.contains('show'))requestAnimationFrame(()=>requestAnimationFrame(()=>t.classList.add('show')));
-  $('live').textContent=m+(opt.undo?'. Bấm Undo để lấy lại.':'');
+  $('live').textContent=m+(opt.sub?'. '+opt.sub:'')+(opt.undo?'. Bấm Undo để lấy lại.':'');
   clearTimeout(tt);tt=setTimeout(hideToast,opt.ms||(opt.undo?5000:2600));
 }
 function hideToast(){clearTimeout(tt);const t=$('toast');t.classList.remove('show');t.dataset.h='';}
