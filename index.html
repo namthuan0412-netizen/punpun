@@ -43,7 +43,8 @@
 
 *{box-sizing:border-box}
 [hidden]{display:none!important}
-html,body{height:100%}
+/* khoá cuộn dọc của cả trang: chỉ danh mục (lưới charm, cột nhóm) và bảng mới cuộn được */
+html,body{height:100%; overflow:hidden; overscroll-behavior:none}
 /* chặn phóng to khi chạm 2 lần trên điện thoại (vẫn cuộn và zoom 2 ngón được) */
 html{-webkit-text-size-adjust:100%; text-size-adjust:100%}
 *{touch-action:manipulation}
@@ -1444,6 +1445,16 @@ function thumbDone(im,failed){const ph=im.parentNode;if(!ph||!ph.classList||!ph.
 function sweepThumbs(){grid.querySelectorAll('.ph.ld img').forEach(im=>{if(im.complete&&im.naturalWidth)thumbDone(im);});}
 grid.addEventListener('load',e=>{const im=e.target;if(im&&im.tagName==='IMG'&&im.naturalWidth)thumbDone(im);},true);
 grid.addEventListener('error',e=>{const im=e.target;if(!im||im.tagName!=='IMG')return;if(im.hasAttribute('crossorigin')){im.removeAttribute('crossorigin');im.setAttribute('src',im.getAttribute('src'));}else thumbDone(im,true);},true);
+
+/* iPhone vẫn kéo được cả trang (nảy) dù đã overflow:hidden: chặn vuốt ở mọi chỗ trừ vùng cuộn được.
+   Vẫn cho zoom 2 ngón, và khi đang phóng to thì vẫn kéo xem được. */
+const SCROLLABLE='.cgrid-wrap,.cside,.sheet,textarea';
+document.addEventListener('touchmove',e=>{
+  if(e.touches.length>1)return;
+  if(window.visualViewport&&visualViewport.scale>1.01)return;
+  const t=e.target,sc=t&&t.closest?t.closest(SCROLLABLE):null;if(sc&&sc.scrollHeight>sc.clientHeight+1)return;
+  if(e.cancelable)e.preventDefault();
+},{passive:false});
 
 /* ---------- specs / selection ---------- */
 function renderSpecs(){
