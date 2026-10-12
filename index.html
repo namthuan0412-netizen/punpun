@@ -150,6 +150,26 @@ button:disabled{cursor:default}
 .cbar.s-from .ctabs{transform:translate3d(0,0,0)}
 .cbar.s-from .cfield{transform:translate3d(calc(100% + 7px),0,0)}
 .cbar.s-instant .ctabs,.cbar.s-instant .cfield{transition:none}
+/* nút mở rộng / thu gọn danh mục (chỉ điện thoại dọc: JS bật .has-x), nằm bên phải nút tìm kiếm.
+   Lúc tìm kiếm: nút này trượt ra mép phải + mờ dần; nút tìm kiếm (X) và khung ô nhập dời sang phải đúng một chỗ nút (--xd),
+   nên ô nhập vẫn dài tới mép phải như cũ và vẫn trồi ra từ sau nút. Cùng nhịp với tab / ô nhập (--s-dur, --s-ease, --s-delay). */
+.xbtn{flex:none; align-self:center; width:40px; height:40px; margin:0 0 1px -4px; border-radius:50%; display:none; place-items:center; color:var(--fg); background:var(--surface); z-index:1; transition:background-color var(--fast), transform var(--s-dur) var(--s-ease), opacity var(--s-dur) var(--s-ease)}
+.cbar.has-x{--xd:44px}
+.cbar.has-x .xbtn{display:grid}
+.xbtn::after{content:""; position:absolute; inset:-2px}
+.xbtn:active{background:var(--soft)}
+/* mũi tên lên = mở rộng; đang mở rộng thì xoay xuống, cùng nhịp với lúc danh mục đẩy lên / hạ xuống */
+.xbtn svg{transition:transform var(--lift-ms,700ms) var(--lift-ease,ease)}
+.xbtn[aria-expanded="true"] svg{transform:rotate(180deg)}
+.cbar.has-x .sbtn{margin-left:auto; transition:background-color var(--fast), transform var(--s-dur) var(--s-ease)}
+.cbar.has-x .csearch{transform:translate3d(calc(-1 * var(--xd)),0,0); transition:transform var(--s-dur) var(--s-ease)}
+.cbar.has-x.searching .sbtn{transform:translate3d(var(--xd),0,0); transition-delay:0s, var(--s-delay)}
+.cbar.has-x.searching .csearch{transform:translate3d(0,0,0); transition-delay:var(--s-delay)}
+.cbar.has-x.searching .xbtn{transform:translate3d(var(--xd),0,0); opacity:0; pointer-events:none; transition-delay:0s, var(--s-delay), var(--s-delay)}
+.cbar.s-gone .xbtn{visibility:hidden}
+.cbar.has-x.s-from .sbtn,.cbar.has-x.s-from .xbtn{transform:none; opacity:1}
+.cbar.has-x.s-from .csearch{transform:translate3d(calc(-1 * var(--xd)),0,0)}
+.cbar.s-instant .sbtn,.cbar.s-instant .xbtn,.cbar.s-instant .csearch{transition:none}
 /* con trỏ của iPhone không chạy theo hiệu ứng: ẩn con trỏ trong lúc ô nhập đang di chuyển */
 .cbar.moving .csearch input{caret-color:transparent}
 /* chữ trong ô tìm nhìn như 14px nhưng vẫn là 16px thật (iPhone tự phóng to trang khi ô nhập dưới 16px) */
@@ -326,7 +346,7 @@ textarea.copybox{width:100%; min-height:240px; border-radius:12px; border:1px so
 }
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms!important; animation-iteration-count:1!important; transition-duration:.01ms!important}
-  .csearch,.csearch *,.cbar .ctabs,.cbar .ctabs *{transition:none!important}
+  .csearch,.csearch *,.cbar .ctabs,.cbar .ctabs *,.cbar .sbtn,.cbar .xbtn,.xbtn svg{transition:none!important}
   .card.limit .ph{animation:none; box-shadow:inset 0 0 0 2px var(--danger)}
 }
 </style>
@@ -394,6 +414,9 @@ textarea.copybox{width:100%; min-height:240px; border-radius:12px; border:1px so
           <line class="s-a" x1="6" y1="6" x2="18" y2="18" stroke-dasharray="17 20"/>
           <line class="s-b" x1="18" y1="6" x2="6" y2="18" stroke-dasharray="17 20"/>
         </svg>
+      </button>
+      <button class="xbtn" id="expBtn" type="button" aria-label="Mở rộng danh mục" aria-expanded="false" aria-controls="cpanel">
+        <svg aria-hidden="true" focusable="false" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m6 11 6-6 6 6"/></svg>
       </button>
     </div>
     <div class="cbody" id="cpanel" role="tabpanel" aria-labelledby="tabCharm">
@@ -1394,7 +1417,7 @@ function closeSearch(fromKey){
   if(!reduceMotion()){cbar.classList.add('s-closing');SEARCH.vt=setTimeout(()=>cbar.classList.remove('s-closing'),S_DUR+40);}sBtn.setAttribute('aria-expanded','false');sBtn.setAttribute('aria-label','Tìm kiếm');
   /* đóng: ô nhập lùi về sau nút + tab trượt về trước, khung vòng hạ xuống ngay sau đó */
   /* trước khi tìm đang mở rộng → giữ mở rộng; đang thu gọn → hạ xuống */
-  EXP.on=SEARCH.exp&&canLift();
+  EXP.on=SEARCH.exp&&canLift();syncExpBtn();
   if(EXP.on)liftTo(true);else liftTo(false,DROP_AFTER);
   /* bấm X bằng tay: chỉ rời ô nhập (cụp bàn phím), không dời focus sang nút để khỏi hiện viền focus vàng quanh kính lúp; Esc / bàn phím thì focus về nút */
   if(document.activeElement===qIn){if(fromKey)sBtn.focus({preventScroll:true});else qIn.blur();}
@@ -1431,7 +1454,7 @@ function liftSettled(){
   if(RAISE.on&&(window.scrollY||0)>0){try{window.scrollTo({top:0,behavior:'smooth'});}catch(e){window.scrollTo(0,0);}}
 }
 function liftReset(){
-  clearTimeout(RAISE.end);clearTimeout(RAISE.wait);RAISE.on=false;EXP.on=false;
+  clearTimeout(RAISE.end);clearTimeout(RAISE.wait);RAISE.on=false;if(EXP.on){EXP.on=false;syncExpBtn();}
   shell.classList.remove('lifted','lift-anim');shell.style.setProperty('--ly','0px');
 }
 function liftTo(on,delay){
@@ -1452,58 +1475,32 @@ function liftTo(on,delay){
 }
 /* đổi cỡ màn hình / xoay máy lúc đang đẩy lên */
 function syncLift(){
+  syncExpBtn();
   if(!shell.classList.contains('lifted'))return;
   if(!canLift()){liftReset();return;}
   if(!RAISE.on||shell.classList.contains('lift-anim'))return;
   RAISE.x=document.querySelector('.top').offsetHeight+document.querySelector('.work').offsetHeight;shell.style.setProperty('--lift',RAISE.x+'px');
 }
-/* ---------- danh mục mở rộng khi cuộn (điện thoại dọc) ----------
-   Cuộn tới khi GIỮA hàng thứ 2 (hàng 2,5) chạm mép trên khung lưới → header + khung vòng đẩy lên, danh mục cao hết màn hình
-   (dùng chung cơ chế đẩy lên của tìm kiếm). Cuộn ngược lại tới đầu danh sách (hoặc kéo xuống khi đã ở đầu) → co về như cũ.
-   Đổi tab / nhóm (lưới tự về đầu) thì giữ nguyên trạng thái; đóng tìm kiếm thì trả về trạng thái lúc mở tìm kiếm. */
-const EXP={on:false,prog:false,raf:0,ty:null,ROW:2.5};
-const gridWrap=$('gridWrap');
-/* cuộn lưới bằng code: bỏ qua sự kiện cuộn kéo theo để không tự mở / co */
-function gridTo(y){
-  y=Math.max(0,Math.round(y||0));const was=gridWrap.scrollTop;if(Math.abs(was-y)<1)return;
-  EXP.prog=true;gridWrap.scrollTop=y;if(gridWrap.scrollTop===was)EXP.prog=false;
-}
+/* ---------- nút mở rộng / thu gọn danh mục (điện thoại dọc) ----------
+   Bấm mũi tên lên (bên phải nút tìm kiếm) → header + khung vòng đẩy lên, danh mục cao hết màn hình (dùng chung cơ chế đẩy lên
+   của tìm kiếm, 700ms); mũi tên xoay xuống, bấm lần nữa thì thu gọn. Đổi tab / nhóm vẫn giữ trạng thái.
+   Mở tìm kiếm: nút trượt ra mép phải; đóng tìm kiếm: trượt vào lại, danh mục trả về đúng trạng thái lúc mở tìm kiếm.
+   (12/10: bỏ cơ chế tự mở rộng khi cuộn tới hàng 2,5 / tự thu gọn khi về đầu danh sách — shop thấy bất tiện.) */
+const EXP={on:false};
+const gridWrap=$('gridWrap'),xBtn=$('expBtn');
+function gridTo(y){gridWrap.scrollTop=Math.max(0,Math.round(y||0));}
 function gridTop(){gridTo(0);}
-/* vị trí (trong nội dung cuộn) của mốc hàng n: n nguyên = đầu hàng card thứ n, n lẻ (2.5) = đi xuống phần lẻ chiều cao hàng đó.
-   Tính theo offsetTop nên không lệch vì hiệu ứng card hiện ra */
-function rowStart(n){
-  const want=Math.floor(n),frac=n-want;let k=0,last=-1e9,row=null;
-  for(const c of grid.children){if(!c.classList.contains('card'))continue;const t=c.offsetTop;if(t>last+4){last=t;if(++k===want){row=c;break;}}}
-  if(!row)return 0;
-  return grid.getBoundingClientRect().top-gridWrap.getBoundingClientRect().top+gridWrap.scrollTop+(row.offsetTop-grid.offsetTop)+frac*row.offsetHeight;
+function syncExpBtn(){
+  cbar.classList.toggle('has-x',canLift());
+  xBtn.setAttribute('aria-expanded',String(EXP.on));
+  xBtn.setAttribute('aria-label',EXP.on?'Thu gọn danh mục':'Mở rộng danh mục');
 }
 function expSet(on){
-  EXP.on=on;
-  if(on)liftTo(true);
+  EXP.on=!!on&&canLift();syncExpBtn();
+  if(EXP.on)liftTo(true);
   else if(!(SEARCH.open&&document.activeElement===qIn))liftTo(false);
 }
-function expCheck(){
-  EXP.raf=0;if(!canLift())return;
-  const st=gridWrap.scrollTop;
-  if(EXP.on){if(st<=0)expSet(false);return;}
-  const y=rowStart(EXP.ROW);if(!y||st<y-1)return;
-  /* danh mục cao thêm đúng phần đẩy lên: chỉ mở khi lưới còn đủ dài, để vị trí cuộn không bị kẹp lại (lưới giật) */
-  if(!RAISE.on){const x=document.querySelector('.top').offsetHeight+document.querySelector('.work').offsetHeight;
-    if(gridWrap.scrollHeight-gridWrap.clientHeight-x<st)return;}
-  expSet(true);
-}
-gridWrap.addEventListener('scroll',()=>{
-  if(EXP.prog){EXP.prog=false;return;}
-  if(!EXP.raf)EXP.raf=requestAnimationFrame(expCheck);
-},{passive:true});
-/* đã ở đầu danh sách mà vẫn kéo xuống (không còn sự kiện cuộn) → co lại */
-gridWrap.addEventListener('touchstart',e=>{EXP.ty=EXP.on&&gridWrap.scrollTop<=0?e.touches[0].clientY:null;},{passive:true});
-gridWrap.addEventListener('touchmove',e=>{
-  if(EXP.ty==null)return;
-  if(!EXP.on||gridWrap.scrollTop>0){EXP.ty=null;return;}
-  if(e.touches[0].clientY-EXP.ty>12){EXP.ty=null;expSet(false);}
-},{passive:true});
-gridWrap.addEventListener('wheel',e=>{if(EXP.on&&e.deltaY<0&&gridWrap.scrollTop<=0)expSet(false);},{passive:true});
+xBtn.addEventListener('click',()=>{if(!SEARCH.open)expSet(!EXP.on);});
 /* bấm lại vào ô nhập (sau khi Enter) thì đẩy lên lại; rời ô nhập (Enter, bấm ra ngoài) thì hạ xuống */
 qIn.addEventListener('focus',()=>{if(SEARCH.open)liftTo(true);});
 qIn.addEventListener('blur',()=>{caretShow(false);if(SEARCH.open&&!EXP.on)liftTo(false);});
