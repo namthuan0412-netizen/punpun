@@ -60,7 +60,7 @@ button:disabled{cursor:default}
 /* điện thoại dọc: lúc gõ tìm kiếm, đẩy header + khung vòng lên khỏi màn hình để ô nhập không bị thanh địa chỉ/bàn phím che.
    Bố cục chỉ đổi MỘT lần (header + khung vòng nằm trên mép màn hình, danh mục cao hết màn hình); phần chạy là transform
    của 3 khối (GPU lo) nên không phải tính lại bố cục mỗi khung hình như khi chạy margin-top. */
-.shell{overflow:hidden; --lift-ms:360ms; --lift-ease:cubic-bezier(.3,.6,.1,1)}
+.shell{overflow:hidden; --lift-ms:700ms; --lift-ease:cubic-bezier(.4,0,.2,1)}
 .shell.lifted > .top{margin-top:calc(-1 * var(--lift,0px))}
 .shell.lifted > .top,.shell.lifted > .work,.shell.lifted > .catalog{transform:translate3d(0,var(--ly,0px),0)}
 .shell.lift-anim > .top,.shell.lift-anim > .work,.shell.lift-anim > .catalog{transition:transform var(--lift-ms) var(--lift-ease); will-change:transform}
@@ -1320,10 +1320,10 @@ function renderCatalog(animate){
    cùng lúc. Gõ tới đâu, ngưng gõ 0,5 giây mới tìm (đỡ nháy kết quả liên tục); Enter là tìm ngay.
    Không phân biệt dấu (gõ "hong" ra "Hồng"), các chữ đã gõ tô vàng. */
 const SEARCH={open:false,shown:'',t:0,ct:0,vt:0,exp:false,st:0};
-/* nhịp chuyển động (khớp với CSS: --lift-ms, --s-dur); ô nhập + tab bắt đầu chạy khi phần đẩy lên đã đi được ~90% */
-const RAISE_MS=360,S_DUR=380,S_AFTER_LIFT=180,DROP_AFTER=120;
-/* danh mục mở rộng / co lại khi cuộn: chậm + êm hơn tìm kiếm (shop thấy 360ms nhanh quá, chóng mặt) — vào chậm, ra chậm, không giật lúc bắt đầu */
-const EXP_MS=700,EXP_EASE='cubic-bezier(.4,0,.2,1)';
+/* nhịp chuyển động (khớp với CSS: --lift-ms, --s-dur).
+   Đẩy lên / hạ xuống (tìm kiếm và mở rộng danh mục khi cuộn dùng chung): 700ms, vào chậm ra chậm — shop thấy 360ms nhanh quá, chóng mặt.
+   Ô nhập + tab bắt đầu chạy khi phần đẩy lên đã đi được ~85% (400ms). */
+const RAISE_MS=700,S_DUR=380,S_AFTER_LIFT=400,DROP_AFTER=120;
 const cbar=$('cbar'),qIn=$('q'),sBtn=$('searchBtn');
 function sNorm(str){
   str=String(str||'');let n='';const map=[];
@@ -1371,7 +1371,7 @@ function openSearch(){
   /* 1) dựng ngay trạng thái cuối rồi mới focus: iPhone lấy vị trí ô nhập lúc focus để đặt con trỏ và quyết định có tự đẩy trang không */
   clearTimeout(SEARCH.vt);cbar.classList.remove('s-closing');
   cbar.classList.add('s-instant','searching','moving');
-  if(lift){liftSpeed(false);liftLayout();}
+  if(lift)liftLayout();
   qIn.focus({preventScroll:true});
   if(rm){cbar.classList.remove('s-instant');cbar.classList.add('s-gone');caretShow(false);return;}
   /* 2) quay về hình lúc đầu (chưa kịp vẽ ra màn hình) rồi cho chạy: đẩy lên trước, sau đó tab qua trái + ô nhập từ phải qua cùng lúc */
@@ -1391,7 +1391,7 @@ function closeSearch(fromKey){
   /* đóng: ô nhập lùi về sau nút + tab trượt về trước, khung vòng hạ xuống ngay sau đó */
   /* trước khi tìm đang mở rộng → giữ mở rộng; đang thu gọn → hạ xuống */
   EXP.on=SEARCH.exp&&canLift();
-  if(EXP.on){if(!RAISE.on)liftSpeed(true);liftTo(true);}else{if(RAISE.on)liftSpeed(false);liftTo(false,DROP_AFTER);}
+  if(EXP.on)liftTo(true);else liftTo(false,DROP_AFTER);
   /* bấm X bằng tay: chỉ rời ô nhập (cụp bàn phím), không dời focus sang nút để khỏi hiện viền focus vàng quanh kính lúp; Esc / bàn phím thì focus về nút */
   if(document.activeElement===qIn){if(fromKey)sBtn.focus({preventScroll:true});else qIn.blur();}
   qIn.value='';const had=!!SEARCH.shown;SEARCH.shown='';
@@ -1408,12 +1408,7 @@ function caretShow(nudge){
 /* đẩy header + khung vòng lên (điện thoại dọc, lúc đang gõ tìm kiếm).
    FLIP: đổi bố cục sang trạng thái đã đẩy lên một lần, bù lại bằng transform cho mọi thứ đứng yên tại chỗ, rồi cho transform chạy về 0.
    Hạ xuống: giữ bố cục đã đẩy lên trong lúc trượt xuống, xong mới trả bố cục cũ (không lộ khoảng trống ở đáy). */
-const RAISE={on:false,x:0,end:0,wait:0,ms:RAISE_MS};
-/* tốc độ đẩy lên / hạ xuống: slow = mở rộng khi cuộn, còn lại = tìm kiếm */
-function liftSpeed(slow){
-  RAISE.ms=slow?EXP_MS:RAISE_MS;shell.style.setProperty('--lift-ms',RAISE.ms+'ms');
-  if(slow)shell.style.setProperty('--lift-ease',EXP_EASE);else shell.style.removeProperty('--lift-ease');
-}
+const RAISE={on:false,x:0,end:0,wait:0};
 const canLift=()=>!WIDE&&!LAND;
 function liftLayout(){
   clearTimeout(RAISE.end);clearTimeout(RAISE.wait);
@@ -1424,7 +1419,7 @@ function liftLayout(){
 function liftFrom(){shell.style.setProperty('--ly',RAISE.x+'px');}
 function liftPlay(){
   void shell.offsetWidth;shell.classList.add('lift-anim');shell.style.setProperty('--ly','0px');
-  clearTimeout(RAISE.end);RAISE.end=setTimeout(liftSettled,RAISE.ms+40);
+  clearTimeout(RAISE.end);RAISE.end=setTimeout(liftSettled,RAISE_MS+40);
 }
 function liftSettled(){
   shell.classList.remove('lift-anim');
@@ -1444,12 +1439,12 @@ function liftTo(on,delay){
   clearTimeout(RAISE.end);
   if(on){
     /* đang hạ xuống dở thì quay đầu đi lên từ chỗ đang đứng */
-    if(shell.classList.contains('lifted')){RAISE.on=true;shell.classList.add('lift-anim');shell.style.setProperty('--ly','0px');RAISE.end=setTimeout(liftSettled,RAISE.ms+40);}
+    if(shell.classList.contains('lifted')){RAISE.on=true;shell.classList.add('lift-anim');shell.style.setProperty('--ly','0px');RAISE.end=setTimeout(liftSettled,RAISE_MS+40);}
     else{liftLayout();liftFrom();liftPlay();}
     if(SEARCH.open)caretHide(RAISE_MS);return;
   }
   RAISE.on=false;shell.classList.add('lift-anim');shell.style.setProperty('--ly',RAISE.x+'px');
-  RAISE.end=setTimeout(liftReset,RAISE.ms+40);
+  RAISE.end=setTimeout(liftReset,RAISE_MS+40);
 }
 /* đổi cỡ màn hình / xoay máy lúc đang đẩy lên */
 function syncLift(){
@@ -1480,8 +1475,8 @@ function rowStart(n){
 }
 function expSet(on){
   EXP.on=on;
-  if(on){if(!RAISE.on)liftSpeed(true);liftTo(true);}
-  else if(!(SEARCH.open&&document.activeElement===qIn)){liftSpeed(true);liftTo(false);}
+  if(on)liftTo(true);
+  else if(!(SEARCH.open&&document.activeElement===qIn))liftTo(false);
 }
 function expCheck(){
   EXP.raf=0;if(!canLift())return;
@@ -1506,8 +1501,8 @@ gridWrap.addEventListener('touchmove',e=>{
 },{passive:true});
 gridWrap.addEventListener('wheel',e=>{if(EXP.on&&e.deltaY<0&&gridWrap.scrollTop<=0)expSet(false);},{passive:true});
 /* bấm lại vào ô nhập (sau khi Enter) thì đẩy lên lại; rời ô nhập (Enter, bấm ra ngoài) thì hạ xuống */
-qIn.addEventListener('focus',()=>{if(SEARCH.open){if(!RAISE.on)liftSpeed(false);liftTo(true);}});
-qIn.addEventListener('blur',()=>{caretShow(false);if(SEARCH.open&&!EXP.on){if(RAISE.on)liftSpeed(false);liftTo(false);}});
+qIn.addEventListener('focus',()=>{if(SEARCH.open)liftTo(true);});
+qIn.addEventListener('blur',()=>{caretShow(false);if(SEARCH.open&&!EXP.on)liftTo(false);});
 document.addEventListener('focusout',()=>setTimeout(()=>{if(document.documentElement.classList.contains('kb')&&!/^(INPUT|TEXTAREA)$/.test((document.activeElement||{}).tagName||''))sizeStage();},0));
 qIn.addEventListener('input',()=>{
   const v=qIn.value.trim();clearTimeout(SEARCH.t);SEARCH.t=0;cbar.classList.remove('typing');
