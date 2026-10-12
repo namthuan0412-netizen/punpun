@@ -572,11 +572,12 @@ function buildFromSheet(cr,sr,hr){
     const img=normImg(r.linkanh,1600),img2=normImg(r.linkanhnuaphai||r.anhnuaphai,1600),kind=r.kieuday?strapKind(r.kieuday):(img?'braid':'snake'),col=strapColor(r.mau);
     straps.push({code,name,vname:r.phanloai||'',price:money(r.gia),img,img2:img?img2:null,kind,m:col,c:(kind==='leather'||kind==='cord'||kind==='braid')?metalOf(col).b:null,c2:null,thick:num(r.daymm)||THICK[kind]||3});});
   /* hạt chặn: tặng miễn phí khi mua vòng mix charm (giá trong sheet chỉ là giá bán lẻ trên sàn, app không tính).
-     Trên vòng chỉ thấy hạt nhìn nghiêng: một vạch ngang dây, Rộng (mm) = bề dày dọc theo dây, Cao (mm) = đường kính. */
+     Trên vòng chỉ thấy hạt nhìn nghiêng: Rộng (mm) = bề dày dọc theo dây, Cao (mm) = đường kính.
+     Có "Ảnh trên vòng" (chặn hoa) thì vẽ ảnh hạt nhìn nghiêng; không có thì vẽ vạch màu (vòng chặn trơn). */
   const stops=[];
   (hr||[]).forEach((r,i)=>{if(!shown(r.hien))return;const name=r.ten||r.tenhatchan||'';if(!name)return;let code=cleanCode(r.ma)||('H'+(i+2));while(seen.has(code))code+='-2';seen.add(code);
     const w=num(r.rongmm)||3,cao=num(r.caomm)||8,hx=/^#[0-9a-f]{6}$/i.test((r.mau||'').trim())?r.mau.trim():null;
-    stops.push(sizeEntry({code,name,vname:r.phanloai||'',cat:r.nhom||'Hạt chặn',price:0,listPrice:money(r.gia1cap||r.giacap||r.gia),stop:true,kind:'bead',w,ar:cao/w,fixedAr:true,hex:hx,img:normImg(r.linkanh,480),demo:null}));});
+    stops.push(sizeEntry({code,name,vname:r.phanloai||'',cat:r.nhom||'Hạt chặn',price:0,listPrice:money(r.gia1cap||r.giacap||r.gia),stop:true,kind:'bead',w,ar:cao/w,fixedAr:true,hex:hx,img:normImg(r.linkanh,480),sideImg:normImg(r.anhtrenvong||r.anhnghieng,400),demo:null}));});
   return{charms,straps,stops};
 }
 function applyTables(cr,sr,hr){
@@ -646,7 +647,18 @@ function stopTone(e){
   if(!b&&e.img){const rec=charmImg(e);if(!rec.ok&&!rec.failed)return TONE_WAIT;if(rec.ok)b=imgTone(rec.el);}
   e.col=toneSet(b||'#B9B3AA');return e.col;
 }
+/* Chặn hoa (hạt đan, có chỉ vàng): sheet có "Ảnh trên vòng" = ảnh thật của hạt nhìn nghiêng, thân dựng đứng
+   (lỗ xỏ chạy trái–phải như khi nằm trên dây) → vẽ đúng ảnh đó để thấy chỉ vàng và vân đan.
+   Chiều cao = Cao (mm), bề rộng dọc theo dây lấy theo tỉ lệ ảnh. Vòng chặn trơn không có ảnh này thì vẫn vẽ vạch màu. */
+function stopSide(e){
+  const rec=loadImg(e.sideImg);
+  if(!e._sideHooked){e._sideHooked=true;
+    const apply=()=>{if(rec.ok&&rec.el.naturalHeight){const w=Math.round(e.h*rec.el.naturalWidth/rec.el.naturalHeight*100)/100;if(Math.abs(w-e.w)>.05){e.w=w;e.ar=e.h/w;sizeEntry(e);renderSpecs();}}scheduleRender();};
+    if(rec.ok||rec.failed)apply();else rec.waiters.push(apply);}
+  return rec;
+}
 function drawStop(ctx,e){
+  if(e.sideImg){const rec=stopSide(e);if(rec.ok){shadowOn(ctx);ctx.drawImage(rec.el,-e.w/2,-e.h/2,e.w,e.h);shadowOff(ctx);return;}}
   const c=stopTone(e),w=e.w,h=e.h,r=Math.min(w*.46,h/2),path=()=>rr(ctx,-w/2,-h/2,w,h,r);
   path();shadowOn(ctx);ctx.fillStyle=c.b;ctx.fill();shadowOff(ctx);
   let g=ctx.createLinearGradient(0,-h/2,0,h/2);
@@ -1037,7 +1049,7 @@ function charmSprite(e,rec,px){
   return sp;
 }
 function stopSprite(e,px){
-  const c=stopTone(e),sh=SH||{c:'transparent',b:0,y:0},key='S|'+e.code+'|'+c.b+'|'+px.toFixed(1)+'|'+sh.b+'|'+sh.y+'|'+sh.c;
+  const side=e.sideImg?stopSide(e):null,c=side&&side.ok?{b:'img'}:stopTone(e),sh=SH||{c:'transparent',b:0,y:0},key='S|'+e.code+'|'+c.b+'|'+e.w+'|'+px.toFixed(1)+'|'+sh.b+'|'+sh.y+'|'+sh.c;
   let sp=SPRITES.get(key);if(sp)return sp;
   const pad=Math.ceil(sh.b*1.6+Math.abs(sh.y)+2),cv2=document.createElement('canvas');
   cv2.width=Math.ceil(e.w*px)+2*pad;cv2.height=Math.ceil(e.h*px)+2*pad;const x=cv2.getContext('2d');
@@ -1615,7 +1627,7 @@ async function drawFit(x,src,bx,by,bs){if(!src)return;const im=await img(src);if
 /* đợi ảnh charm và ảnh dây tải xong rồi mới vẽ ảnh xuất */
 async function assetsReady(){
   const ps=[],seen=new Set();
-  state.items.forEach(it=>{const e=CE[it.code];if(e&&e.img&&!seen.has(e.img)){seen.add(e.img);ps.push(charmImg(e).p);}});
+  state.items.forEach(it=>{const e=CE[it.code];if(e&&e.img&&!seen.has(e.img)){seen.add(e.img);ps.push(charmImg(e).p);}if(e&&e.sideImg&&!seen.has(e.sideImg)){seen.add(e.sideImg);ps.push(stopSide(e).p);}});
   const st=strapE();if(st&&st.img)ps.push(loadImg(st.img).p);if(st&&st.img2)ps.push(loadImg(st.img2).p);
   await settle(Promise.all(ps),8000);
 }
