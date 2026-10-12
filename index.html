@@ -113,15 +113,22 @@ button:disabled{cursor:default}
 
 .toolbar{display:flex; align-items:flex-start; gap:2px; padding:8px 0 10px}
 .tools{display:flex; justify-content:center; gap:2px; flex:1; min-width:0}
-.tool{display:flex; flex-direction:column; align-items:center; gap:4px; min-width:58px; flex:0 1 64px; font-size:12px; color:var(--fg); white-space:nowrap}
+/* hàng công cụ 3 ↔ 4 nút (12/10): mỗi ô (.slot) chứa nút lúc chưa chọn + nút lúc đang chọn chồng lên nhau, đổi qua lại bằng mờ + phóng;
+   ô thứ 4 (Xoá) nở bề ngang từ 0 → 64px nên 3 nút kia trượt sang trái nhường chỗ, cả hàng luôn canh giữa */
+.slot{display:grid; justify-items:center; flex:0 1 64px; min-width:58px; transition:flex-basis 480ms cubic-bezier(.3,.7,.2,1), min-width 480ms cubic-bezier(.3,.7,.2,1), margin 480ms cubic-bezier(.3,.7,.2,1)}
+.toolbar[data-mode="idle"] .slot.s4{flex-basis:0; min-width:0; margin-left:-2px}
+.tool{grid-area:1 / 1; width:100%; display:flex; flex-direction:column; align-items:center; gap:4px; font-size:12px; color:var(--fg); white-space:nowrap;
+  transition:opacity 300ms var(--ease) 120ms, transform 420ms var(--ease-out) 120ms, visibility 0s}
+.slot.s4 .tool{width:64px}
 .tool .ic{width:44px; height:44px; border-radius:50%; background:var(--surface); border:1px solid var(--line); display:grid; place-items:center; transition:background-color var(--fast), transform var(--fast) var(--ease)}
 .tool:active:not(:disabled) .ic{background:var(--soft); transform:scale(.94)}
 .tool:disabled{opacity:.35}
-.toolbar[data-mode="sel"] .tool[data-ctx="idle"], .toolbar[data-mode="idle"] .tool[data-ctx="sel"]{display:none}
+.toolbar[data-mode="sel"] .tool[data-ctx="idle"], .toolbar[data-mode="idle"] .tool[data-ctx="sel"]{opacity:0; transform:scale(.7); visibility:hidden; pointer-events:none;
+  transition:opacity 180ms var(--ease-in), transform 220ms var(--ease-in), visibility 0s linear 220ms}
 
 @media (max-width:350px){
   .seg button{padding:0 8px; gap:4px}
-  .tool{min-width:54px}
+  .slot{min-width:54px}
   .sel-pill{height:28px; gap:5px; padding:0 10px}
 }
 
@@ -340,8 +347,6 @@ textarea.copybox{width:100%; min-height:240px; border-radius:12px; border:1px so
 @media (prefers-reduced-motion:no-preference){
   .overlay:not([hidden]) .sheet{animation:up .24s var(--ease)}
   @keyframes up{from{transform:translateY(28px); opacity:.5} to{transform:none; opacity:1}}
-  .tools.swap{animation:swap var(--med) var(--ease)}
-  @keyframes swap{from{opacity:0; transform:translateY(4px)} to{opacity:1; transform:none}}
   .cgrid.enter .card{animation:cardIn .26s var(--ease) both; animation-delay:calc(var(--i,0) * 22ms)}
   @keyframes cardIn{from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none}}
   .sel-pill:not([hidden]){animation:pillIn 340ms var(--ease-out)}
@@ -396,13 +401,10 @@ textarea.copybox{width:100%; min-height:240px; border-radius:12px; border:1px so
     </div>
     <div class="toolbar" id="toolbar" data-mode="idle">
       <div class="tools" id="tools" role="group" aria-label="Công cụ">
-        <button class="tool" data-tool="undo" data-ctx="idle" id="undoBtn"><span class="ic"><svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></span>Undo</button>
-        <button class="tool" data-tool="clear" data-ctx="idle" id="clearBtn"><span class="ic"><svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg></span>Reset</button>
-        <button class="tool" data-act="link" data-ctx="idle" id="linkBtn"><span class="ic"><svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1 1"/><path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1-1"/></svg></span>Copy link</button>
-        <button class="tool" data-tool="left" data-ctx="sel"><span class="ic"><svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5m0 0 6-6m-6 6 6 6"/></svg></span>Qua trái</button>
-        <button class="tool" data-tool="right" data-ctx="sel"><span class="ic"><svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14m0 0-6-6m6 6-6 6"/></svg></span>Qua phải</button>
-        <button class="tool" data-tool="dup" data-ctx="sel"><span class="ic"><svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="8" y="8" width="11" height="11" rx="2.5"/><path d="M16 5.5A2.5 2.5 0 0 0 13.5 5H7.5A2.5 2.5 0 0 0 5 7.5v6A2.5 2.5 0 0 0 5.5 16"/></svg></span>Nhân đôi</button>
-        <button class="tool" data-tool="del" data-ctx="sel"><span class="ic"><svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><path d="m9 9 6 6m0-6-6 6"/></svg></span>Xoá</button>
+        <span class="slot"><button class="tool" data-tool="undo" data-ctx="idle" id="undoBtn"><span class="ic"><svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></span>Undo</button><button class="tool" data-tool="left" data-ctx="sel"><span class="ic"><svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5m0 0 6-6m-6 6 6 6"/></svg></span>Qua trái</button></span>
+        <span class="slot"><button class="tool" data-tool="clear" data-ctx="idle" id="clearBtn"><span class="ic"><svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg></span>Reset</button><button class="tool" data-tool="right" data-ctx="sel"><span class="ic"><svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14m0 0-6-6m6 6-6 6"/></svg></span>Qua phải</button></span>
+        <span class="slot"><button class="tool" data-act="link" data-ctx="idle" id="linkBtn"><span class="ic"><svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1 1"/><path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1-1"/></svg></span>Copy link</button><button class="tool" data-tool="dup" data-ctx="sel"><span class="ic"><svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="8" y="8" width="11" height="11" rx="2.5"/><path d="M16 5.5A2.5 2.5 0 0 0 13.5 5H7.5A2.5 2.5 0 0 0 5 7.5v6A2.5 2.5 0 0 0 5.5 16"/></svg></span>Nhân đôi</button></span>
+        <span class="slot s4"><button class="tool" data-tool="del" data-ctx="sel"><span class="ic"><svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><path d="m9 9 6 6m0-6-6 6"/></svg></span>Xoá</button></span>
       </div>
     </div>
   </section>
@@ -1589,8 +1591,7 @@ function refreshSel(){
   if(tb.dataset.mode!==mode){
     const hadFocus=tb.contains(document.activeElement);
     tb.dataset.mode=mode;
-    const tl=$('tools');tl.classList.remove('swap');void tl.offsetWidth;tl.classList.add('swap');
-    if(hadFocus&&document.activeElement&&document.activeElement.offsetParent===null){const f=tb.querySelector(`.tool[data-ctx="${mode}"]:not(:disabled)`)||cv;f.focus({preventScroll:true});}
+    if(hadFocus&&document.activeElement&&document.activeElement.dataset.ctx&&document.activeElement.dataset.ctx!==mode){const f=tb.querySelector(`.tool[data-ctx="${mode}"]:not(:disabled)`)||cv;f.focus({preventScroll:true});}
   }
   /* đang kéo một charm từ trạng thái chưa chọn: giữ vòng đứng yên, chưa hiện viên thông tin; thả tay mới hiện và nhích vòng lên */
   const quiet=!!(drag&&drag.moved&&drag.fromIdle);
