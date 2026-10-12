@@ -1319,7 +1319,7 @@ function renderCatalog(animate){
    Bấm kính lúp → nút đổi thành X; (điện thoại dọc) header + khung vòng đẩy lên, rồi tab trượt qua trái và ô nhập trượt từ phải qua
    cùng lúc. Gõ tới đâu, ngưng gõ 0,5 giây mới tìm (đỡ nháy kết quả liên tục); Enter là tìm ngay.
    Không phân biệt dấu (gõ "hong" ra "Hồng"), các chữ đã gõ tô vàng. */
-const SEARCH={open:false,shown:'',t:0,ct:0,vt:0};
+const SEARCH={open:false,shown:'',t:0,ct:0,vt:0,exp:false,st:0};
 /* nhịp chuyển động (khớp với CSS: --lift-ms, --s-dur); ô nhập + tab bắt đầu chạy khi phần đẩy lên đã đi được ~90% */
 const RAISE_MS=360,S_DUR=380,S_AFTER_LIFT=180,DROP_AFTER=120;
 const cbar=$('cbar'),qIn=$('q'),sBtn=$('searchBtn');
@@ -1359,6 +1359,8 @@ function runSearch(){
 }
 function openSearch(){
   if(SEARCH.open)return;SEARCH.open=true;
+  /* nhớ trạng thái danh mục lúc mở tìm kiếm (mở rộng / thu gọn + vị trí cuộn) để đóng thì trả về đúng như cũ */
+  SEARCH.exp=EXP.on;SEARCH.st=gridWrap.scrollTop;
   const tb=$('ctabs'),lift=canLift()&&!RAISE.on,rm=reduceMotion();
   /* tab đi vừa hết khỏi mép trái đúng lúc ô nhập vừa đủ dài */
   cbar.style.setProperty('--tabs-out',-(tb.offsetLeft+tb.offsetWidth+24)+'px');
@@ -1385,11 +1387,13 @@ function closeSearch(fromKey){
   cbar.classList.remove('searching','typing','s-from','s-instant','s-gone');
   if(!reduceMotion()){cbar.classList.add('s-closing');SEARCH.vt=setTimeout(()=>cbar.classList.remove('s-closing'),S_DUR+40);}sBtn.setAttribute('aria-expanded','false');sBtn.setAttribute('aria-label','Tìm kiếm');
   /* đóng: ô nhập lùi về sau nút + tab trượt về trước, khung vòng hạ xuống ngay sau đó */
-  EXP.on=false;liftTo(false,DROP_AFTER);
+  /* trước khi tìm đang mở rộng → giữ mở rộng; đang thu gọn → hạ xuống */
+  EXP.on=SEARCH.exp&&canLift();
+  if(EXP.on)liftTo(true);else liftTo(false,DROP_AFTER);
   /* bấm X bằng tay: chỉ rời ô nhập (cụp bàn phím), không dời focus sang nút để khỏi hiện viền focus vàng quanh kính lúp; Esc / bàn phím thì focus về nút */
   if(document.activeElement===qIn){if(fromKey)sBtn.focus({preventScroll:true});else qIn.blur();}
   qIn.value='';const had=!!SEARCH.shown;SEARCH.shown='';
-  if(had){renderCatalog(true);gridTop();}
+  if(had){renderCatalog(true);gridTo(SEARCH.st);}
 }
 sBtn.addEventListener('click',e=>SEARCH.open?closeSearch(e.detail===0):openSearch());
 function caretHide(ms){cbar.classList.add('moving');clearTimeout(SEARCH.ct);SEARCH.ct=setTimeout(()=>caretShow(true),ms+40);}
@@ -1448,16 +1452,23 @@ function syncLift(){
   RAISE.x=document.querySelector('.top').offsetHeight+document.querySelector('.work').offsetHeight;shell.style.setProperty('--lift',RAISE.x+'px');
 }
 /* ---------- danh mục mở rộng khi cuộn (điện thoại dọc) ----------
-   Cuộn lưới quá 3,5 hàng → header + khung vòng đẩy lên, danh mục cao hết màn hình (dùng chung cơ chế đẩy lên của tìm kiếm).
-   Cuộn ngược lại tới đầu danh sách (hoặc kéo xuống khi đã ở đầu) → co về như cũ.
-   Đổi tab / nhóm (lưới tự về đầu) thì giữ nguyên trạng thái; đóng tìm kiếm thì co lại. */
-const EXP={on:false,prog:false,raf:0,ty:null,ROWS:3.5};
+   Cuộn tới khi đầu hàng thứ 3 chạm mép trên khung lưới → header + khung vòng đẩy lên, danh mục cao hết màn hình
+   (dùng chung cơ chế đẩy lên của tìm kiếm). Cuộn ngược lại tới đầu danh sách (hoặc kéo xuống khi đã ở đầu) → co về như cũ.
+   Đổi tab / nhóm (lưới tự về đầu) thì giữ nguyên trạng thái; đóng tìm kiếm thì trả về trạng thái lúc mở tìm kiếm. */
+const EXP={on:false,prog:false,raf:0,ty:null,ROW:3};
 const gridWrap=$('gridWrap');
-function gridTop(){if(gridWrap.scrollTop!==0){EXP.prog=true;gridWrap.scrollTop=0;}}
-function rowPitch(){
-  let a=null;
-  for(const c of grid.children){if(!c.classList.contains('card'))continue;if(!a){a=c;continue;}if(c.offsetTop>a.offsetTop+4)return c.offsetTop-a.offsetTop;}
-  return 0;
+/* cuộn lưới bằng code: bỏ qua sự kiện cuộn kéo theo để không tự mở / co */
+function gridTo(y){
+  y=Math.max(0,Math.round(y||0));const was=gridWrap.scrollTop;if(Math.abs(was-y)<1)return;
+  EXP.prog=true;gridWrap.scrollTop=y;if(gridWrap.scrollTop===was)EXP.prog=false;
+}
+function gridTop(){gridTo(0);}
+/* vị trí (trong nội dung cuộn) của đầu hàng card thứ n; tính theo offsetTop nên không lệch vì hiệu ứng card hiện ra */
+function rowStart(n){
+  let k=0,last=-1e9,row=null;
+  for(const c of grid.children){if(!c.classList.contains('card'))continue;const t=c.offsetTop;if(t>last+4){last=t;if(++k===n){row=c;break;}}}
+  if(!row)return 0;
+  return grid.getBoundingClientRect().top-gridWrap.getBoundingClientRect().top+gridWrap.scrollTop+(row.offsetTop-grid.offsetTop);
 }
 function expSet(on){
   EXP.on=on;
@@ -1468,14 +1479,14 @@ function expCheck(){
   EXP.raf=0;if(!canLift())return;
   const st=gridWrap.scrollTop;
   if(EXP.on){if(st<=0)expSet(false);return;}
-  const p=rowPitch();if(!p||st<EXP.ROWS*p)return;
+  const y=rowStart(EXP.ROW);if(!y||st<y-1)return;
   /* danh mục cao thêm đúng phần đẩy lên: chỉ mở khi lưới còn đủ dài, để vị trí cuộn không bị kẹp lại (lưới giật) */
   if(!RAISE.on){const x=document.querySelector('.top').offsetHeight+document.querySelector('.work').offsetHeight;
     if(gridWrap.scrollHeight-gridWrap.clientHeight-x<st)return;}
   expSet(true);
 }
 gridWrap.addEventListener('scroll',()=>{
-  if(EXP.prog){EXP.prog=false;if(gridWrap.scrollTop===0)return;}
+  if(EXP.prog){EXP.prog=false;return;}
   if(!EXP.raf)EXP.raf=requestAnimationFrame(expCheck);
 },{passive:true});
 /* đã ở đầu danh sách mà vẫn kéo xuống (không còn sự kiện cuộn) → co lại */
@@ -1492,7 +1503,7 @@ qIn.addEventListener('blur',()=>{caretShow(false);if(SEARCH.open&&!EXP.on)liftTo
 document.addEventListener('focusout',()=>setTimeout(()=>{if(document.documentElement.classList.contains('kb')&&!/^(INPUT|TEXTAREA)$/.test((document.activeElement||{}).tagName||''))sizeStage();},0));
 qIn.addEventListener('input',()=>{
   const v=qIn.value.trim();clearTimeout(SEARCH.t);SEARCH.t=0;cbar.classList.remove('typing');
-  if(!v){if(SEARCH.shown){SEARCH.shown='';renderCatalog(true);gridTop();}return;}
+  if(!v){if(SEARCH.shown){SEARCH.shown='';renderCatalog(true);gridTo(SEARCH.st);}return;}
   if(v===SEARCH.shown)return;
   void cbar.offsetWidth;cbar.classList.add('typing');
   SEARCH.t=setTimeout(runSearch,500);
