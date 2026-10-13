@@ -96,6 +96,9 @@ button:disabled{cursor:default}
 .seg button{z-index:1; height:30px; padding:0 11px; border-radius:999px; font-size:12.5px; font-weight:600; color:var(--muted); display:inline-flex; align-items:center; gap:5px; transition:color 600ms var(--ease)}
 .seg button::after{content:""; position:absolute; inset:-8px 0}
 .seg button[aria-checked="true"]{color:var(--bg)}
+/* vòng kiềng (kim loại cứng) chỉ xem Tròn: ẩn nút Tròn/Ngang nhưng giữ chỗ để vòng không nhảy (13/10) */
+.seg{transition:opacity 260ms var(--ease), visibility 0s}
+.corner.only-ring .seg{opacity:0; visibility:hidden; pointer-events:none; transition:opacity 200ms var(--ease), visibility 0s linear 200ms}
 .seg:not(.ready) button[aria-checked="true"]{background:var(--fg)}
 
 /* viên thông tin charm nằm sát đáy khung vòng: bo 2 góc trên 16px, 2 góc dưới vuông, không viền dưới, không bóng đổ */
@@ -416,6 +419,7 @@ textarea.copybox{width:100%; min-height:240px; border-radius:12px; border:1px so
         <div><dt>Số charm</dt><dd id="spCount">0</dd></div>
         <div><dt>Đã dùng</dt><dd id="spUsed">0 cm</dd></div>
         <div id="spStopRow" hidden><dt>Hạt chặn</dt><dd id="spStop">0</dd></div>
+        <div id="spRingRow" hidden><dt>Khoen</dt><dd id="spRing">0</dd></div>
         <div><dt>Tạm tính</dt><dd class="big" id="spTotal">0đ</dd></div>
       </dl>
     </div>
@@ -593,13 +597,13 @@ function drawCharm(ctx,p,v){
 /* ---------- catalog: Google Sheet + dữ liệu mẫu ---------- */
 const $=id=>document.getElementById(id);
 const SHEET_ID="1EfG3PN7HUzXhmpJlYy1-vo6IIdRsOmVQyewymnijGik";
-const SHEET_GIDS={charm:"0",strap:"1728579730",stop:"2002"};
+const SHEET_GIDS={charm:"0",strap:"1728579730",stop:"2002",ring:"2003"};
 const noAccent=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/đ/g,'d').replace(/Đ/g,'D');
 const keyOf=s=>noAccent(s).toLowerCase().replace(/[^a-z0-9#]/g,'');
 const cleanCode=s=>noAccent(s).trim().replace(/[^A-Za-z0-9-]+/g,'-').replace(/^-+|-+$/g,'');
 function metalOf(x){if(x&&typeof x==='object')return x;if(typeof x==='string'&&/^#[0-9a-f]{3,6}$/i.test(x))return{b:x,l:shade(x,.6),d:shade(x,-.3),e:shade(x,-.55)};return METAL[x]||METAL.silver;}
 
-let CAT={charms:[],straps:[],stops:[],cats:[],stopCats:[],source:'demo',loading:false};
+let CAT={charms:[],straps:[],stops:[],rings:[],cats:[],stopCats:[],source:'demo',loading:false};
 let CE={},SE={};
 /* độ dày dây (mm) theo kiểu */
 const THICK={snake:3,cable:3,leather:3.6,cord:2.6,braid:3};
@@ -610,11 +614,11 @@ function demoCatalog(){
   const straps=[];STRAPS.forEach(sp=>sp.variants.forEach((v,vi)=>straps.push({code:sp.id+'-'+vi,name:sp.name,vname:v.n,price:v.p,img:null,kind:sp.kind,m:v.m||'silver',c:v.c||null,c2:v.c2||null,thick:THICK[sp.kind]||3})));
   return{charms,straps};
 }
-function setCatalog(charms,straps,source,stops){
-  stops=stops||[];
-  CAT={charms,straps,stops,cats:[],stopCats:[],source,loading:false};
-  /* hạt chặn dùng chung bảng CE với charm: gắn lên vòng, kéo, xoá, tính tiền y như charm */
-  CE=Object.fromEntries(charms.concat(stops).map(e=>[e.code,e]));SE=Object.fromEntries(straps.map(e=>[e.code,e]));
+function setCatalog(charms,straps,source,stops,rings){
+  stops=stops||[];rings=rings||[];
+  CAT={charms,straps,stops,rings,cats:[],stopCats:[],source,loading:false};
+  /* hạt chặn + khoen dùng chung bảng CE với charm: gắn lên vòng, kéo, xoá y như charm (khoen tính tiền theo set) */
+  CE=Object.fromEntries(charms.concat(stops,rings).map(e=>[e.code,e]));SE=Object.fromEntries(straps.map(e=>[e.code,e]));
   charms.forEach(e=>{if(e.cat&&!CAT.cats.includes(e.cat))CAT.cats.push(e.cat);});
   stops.forEach(e=>{if(e.cat&&!CAT.stopCats.includes(e.cat))CAT.stopCats.push(e.cat);});
   if(catId!=='all'&&!CAT.cats.includes(catId))catId='all';
@@ -628,10 +632,10 @@ const shown=s=>!['khong','no','false','0','an','hethang'].includes(keyOf(s));
 /* link Drive → ảnh lh3 (w: bề ngang tối đa, ảnh charm nhỏ cho nhẹ, ảnh vân dây giữ nét) */
 function normImg(u,w){u=(u||'').trim();if(!u)return null;const m=u.match(/\/d\/([\w-]{20,})/)||u.match(/[?&]id=([\w-]{20,})/);if(m&&/google\./.test(u))return`https://lh3.googleusercontent.com/d/${m[1]}=w${w||480}`;if(/^https?:\/\//.test(u))return u;if(/\.(png|jpe?g|webp|gif|avif)$/i.test(u))return'images/'+encodeURIComponent(u.replace(/^.*[\\/]/,''));return null;}
 const kindOf=s=>{const k=keyOf(s);return k.startsWith('treo')||k==='dangle'?'dangle':'bead';};
-function strapKind(s){const k=keyOf(s);if(k.includes('ran'))return'snake';if(k.includes('xich'))return'cable';if(k.includes('dan'))return'braid';if(k.includes('du'))return'cord';if(k.includes('da'))return'leather';return'snake';}
+function strapKind(s){const k=keyOf(s);if(k.includes('kieng')||k.includes('bangle'))return'bangle';if(k.includes('ran'))return'snake';if(k.includes('xich'))return'cable';if(k.includes('dan'))return'braid';if(k.includes('du'))return'cord';if(k.includes('da'))return'leather';return'snake';}
 const COLORS=[['xanhla','#6BAF7B'],['xanhduong','#5B8FD1'],['xanhnavy','#2F3F68'],['navy','#2F3F68'],['xanh','#8DB6DE'],['hong','#E9A3B4'],['tim','#B49BDB'],['kem','#EADFC8'],['trang','#F4F2EC'],['den','#2B2A2C'],['nau','#97613F'],['cam','#F0A06B'],['xam','#9A9A9E'],['do','#C63A3F'],['be','#CDB99A']];
 function strapColor(s){const t=(s||'').trim();if(/^#[0-9a-f]{3,6}$/i.test(t))return t;const k=keyOf(t);if(!k)return'silver';if(k.includes('vanghong')||k.includes('rose'))return'rose';if(k.includes('vang')||k.includes('gold'))return'gold';if(k.includes('bac')||k.includes('silver'))return'silver';for(const[n,c]of COLORS)if(k.includes(n))return c;return'silver';}
-function buildFromSheet(cr,sr,hr){
+function buildFromSheet(cr,sr,hr,kr){
   const charms=[],seen=new Set();
   cr.forEach((r,i)=>{if(!shown(r.hien))return;const name=r.tencharm||r.ten||'';if(!name)return;let code=cleanCode(r.ma)||('C'+(i+2));while(seen.has(code))code+='-2';seen.add(code);
     charms.push(sizeEntry({code,name,vname:r.phanloai||'',cat:r.nhom||'Khác',price:money(r.gia),kind:kindOf(r.kieu),w:num(r.rongmm)||10,ar:1,img:normImg(r.linkanh,480),demo:null}));});
@@ -646,12 +650,18 @@ function buildFromSheet(cr,sr,hr){
   (hr||[]).forEach((r,i)=>{if(!shown(r.hien))return;const name=r.ten||r.tenhatchan||'';if(!name)return;let code=cleanCode(r.ma)||('H'+(i+2));while(seen.has(code))code+='-2';seen.add(code);
     const w=num(r.rongmm)||3,cao=num(r.caomm)||8,hx=/^#[0-9a-f]{6}$/i.test((r.mau||'').trim())?r.mau.trim():null;
     stops.push(sizeEntry({code,name,vname:r.phanloai||'',cat:r.nhom||'Hạt chặn',price:0,listPrice:money(r.gia1cap||r.giacap||r.gia),stop:true,kind:'bead',w,ar:cao/w,fixedAr:true,hex:hx,img:normImg(r.linkanh,480),sideImg:normImg(r.anhtrenvong||r.anhnghieng,400),demo:null}));});
-  return{charms,straps,stops};
+  /* khoen kim loại (13/10): chỉ dùng cho vòng kiềng; bán theo set (Giá (1 set), Số khoen / set). Trên vòng thấy khoen nhìn nghiêng:
+     Rộng (mm) = bề dày dọc theo vòng, Cao (mm) = đường kính */
+  const rings=[];
+  (kr||[]).forEach((r,i)=>{if(!shown(r.hien))return;const name=r.ten||r.tenkhoen||'';if(!name)return;let code=cleanCode(r.ma)||('K'+(i+2));while(seen.has(code))code+='-2';seen.add(code);
+    const w=num(r.rongmm)||2.3,cao=num(r.caomm)||8,per=Math.max(1,Math.round(num(r.sokhoenset)||num(r.sokhoen)||20));
+    rings.push(sizeEntry({code,name,vname:r.phanloai||`Set ${per} khoen`,cat:r.nhom||'Khoen',price:money(r.gia1set||r.giaset||r.gia),per,ring:true,kind:'bead',w,ar:cao/w,fixedAr:true,img:normImg(r.linkanh,480),demo:null}));});
+  return{charms,straps,stops,rings};
 }
-function applyTables(cr,sr,hr){
-  const b=buildFromSheet(cr,sr,hr),d=demoCatalog();
+function applyTables(cr,sr,hr,kr){
+  const b=buildFromSheet(cr,sr,hr,kr),d=demoCatalog();
   const charms=b.charms.length?b.charms:d.charms, straps=b.straps.length?b.straps:d.straps;
-  setCatalog(charms,straps,b.charms.length?'sheet':'demo',b.stops);
+  setCatalog(charms,straps,b.charms.length?'sheet':'demo',b.stops,b.rings);
 }
 async function fetchTab(gid){
   const u=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&headers=1&gid=${gid}&t=${Date.now()}`;
@@ -659,7 +669,7 @@ async function fetchTab(gid){
   try{const r=await fetch(u,{signal:ctl.signal,cache:'no-store'});if(!r.ok)throw new Error('HTTP '+r.status);const t=await r.text();if(/^\s*</.test(t))throw new Error('not csv');return tableOf(t);}
   finally{clearTimeout(to);}
 }
-async function loadSheet(){const[cr,sr,hr]=await Promise.all([fetchTab(SHEET_GIDS.charm),fetchTab(SHEET_GIDS.strap),fetchTab(SHEET_GIDS.stop).catch(()=>[])]);return{cr,sr,hr};}
+async function loadSheet(){const[cr,sr,hr,kr]=await Promise.all([fetchTab(SHEET_GIDS.charm),fetchTab(SHEET_GIDS.strap),fetchTab(SHEET_GIDS.stop).catch(()=>[]),fetchTab(SHEET_GIDS.ring).catch(()=>[])]);return{cr,sr,hr,kr};}
 
 /* ---------- ảnh (tải khi cần, không tải trước cả danh mục) ---------- */
 const IMG=new Map();
@@ -698,8 +708,29 @@ function charmImg(e){
     if(rec.ok||rec.failed)apply();else rec.waiters.push(apply);}
   return rec;
 }
+/* vàng kim loại của vòng kiềng + khoen: lấy theo vàng charm Chó nhỏ (Lab ~ L76,5 C63 hue 85°, 13/10) */
+const KG={x:'#7D481B',e:'#A66925',d:'#CE8F2D',b:'#E5B642',l:'#F2DC86',h:'#FBF2C1'};
+/* khoen trên vòng nhìn nghiêng: dải bo tròn (rộng = bề dày khoen dọc theo vòng, cao = đường kính), vàng mờ (phun cát) có vết búa lõm như ảnh shop */
+function drawKhoen(ctx,e){
+  const w=e.w,h=e.h,G=KG,r=Math.min(w*.46,h/2),path=()=>rr(ctx,-w/2,-h/2,w,h,r);
+  path();shadowOn(ctx);ctx.fillStyle=G.d;ctx.fill();shadowOff(ctx);
+  ctx.save();path();ctx.clip();
+  let g=ctx.createLinearGradient(0,-h/2,0,h/2);
+  g.addColorStop(0,G.e);g.addColorStop(.1,G.d);g.addColorStop(.24,G.b);g.addColorStop(.34,G.l);g.addColorStop(.42,G.h);g.addColorStop(.52,G.l);g.addColorStop(.66,G.b);g.addColorStop(.86,G.d);g.addColorStop(1,G.e);
+  ctx.fillStyle=g;ctx.fillRect(-w/2,-h/2,w,h);
+  /* vết búa: lõm tối + mép sáng phía dưới, cố định theo mã để mọi khoen giống nhau */
+  let sd=97;const rnd=()=>(sd=(sd*16807)%2147483647)/2147483647;
+  for(let i=0;i<12;i++){const y=-h/2+h*(.06+.88*rnd()),x=-w/2+w*(.2+.6*rnd()),rw=w*(.2+rnd()*.12),rh=h*(.045+rnd()*.035),lt=(y+h/2)/h;
+    ctx.beginPath();ctx.ellipse(x,y,rw,rh,0,0,Math.PI*2);ctx.fillStyle=`rgba(110,60,10,${(.18+.18*lt).toFixed(3)})`;ctx.fill();
+    ctx.beginPath();ctx.ellipse(x,y+rh*.55,rw*.8,rh*.38,0,0,Math.PI*2);ctx.fillStyle=`rgba(255,246,205,${(.32-.2*lt).toFixed(3)})`;ctx.fill();}
+  /* 2 mép khoen (mặt phẳng nhìn xiên) hơi tối */
+  g=ctx.createLinearGradient(-w/2,0,w/2,0);g.addColorStop(0,'rgba(95,52,12,.5)');g.addColorStop(.22,'rgba(95,52,12,0)');g.addColorStop(.78,'rgba(95,52,12,0)');g.addColorStop(1,'rgba(95,52,12,.5)');
+  ctx.fillStyle=g;ctx.fillRect(-w/2,-h/2,w,h);
+  ctx.restore();
+}
 function drawEntry(ctx,e){
   if(e.demo){drawCharm(ctx,e.demo.p,e.demo.v);return;}
+  if(e.ring){drawKhoen(ctx,e);return;}
   if(e.stop){drawStop(ctx,e);return;}
   const rec=e.img?charmImg(e):null;
   if(rec&&rec.ok){shadowOn(ctx);ctx.drawImage(rec.el,-e.w/2,e.top,e.w,e.h);shadowOff(ctx);return;}
@@ -817,13 +848,29 @@ function commit(fn){const from=posSnap();pushHist();fn();startReflow(from);chang
 const selIndex=()=>state.items.findIndex(i=>i.uid===sel);
 const selItem=()=>state.items.find(i=>i.uid===sel)||null;
 const strapE=()=>SE[state.strap]||CAT.straps[0];
-const total=()=>strapE().price+state.items.reduce((a,it)=>a+(CE[it.code]?CE[it.code].price:0),0);
+/* vòng kiềng (13/10): kim loại cứng, chỉ gắn charm + khoen (không hạt chặn); dây đan: charm + hạt chặn (không khoen) */
+const isBangle=st=>!!st&&st.kind==='bangle';
+const bangleOn=()=>isBangle(strapE());
+const fitsStrap=(e,st)=>!e||!(e.ring&&!isBangle(st))&&!(e.stop&&isBangle(st));
+/* khoen tính tiền theo set: mỗi mã khoen = ceil(số khoen / số khoen 1 set) × giá 1 set */
+const ringCounts=()=>{const c={};state.items.forEach(it=>{const e=CE[it.code];if(e&&e.ring)c[it.code]=(c[it.code]||0)+1;});return c;};
+const ringSets=(code,n)=>{const e=CE[code];return e?Math.ceil(n/e.per):0;};
+const ringCost=()=>{const c=ringCounts();let t=0;for(const k in c)t+=ringSets(k,c[k])*CE[k].price;return t;};
+const total=()=>strapE().price+state.items.reduce((a,it)=>{const e=CE[it.code];return a+(e&&!e.ring?e.price:0);},0)+ringCost();
 const usedMM=()=>{const n=state.items.length;return state.items.reduce((a,it)=>a+(CE[it.code]?CE[it.code].strapW:0),0)+.35*Math.max(0,n-1);};
-function fitState(){state.items=state.items.filter(it=>CE[it.code]);if(!SE[state.strap])state.strap=CAT.straps[0].code;state.size=STRAP_CM;}
+function fitState(){if(!SE[state.strap])state.strap=CAT.straps[0].code;const st=SE[state.strap];state.items=state.items.filter(it=>CE[it.code]&&fitsStrap(CE[it.code],st));state.size=STRAP_CM;}
 /* mỗi vòng tối đa 15 charm (12/10). Hạt chặn không tính, gắn bao nhiêu cũng được */
 const MAX_CHARMS=15;
-const charmCount=()=>state.items.reduce((a,it)=>a+(CE[it.code]&&!CE[it.code].stop?1:0),0);
-const atLimit=e=>!!e&&!e.stop&&charmCount()>=MAX_CHARMS;
+const charmCount=()=>state.items.reduce((a,it)=>a+(CE[it.code]&&!CE[it.code].stop&&!CE[it.code].ring?1:0),0);
+const atLimit=e=>!!e&&!e.stop&&!e.ring&&charmCount()>=MAX_CHARMS;
+/* vòng kiềng không nới ra được: còn bao nhiêu mm chỗ gắn (ngoài ống khoá) */
+function roomLeft(){if(!bangleOn())return Infinity;const pm=pathModel(strapE(),0),cl=clusterOf();return pm.uMax-pm.uMin-cl.W;}
+const fitsRoom=(e,n)=>roomLeft()>=(n||1)*(e.strapW+KN.gap)-.01;
+function fullHit(card){
+  toast('Vòng kiềng đã kín chỗ',{sub:'Xoá bớt charm hoặc khoen rồi gắn tiếp',ms:4000});
+  if(!card)return;card.classList.remove('limit');void card.offsetWidth;card.classList.add('limit');
+  clearTimeout(card._lt);card._lt=setTimeout(()=>card.classList.remove('limit'),1050);
+}
 /* báo đủ charm: toast + ô charm vừa bấm (nếu có) nháy viền đỏ; bấm tiếp thì nháy lại từ đầu */
 function limitHit(card){
   toast('Đã đạt giới hạn charm trong 1 vòng',{sub:'Chạm vào charm trong vòng trên rồi xoá bớt',ms:4000});
@@ -832,15 +879,21 @@ function limitHit(card){
   clearTimeout(card._lt);card._lt=setTimeout(()=>card.classList.remove('limit'),1050);
 }
 
-function encode(){return['pp2',state.strap,state.size,state.items.map(i=>i.code).join('_')].join('~');}
+function encode(){
+  /* mã lặp liền nhau từ 3 lần (khoen) ghi gọn thành MÃ*số (13/10) */
+  const out=[];const its=state.items;
+  for(let i=0;i<its.length;){let j=i;while(j+1<its.length&&its[j+1].code===its[i].code)j++;const n=j-i+1;if(n>=3)out.push(its[i].code+'*'+n);else for(let k=i;k<=j;k++)out.push(its[k].code);i=j+1;}
+  return['pp2',state.strap,state.size,out.join('_')].join('~');
+}
 function decode(tok){
   try{
     tok=decodeURIComponent(String(tok).trim());
     const h=tok.indexOf('#');if(h>=0)tok=tok.slice(h+1);
     const parts=tok.split('~');if(parts[0]!=='pp2'||parts.length<3)return null;
-    const codes=parts[3]?parts[3].split('_').filter(Boolean):[];
-    const items=codes.filter(c=>CE[c]).map(code=>({uid:newUid(),code}));
-    return{strap:SE[parts[1]]?parts[1]:CAT.straps[0].code,size:STRAP_CM,items,missing:codes.length-items.length};
+    const codes=[];(parts[3]?parts[3].split('_').filter(Boolean):[]).forEach(c=>{const m=c.match(/^(.+)\*(\d{1,3})$/);if(m){for(let k=0;k<Math.min(200,+m[2]);k++)codes.push(m[1]);}else codes.push(c);});
+    const strap=SE[parts[1]]?parts[1]:CAT.straps[0].code,st=SE[strap];
+    const items=codes.filter(c=>CE[c]&&fitsStrap(CE[c],st)).map(code=>({uid:newUid(),code}));
+    return{strap,size:STRAP_CM,items,missing:codes.length-items.length};
   }catch(e){return null;}
 }
 const shareLink=()=>APP_URL?APP_URL+'#'+encode():'';
@@ -907,12 +960,19 @@ const DEF_C=182;
    k1gap: khe từ đầu khoen tới mép chốt 1; kGap: khe giữa 2 chốt khi sát nhau */
 const KN={collar:5.5,eyeLen:9.4,eyeW:6.6,cord:1.4,foldIn:5.4,dbl:.22,knotL:5.2,rimW:1.02,k1gap:.35,kGap:.35,kinkL:2.5,kink:.1,wrap:8.5,tip:1,pad:.5,gap:.35};
 const PH=.25;
+/* ống khoá vòng kiềng (ảnh shop: ống trụ 3 vành có hạt): dài barL, đường kính barD (mm) */
+const KB={barL:9.6,barD:6.4,ribW:1.5};
 let PM_CACHE={key:'',pm:null};
 function pathModel(st,need){
-  const L=STRAP_CM*10,T=(st&&st.thick)||3,braid=!st||st.kind==='braid',key=[braid,T,braid?Math.round((need||0)*20):0].join('|');
+  const L=STRAP_CM*10,T=(st&&st.thick)||3,braid=!st||st.kind==='braid',key=[st?st.kind:'braid',T,braid?Math.round((need||0)*20):0].join('|');
   if(PM_CACHE.key===key)return PM_CACHE.pm;
   let pm;
-  if(!braid){
+  if(st&&st.kind==='bangle'){
+    /* vòng kiềng (13/10): vòng tròn kim loại chu vi 23 cm (shop: 1 size, cũng 23 cm như dây), 2 đầu gặp nhau trong ống khoá ở đỉnh vòng;
+       không nới ra được — đoạn gắn charm là cả vòng trừ ống khoá */
+    const C=L,R=C/(2*Math.PI),h=KB.barL/2+KN.pad;
+    pm={braid:false,bangle:true,L,T,C,R,Rref:R,ru:0,uS:-C/2,uE:C/2,uP:C/2,uB:C/2,uMin:-C/2+h,uMax:C/2-h,topExt:KB.barD/2+.6,endX:2.5,a0:C/2/R,segs:[{u0:-C/2,u1:C/2,k:-1/R}]};
+  }else if(!braid){
     const R=L/(2*Math.PI);
     pm={braid:false,L,T,C:L,R,Rref:R,ru:0,uS:-L/2,uE:L/2,uP:L/2,uB:L/2,uMin:-L/2+6.5,uMax:L/2-6.5,topExt:3.6,endX:2.5,a0:-L/2*(-1/R),segs:[{u0:-L/2,u1:L/2,k:-1/R}]};
   }else{
@@ -1021,13 +1081,13 @@ function uAt(g,px,py){
 function rr2(ctx,x,y,w,h,rl,rrt){ctx.beginPath();ctx.moveTo(x+rl,y);ctx.arcTo(x+w,y,x+w,y+h,rrt);ctx.arcTo(x+w,y+h,x,y+h,rrt);ctx.arcTo(x,y+h,x,y,rl);ctx.arcTo(x,y,x+w,y,rl);ctx.closePath();}
 
 function drawStrapCurve(ctx,g,st){
-  const m=metalOf(st.m),s=g.s,pm=g.pm,u0=pm.braid?pm.uS:pm.uS+5,u1=pm.braid?pm.uE:pm.uE-5,STEP=.6,TAU=Math.PI*2;
+  const m=metalOf(st.m),s=g.s,pm=g.pm,full=pm.braid||pm.bangle,u0=full?pm.uS:pm.uS+5,u1=full?pm.uE:pm.uE-5,STEP=.6,TAU=Math.PI*2;
   const path=(off,dy)=>{ctx.beginPath();for(let u=u0,i=0;;u+=STEP,i++){const uu=Math.min(u,u1),p=curvePt(g,uu),x=p.x+p.nx*off*s,y=p.y+p.ny*off*s+(dy||0);if(i)ctx.lineTo(x,y);else ctx.moveTo(x,y);if(uu>=u1)break;}};
   const along=(pitch,fn)=>{let i=0;for(let u=u0+pitch/2;u<u1;u+=pitch)fn(curvePt(g,u),u,i++);};
   const P=(p,off)=>[p.x+p.nx*off*s,p.y+p.ny*off*s];
   const tex=strapTex(st),tex2=strapTex2(st),T=st.thick||THICK[st.kind]||3;
   ctx.save();ctx.lineJoin='round';ctx.lineCap='butt';
-  ctx.strokeStyle='rgba(40,30,15,.10)';ctx.lineWidth=(tex||st.kind==='braid'?T*1.2:3.6)*s;path(0,1.3*s);ctx.stroke();
+  ctx.strokeStyle='rgba(40,30,15,.10)';ctx.lineWidth=(tex||st.kind==='braid'||pm.bangle?T*1.2:3.6)*s;path(0,1.3*s);ctx.stroke();
   /* khoen vẽ TRƯỚC sợi dây (13/10, shop: ảnh thật không thấy trọn vòng khoen vàng): dây luồn vào khoen đè lên đầu khoen + chỗ gập, chỉ lộ 2 chân khoen gần chân quấn chỉ; Ngang thì không có gì đè nên thấy trọn khoen */
   if(pm.braid){ctx.save();drawEye(ctx,g);ctx.restore();}
   if(tex){
@@ -1063,6 +1123,8 @@ function drawStrapCurve(ctx,g,st){
         const r2=ctx.createRadialGradient(0,0,0,0,0,hh/2*s+1);r2.addColorStop(0,'rgba(255,255,255,.06)');r2.addColorStop(.6,'rgba(0,0,0,0)');r2.addColorStop(1,'rgba(20,6,0,.38)');
         ctx.fillStyle=r2;ctx.fillRect(-len/2*s,-hh/2*s,len*s,hh*s);ctx.restore();}
       i=j+1;}
+  }else if(pm.bangle){
+    drawBangleTube(ctx,g,T);
   }else if(st.kind==='snake'){
     ctx.lineWidth=3*s;ctx.strokeStyle=m.b;path(0);ctx.stroke();
     ctx.lineWidth=1.1*s;ctx.strokeStyle=rgba(m.l,.9);path(-.55);ctx.stroke();
@@ -1093,7 +1155,7 @@ function drawStrapCurve(ctx,g,st){
     ctx.strokeStyle='rgba(255,255,255,.22)';ctx.lineWidth=.45*s;path(-.6);ctx.stroke();
   }
   ctx.restore();
-  if(pm.braid)drawClosure(ctx,g,st,tex,tex2||tex);else drawEnds(ctx,g,st);
+  if(pm.braid)drawClosure(ctx,g,st,tex,tex2||tex);else if(pm.bangle)drawBangleClasp(ctx,g);else drawEnds(ctx,g,st);
 }
 /* hệ toạ độ dọc một đoạn thẳng, xoay sao cho mặt sáng luôn ở phía trên màn hình; trả về chiều trục x */
 function lineFrame(ctx,x,y,dir,s){const flip=Math.cos(dir)<-1e-6;ctx.translate(x,y);ctx.rotate(flip?dir+Math.PI:dir);ctx.scale(s,s);return flip?-1:1;}
@@ -1227,6 +1289,52 @@ function drawClosure(ctx,g,st,tex,texR){
   drawKnot(ctx,g,uK1,st,tx,1,dev);
   drawKnot(ctx,g,pm.uB,st,tx,2,dev);
 }
+/* ---------- vòng kiềng (13/10) ----------
+   Thân: ống tròn vàng mờ (satin) vẽ bằng lát ảnh dải ống (bóng ống tròn, vệt sáng giữa ống + vân xước mảnh) đặt dọc vòng;
+   ánh sáng từ trên-trái: nửa vòng phía trên sáng hơn, phía dưới tối hơn. Ống khoá 3 vành có hạt ở đỉnh vòng. */
+const TUBES=new Map();
+function tubeStrip(ppm,hh){
+  ppm=Math.max(4,Math.min(30,Math.round(ppm/2)*2));const key=ppm+'|'+hh.toFixed(2);let S=TUBES.get(key);if(S)return S;
+  const G=KG,LEN=24,w=Math.round(LEN*ppm),h=Math.max(3,Math.round(hh*ppm));
+  S=document.createElement('canvas');S.width=w;S.height=h;const x=S.getContext('2d');
+  const gr=x.createLinearGradient(0,0,0,h);
+  gr.addColorStop(0,G.x);gr.addColorStop(.09,G.e);gr.addColorStop(.22,G.d);gr.addColorStop(.35,G.b);gr.addColorStop(.44,G.l);gr.addColorStop(.5,G.h);gr.addColorStop(.56,G.l);gr.addColorStop(.65,G.b);gr.addColorStop(.78,G.d);gr.addColorStop(.91,G.e);gr.addColorStop(1,G.x);
+  x.fillStyle=gr;x.fillRect(0,0,w,h);
+  let sd=5;const rnd=()=>(sd=(sd*16807)%2147483647)/2147483647,lw=Math.max(1,ppm*.05);
+  for(let i=0,n=Math.round(w*h/60);i<n;i++){const px=rnd()*w,py=rnd()*h,len=ppm*(.5+rnd()*1.5);x.fillStyle=rnd()<.5?'rgba(255,250,225,.10)':'rgba(120,70,15,.09)';x.fillRect(px,py,len,lw);}
+  S.ppm=w/LEN;TUBES.set(key,S);if(TUBES.size>12)TUBES.delete(TUBES.keys().next().value);
+  return S;
+}
+function drawBangleTube(ctx,g,T){
+  const s=g.s,pm=g.pm,S=tubeStrip(s*devScale(ctx),T),pp=S.ppm,step=Math.max(.3,Math.min(1.2,1.5/s)),Lx=-.45,Ly=-.89;
+  for(let u=pm.uS;u<pm.uE-1e-6;u+=step){const ub=Math.min(u+step,pm.uE),du=ub-u,p=curvePt(g,(u+ub)/2),sx=((((u-pm.uS)%20)+20)%20)*pp,f=p.nx*Lx+p.ny*Ly;
+    ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.a);
+    ctx.drawImage(S,sx,0,Math.max(1,Math.min(du*pp,S.width-sx)),S.height,-du/2*s-.3,-T/2*s,du*s+.6,T*s);
+    ctx.fillStyle=f>0?`rgba(255,248,220,${(.16*f).toFixed(3)})`:`rgba(70,35,5,${(-.2*f).toFixed(3)})`;ctx.fillRect(-du/2*s-.3,-T/2*s,du*s+.6,T*s);
+    ctx.restore();}
+}
+function drawBangleClasp(ctx,g){
+  const pm=g.pm,p=curvePt(g,pm.uE),G=KG,L=KB.barL,D=KB.barD,rw=KB.ribW;
+  ctx.save();lineFrame(ctx,p.x,p.y,p.a,g.s);
+  const grad=ctx.createLinearGradient(0,-D/2,0,D/2);
+  grad.addColorStop(0,G.e);grad.addColorStop(.2,G.b);grad.addColorStop(.33,G.l);grad.addColorStop(.42,G.h);grad.addColorStop(.52,G.b);grad.addColorStop(.8,G.d);grad.addColorStop(1,G.x);
+  /* thân ống (phần lõm giữa các vành) */
+  const body=()=>rr(ctx,-L/2,-D/2+.45,L,D-.9,.8);
+  body();shadowOn(ctx);ctx.fillStyle=G.d;ctx.fill();shadowOff(ctx);
+  body();ctx.fillStyle=grad;ctx.fill();
+  body();ctx.fillStyle='rgba(90,45,8,.16)';ctx.fill();
+  /* 3 vành nổi, giữa mỗi vành một hàng hạt nhỏ */
+  for(let i=0;i<3;i++){const xc=-L/2+rw/2+.1+i*((L-rw-.2)/2),rib=()=>rr(ctx,xc-rw/2,-D/2,rw,D,rw*.42);
+    rib();ctx.fillStyle=grad;ctx.fill();
+    const hg=ctx.createLinearGradient(xc-rw/2,0,xc+rw/2,0);
+    hg.addColorStop(0,'rgba(90,45,8,.5)');hg.addColorStop(.3,'rgba(255,248,215,.15)');hg.addColorStop(.55,'rgba(255,248,215,0)');hg.addColorStop(1,'rgba(90,45,8,.55)');
+    rib();ctx.fillStyle=hg;ctx.fill();
+    for(let k=0,nb=8;k<nb;k++){const y=-D/2+.5+k*((D-1)/(nb-1)),lt=(y+D/2)/D;
+      ctx.beginPath();ctx.arc(xc,y,.26,0,Math.PI*2);ctx.fillStyle=shade(G.b,-lt*.4);ctx.fill();
+      ctx.beginPath();ctx.arc(xc-.07,y-.08,.1,0,Math.PI*2);ctx.fillStyle=rgba(G.h,.95-lt*.55);ctx.fill();}
+  }
+  ctx.restore();
+}
 /* khoá: mỗi đầu dây giữ một nửa, khi đeo tròn hai nửa khép lại thành một khoá (dây kim loại, da, dù) */
 function drawEnds(ctx,g,st){
   const pm=g.pm,s=g.s,TAU=Math.PI*2;
@@ -1280,7 +1388,8 @@ function drawScene(ctx,W,H,o){
   if(o.nums&&lay.list.length){
     const br=Math.max(7.5,Math.min(11,2.3*g.s));
     ctx.font=`700 ${Math.round(br*1.05)}px "Be Vietnam Pro", system-ui, sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
-    lay.list.forEach((x,i)=>{const d=(x.e.top*zOf(x.it.uid)-3.6)*g.s,px=x.x+x.nx*d,py=x.y+x.ny*d,on=o.sel===x.it.uid&&o.selRing;ctx.beginPath();ctx.arc(px,py,br,0,Math.PI*2);ctx.fillStyle=on?o.selRing:o.numBg;ctx.fill();ctx.fillStyle=on?o.selFg:o.numFg;ctx.fillText(String(i+1),px,py+.5);});
+    /* khoen không đánh số (nhiều quá rối mắt); số của charm / hạt chặn đếm bỏ qua khoen, khớp danh sách trong ảnh xuất */
+    let num=0;lay.list.forEach(x=>{if(x.e.ring)return;num++;const d=(x.e.top*zOf(x.it.uid)-3.6)*g.s,px=x.x+x.nx*d,py=x.y+x.ny*d,on=o.sel===x.it.uid&&o.selRing;ctx.beginPath();ctx.arc(px,py,br,0,Math.PI*2);ctx.fillStyle=on?o.selRing:o.numBg;ctx.fill();ctx.fillStyle=on?o.selFg:o.numFg;ctx.fillText(String(num),px,py+.5);});
   }
   if(o.bg&&g.e>0){
     const fw=Math.min(28,W*.08);
@@ -1326,6 +1435,15 @@ function charmSprite(e,rec,px){
   if(SPRITES.size>160)SPRITES.delete(SPRITES.keys().next().value);
   return sp;
 }
+function khoenSprite(e,px){
+  const sh=SH||{c:'transparent',b:0,y:0},key='K|'+e.code+'|'+e.w+'|'+e.h+'|'+px.toFixed(1)+'|'+sh.b+'|'+sh.y+'|'+sh.c;
+  let sp=SPRITES.get(key);if(sp)return sp;
+  const pad=Math.ceil(sh.b*1.6+Math.abs(sh.y)+2),c=document.createElement('canvas');
+  c.width=Math.ceil(e.w*px)+2*pad;c.height=Math.ceil(e.h*px)+2*pad;const x=c.getContext('2d');
+  x.translate(c.width/2,c.height/2);x.scale(px,px);drawKhoen(x,e);
+  sp={c,pad,px};SPRITES.set(key,sp);if(SPRITES.size>160)SPRITES.delete(SPRITES.keys().next().value);
+  return sp;
+}
 function stopSprite(e,px){
   const side=e.sideImg?stopSide(e):null,c=side&&side.ok?{b:'img'}:stopTone(e),sh=SH||{c:'transparent',b:0,y:0},key='S|'+e.code+'|'+c.b+'|'+e.w+'|'+px.toFixed(1)+'|'+sh.b+'|'+sh.y+'|'+sh.c;
   let sp=SPRITES.get(key);if(sp)return sp;
@@ -1337,6 +1455,7 @@ function stopSprite(e,px){
   return sp;
 }
 function drawEntryFast(ctx,e,k,dpr){
+  if(e.ring){const px=Math.max(1,Math.round(k*dpr*10)/10),sp=khoenSprite(e,px);ctx.drawImage(sp.c,-sp.c.width/px/2,-sp.c.height/px/2,sp.c.width/px,sp.c.height/px);return;}
   if(e.stop){const px=Math.max(1,Math.round(k*dpr*10)/10),sp=stopSprite(e,px);ctx.drawImage(sp.c,-sp.c.width/px/2,-sp.c.height/px/2,sp.c.width/px,sp.c.height/px);return;}
   const rec=e.img&&!e.demo?charmImg(e):null;
   if(!rec||!rec.ok){drawEntry(ctx,e);return;}
@@ -1425,11 +1544,12 @@ function syncSideBar(){
   if(!el.classList.contains('ready'))requestAnimationFrame(()=>requestAnimationFrame(()=>el.classList.add('ready')));
 }
 try{document.fonts.ready.then(()=>{syncSeg();syncTabBar();syncSideBar();});}catch(e){}
-function setView(mode,instant){
+function setView(mode,instant,keepPref){
+  if(mode==='line'&&bangleOn())return;
   const target=mode==='line'?1:0;
   document.querySelectorAll('[data-view]').forEach(b=>{const on=b.dataset.view===mode;b.setAttribute('aria-checked',String(on));b.tabIndex=on?0:-1;});
   syncSeg();
-  try{localStorage.setItem('punpun-view',mode);}catch(e){}
+  if(!keepPref)try{localStorage.setItem('punpun-view',mode);}catch(e){}
   if(VIEW.raf){cancelAnimationFrame(VIEW.raf);VIEW.raf=0;}
   stopPan();drag=null;panDrag=null;
   VIEW.target=target;
@@ -1588,7 +1708,7 @@ const grid=$('grid'), side=$('cside'), gridNote=$('gridNote'), gridHead=$('gridH
 const CHECK=`<span class="used" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7"/></svg></span>`;
 const countsOf=()=>{const c={};state.items.forEach(i=>{c[i.code]=(c[i.code]||0)+1;});return c;};
 const FREE='Miễn phí';
-const charmLabel=(e,n)=>`Thêm ${e.name}${e.vname?' – '+e.vname:''}, ${e.stop?'miễn phí':fmt(e.price)}${n?`, đã gắn ${n}`:''}`;
+const charmLabel=(e,n)=>e.ring?`Thêm 1 set ${e.per} ${e.name}, ${fmt(e.price)} một set${n?`, đã gắn ${n} khoen`:''}`:`Thêm ${e.name}${e.vname?' – '+e.vname:''}, ${e.stop?'miễn phí':fmt(e.price)}${n?`, đã gắn ${n}`:''}`;
 /* ô danh mục (dùng chung cho tab và kết quả tìm kiếm); toks = từ khoá để tô vàng */
 function charmCard(e,i,cn,toks){
   const T=t=>toks?hl(t,toks):esc(t),codeHit=toks&&!toks.every(t=>sNorm([e.name,e.vname].join(' ')).n.includes(t));
@@ -1617,6 +1737,11 @@ function renderCatalog(animate){
     const list=CAT.charms.filter(e=>catId==='all'||e.cat===catId);
     grid.innerHTML=list.map((e,i)=>charmCard(e,i,cn)).join('');
     gridNote.textContent=CAT.source==='sheet'?'Bấm vào charm là charm được gắn lên vòng.':'Bấm vào charm là charm được gắn lên vòng. Đang hiện hình minh hoạ và giá mẫu.';
+  }else if(ctab==='stop'&&bangleOn()){
+    side.hidden=true;gridHead.hidden=true;gridHead.innerHTML='';side.innerHTML='';
+    const list=CAT.rings,r0=list[0];
+    grid.innerHTML=list.map((e,i)=>charmCard(e,i,cn)).join('');
+    gridNote.textContent=r0?`Bấm 1 lần gắn 1 set ${r0.per} khoen (${fmt(r0.price)}), khoen tự rải đều giữa các charm; đang chọn charm thì gắn liền sau charm đó. Xoá bớt khoen vẫn tính trọn set.`:'Chưa có khoen.';
   }else if(ctab==='stop'){
     const cats=CAT.stopCats;side.hidden=!cats.length;gridHead.hidden=true;gridHead.innerHTML='';
     side.innerHTML=`<button data-scat="all" aria-current="${stopCatId==='all'}">Tất cả</button>`+cats.map((c,i)=>`<button data-scat="${i}" aria-current="${c===stopCatId}">${esc(c)}</button>`).join('');
@@ -1626,7 +1751,7 @@ function renderCatalog(animate){
   }else{
     side.hidden=true;gridHead.hidden=true;gridHead.innerHTML='';
     grid.innerHTML=CAT.straps.map((e,i)=>strapCard(e,i)).join('');
-    gridNote.textContent='Tất cả dây dài 23 cm, có nút rút để chỉnh vừa cổ tay. Bấm vào dây để đổi dây cho vòng.';
+    gridNote.textContent=CAT.straps.some(isBangle)?'Dây đan dài 23 cm, có nút rút để chỉnh vừa cổ tay. Vòng kiềng kim loại chu vi 23 cm, gắn charm + khoen. Bấm để đổi cho vòng.':'Tất cả dây dài 23 cm, có nút rút để chỉnh vừa cổ tay. Bấm vào dây để đổi dây cho vòng.';
   }
   syncSideBar();
   sweepThumbs();
@@ -1662,12 +1787,12 @@ function sMatch(e,toks){
 }
 function renderResults(cn){
   const q=SEARCH.shown,toks=sToks(q);
-  const cs=CAT.charms.filter(e=>sMatch(e,toks)),ss=CAT.stops.filter(e=>sMatch(e,toks)),ds=CAT.straps.filter(e=>sMatch(e,toks)),n=cs.length+ss.length+ds.length;
+  const bo=bangleOn(),cs=CAT.charms.filter(e=>sMatch(e,toks)),ss=(bo?CAT.rings:CAT.stops).filter(e=>sMatch(e,toks)),ds=CAT.straps.filter(e=>sMatch(e,toks)),n=cs.length+ss.length+ds.length;
   side.hidden=true;gridHead.hidden=false;
   gridHead.innerHTML=n?`<b>${n}</b> kết quả cho “${esc(q)}”`:`Không tìm thấy “${esc(q)}”`;
   let i=0;const sec=(t,k)=>`<p class="gsec">${t} · ${k}</p>`;
   grid.innerHTML=(cs.length?sec('Charm',cs.length)+cs.map(e=>charmCard(e,i++,cn,toks)).join(''):'')
-    +(ss.length?sec('Hạt chặn',ss.length)+ss.map(e=>charmCard(e,i++,cn,toks)).join(''):'')
+    +(ss.length?sec(bo?'Khoen':'Hạt chặn',ss.length)+ss.map(e=>charmCard(e,i++,cn,toks)).join(''):'')
     +(ds.length?sec('Dây',ds.length)+ds.map(e=>strapCard(e,i++,toks)).join(''):'');
   gridNote.textContent=n?'':'Thử gõ tên khác, màu (vd. hồng, xanh) hoặc mã (vd. HK-12).';
   $('live').textContent=n?`${n} kết quả cho ${q}`:`Không tìm thấy ${q}`;
@@ -1860,8 +1985,9 @@ document.addEventListener('touchmove',e=>{
 
 /* ---------- specs / selection ---------- */
 function renderSpecs(){
-  const nStop=state.items.filter(it=>CE[it.code]&&CE[it.code].stop).length;
-  $('spCount').textContent=state.items.length-nStop;$('spStop').textContent=nStop;$('spStopRow').hidden=!nStop;
+  const nStop=state.items.filter(it=>CE[it.code]&&CE[it.code].stop).length,rc=ringCounts();let nRing=0,sets=0;for(const k in rc){nRing+=rc[k];sets+=ringSets(k,rc[k]);}
+  $('spCount').textContent=state.items.length-nStop-nRing;$('spStop').textContent=nStop;$('spStopRow').hidden=!nStop;
+  $('spRing').textContent=`${nRing} · ${sets} set`;$('spRingRow').hidden=!nRing;
   $('spUsed').textContent=(usedMM()/10).toLocaleString('vi-VN',{maximumFractionDigits:1})+' / '+state.size+' cm';
   $('spTotal').textContent=CAT.straps.length?fmt(total()):'–';
 }
@@ -1887,7 +2013,7 @@ function refreshSel(){
   /* đang kéo một charm từ trạng thái chưa chọn: giữ vòng đứng yên, chưa hiện viên thông tin; thả tay mới hiện và nhích vòng lên */
   const quiet=!!(drag&&drag.moved&&drag.fromIdle);
   pillShow(has&&!quiet);setLift(has&&!quiet?1:0);
-  if(has){const e=CE[it.code],i=selIndex();$('selNum').textContent=`Vị trí ${i+1}:`;$('selName').textContent=e.name;$('selVar').textContent=e.vname||'';$('selVar').hidden=!e.vname;$('selPrice').textContent=e.stop?FREE:fmt(e.price);
+  if(has){const e=CE[it.code],i=selIndex();$('selNum').textContent=`Vị trí ${i+1}:`;$('selName').textContent=e.name;$('selVar').textContent=e.vname||'';$('selVar').hidden=!e.vname;$('selPrice').textContent=e.stop?FREE:e.ring?fmt(e.price)+'/set':fmt(e.price);
     document.querySelector('[data-tool="left"]').disabled=i<=0;document.querySelector('[data-tool="right"]').disabled=i>=state.items.length-1;}
   $('undoBtn').disabled=!hist.length;$('redoBtn').disabled=!redoHist.length;
   $('clearBtn').disabled=!state.items.length;
@@ -1899,8 +2025,45 @@ function stageLabel(){
   const names=state.items.slice(0,12).map((it,i)=>{const e=CE[it.code];return`${i+1}. ${e.name}${e.vname?' '+e.vname:''}`;}).join(', ');
   return`Vòng tay đang mix: ${st?st.name+(st.vname?' '+st.vname:''):'dây'}, dài ${STRAP_CM} cm, ${n} charm${n?': '+names+(n>12?`, và ${n-12} charm khác`:''):''}. Phím mũi tên để chọn charm, Shift cộng mũi tên để đổi chỗ, Delete để xoá.`;
 }
-function changed(){if(!CAT.loading)saveDraft();renderSpecs();syncCatalog();refreshSel();ensureSelVisible();if(CAT.straps.length)cv.setAttribute('aria-label',stageLabel());}
+/* đổi loại vòng (dây ↔ kiềng): tab giữa đổi Hạt chặn ↔ Khoen, kiềng thì ẩn nút Tròn/Ngang và về Tròn */
+let KIND_ON=null;
+function syncKind(){
+  if(!CAT.straps.length)return;
+  const b=bangleOn();if(KIND_ON===b)return;const first=KIND_ON===null;KIND_ON=b;
+  const co=document.querySelector('.corner');if(co)co.classList.toggle('only-ring',b);
+  $('tabStop').textContent=b?'Khoen':'Hạt chặn';
+  if(b&&VIEW.target===1)setView('circle',first,true);
+  if(ctab==='stop'||(SEARCH.open&&SEARCH.shown))renderCatalog();else syncTabBar();
+}
+function changed(){if(!CAT.loading)saveDraft();syncKind();renderSpecs();syncCatalog();refreshSel();ensureSelVisible();if(CAT.straps.length)cv.setAttribute('aria-label',stageLabel());}
 
+/* bấm khoen = gắn nguyên 1 set (13/10, shop chốt). Đang chọn món nào thì gắn liền sau món đó;
+   không thì rải đều các khoen vào khoảng giữa các charm (và 2 đầu cụm) như vòng thật, chưa có charm thì gắn thành 1 cụm */
+function addRingSet(en,card){
+  const n=en.per;
+  if(!fitsRoom(en,n)){fullHit(card);return;}
+  const news=Array.from({length:n},()=>({uid:newUid(),code:en.code}));
+  commit(()=>{
+    const its=state.items,si=selIndex();
+    if(si>=0){its.splice(si+1,0,...news);}
+    else{
+      const anchors=its.map((it,i)=>CE[it.code]&&!CE[it.code].ring?i:-1).filter(i=>i>=0);
+      if(!anchors.length)its.push(...news);
+      else{
+        /* khe: trước charm đầu, giữa từng cặp charm, sau charm cuối; chia đều, phần dư ưu tiên khe ở giữa */
+        const k=anchors.length+1,base=Math.floor(n/k),cnt=new Array(k).fill(base);let rem=n-base*k;
+        const prio=Array.from({length:Math.max(0,k-2)},(_,i)=>i+1).sort((a,b)=>Math.abs(a-(k-1)/2)-Math.abs(b-(k-1)/2)).concat([0,k-1]);
+        for(let i=0;rem>0;i++){cnt[prio[i%prio.length]]++;rem--;}
+        const out=[];let q=0;
+        its.forEach((it,i)=>{const a=anchors.indexOf(i);if(a>=0){for(let c=0;c<cnt[a];c++)out.push(news[q++]);}out.push(it);});
+        for(let c=0;c<cnt[k-1];c++)out.push(news[q++]);
+        state.items=out;
+      }
+    }
+    sel=null;
+  });
+  $('live').textContent=`Đã gắn 1 set ${n} khoen`;
+}
 /* ---------- tools ---------- */
 function tool(t){
   const i=selIndex();
@@ -1917,12 +2080,13 @@ function tool(t){
   if(t==='right'&&i<state.items.length-1)commit(()=>{const[it]=state.items.splice(i,1);state.items.splice(i+1,0,it);});
   if(t==='dup'){
     if(atLimit(CE[state.items[i].code])){limitHit(null);return;}
+    if(!fitsRoom(CE[state.items[i].code])){fullHit(null);return;}
     commit(()=>{const it=state.items[i];const n={uid:newUid(),code:it.code};state.items.splice(i+1,0,n);sel=n.uid;});
   }
   if(t==='del'){
     const e=CE[state.items[i].code];
     commit(()=>{state.items.splice(i,1);const nx=state.items[Math.min(i,state.items.length-1)];sel=nx?nx.uid:null;});
-    toast(`Đã xoá ${e?e.name+(e.vname?' · '+e.vname:''):'charm'}`,{undo:true});
+    toast(e&&e.ring?'Đã xoá 1 khoen':`Đã xoá ${e?e.name+(e.vname?' · '+e.vname:''):'charm'}`,{undo:true});
   }
 }
 
@@ -2039,11 +2203,16 @@ async function assetsReady(){
 async function buildImage(){
   try{await Promise.all([document.fonts.load('700 20px "Be Vietnam Pro"'),document.fonts.load('500 20px "Be Vietnam Pro"'),document.fonts.load('400 20px "Be Vietnam Pro"')]);}catch(e){}
   await assetsReady();
-  const W=1080,P=64,inner=W-2*P,n=state.items.length,cols=n>8?2:1,rows=Math.max(1,Math.ceil(n/cols)),rowH=76;
+  const W=1080,P=64,inner=W-2*P,rowH=76,showLine=!bangleOn();
+  /* danh sách: khoen liền nhau gộp 1 dòng (không đánh số); charm / hạt chặn đánh số bỏ qua khoen — khớp số trên vòng (13/10) */
+  const RL=[];let numC=0;
+  state.items.forEach(it=>{const e=CE[it.code];if(!e)return;if(e.ring){const l=RL[RL.length-1];if(l&&l.ring&&l.e===e){l.count++;return;}RL.push({ring:true,e,code:it.code,count:1});}else RL.push({ring:false,e,code:it.code,num:++numC});});
+  const rcx=ringCounts(),RS=Object.keys(rcx).map(k=>({e:CE[k],code:k,count:rcx[k],sets:ringSets(k,rcx[k])}));
+  const n=RL.length,cols=n>8?2:1,rows=Math.max(1,Math.ceil(n/cols));
   const tmp=document.createElement('canvas').getContext('2d');tmp.font='500 19px ui-monospace, Menlo, monospace';
   const codeLines=wrapText(tmp,'Mã thiết kế: '+encode(),inner);
   const Lmm=state.size*10, sB=(inner*.94)/(Lmm+12+KN.eyeLen), lineYpx=Math.round(9.6*sB+11+24), bandH=Math.round(lineYpx+18*sB+48);
-  const H=P+118+inner+44+(16+bandH+44)+110+52+rows*rowH+30+90+codeLines.length*28+50+P;
+  const H=P+118+inner+44+(showLine?16+bandH+44:0)+110+52+rows*rowH+(RS.length?RS.length*rowH+12:0)+30+90+codeLines.length*28+50+P;
   const c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');
   const INK='#1C1B19',MUTE='#76716A',LINE='#ECE9E4',GOLD='#8C6A1F';
   x.fillStyle='#FFFFFF';x.fillRect(0,0,W,H);
@@ -2056,7 +2225,8 @@ async function buildImage(){
   x.save();x.translate(P,y);rr(x,0,0,inner,inner,28);x.fillStyle='#F3F2EF';x.fill();x.clip();
   drawScene(x,inner,inner,{bg:null,k:1,m:0,reserve:0,nums:true,sel:null,numBg:INK,numFg:'#FFFFFF',empty:MUTE});x.restore();
   y+=inner+44;
-  /* trải ngang cả sợi dây + thước cm để shop thấy đúng vị trí từng charm */
+  /* trải ngang cả sợi dây + thước cm để shop thấy đúng vị trí từng charm (vòng kiềng không có) */
+  if(showLine){
   x.fillStyle=MUTE;x.font='600 16px '+FONT;x.fillText(`TRẢI NGANG · DÂY ${state.size} CM`,P,y);
   y+=16;
   x.save();x.translate(P,y);rr(x,0,0,inner,bandH,24);x.fillStyle='#F3F2EF';x.fill();x.clip();
@@ -2070,30 +2240,43 @@ async function buildImage(){
    x.fillText(state.size+' cm',rx1,ry+24);x.textAlign='left';}
   x.restore();
   y+=bandH+44;
-  const st=strapE();
-  x.fillStyle=MUTE;x.font='600 16px '+FONT;x.fillText('DÂY',P,y);
+  }
+  const st=strapE(),bg=isBangle(st);
+  x.fillStyle=MUTE;x.font='600 16px '+FONT;x.fillText(bg?'VÒNG':'DÂY',P,y);
   await drawFit(x,strapThumb(st.code,80),P,y+14,64);
   x.fillStyle=INK;x.font='600 25px '+FONT;x.fillText(fitText(x,`${st.name}${st.vname?' – '+st.vname:''}`,inner-84-160),P+84,y+42);
-  x.fillStyle=MUTE;x.font='400 19px '+FONT;x.fillText(`Dài ${STRAP_CM} cm · ${st.code}`,P+84,y+70);
+  x.fillStyle=MUTE;x.font='400 19px '+FONT;x.fillText(`${bg?'Chu vi':'Dài'} ${STRAP_CM} cm · ${st.code}`,P+84,y+70);
   x.textAlign='right';x.fillStyle=INK;x.font='500 22px '+FONT;x.fillText(fmt(st.price),W-P,y+42);x.textAlign='left';
   y+=110;
-  x.fillStyle=MUTE;x.font='600 16px '+FONT;x.fillText(`${state.items.some(it=>CE[it.code]&&CE[it.code].stop)?'CHARM & HẠT CHẶN':'CHARM'} · ${n} CÁI · THỨ TỰ TỪ TRÁI SANG PHẢI`,P,y);
+  {const nR=RS.reduce((a,r)=>a+r.count,0),nS=state.items.filter(it=>CE[it.code]&&CE[it.code].stop).length,nC=state.items.length-nR-nS;
+   x.fillStyle=MUTE;x.font='600 16px '+FONT;x.fillText(nR?`CHARM & KHOEN · ${nC} CHARM · ${nR} KHOEN · THỨ TỰ TỪ TRÁI SANG PHẢI`:`${nS?'CHARM & HẠT CHẶN':'CHARM'} · ${state.items.length} CÁI · THỨ TỰ TỪ TRÁI SANG PHẢI`,P,y);}
   y+=22;
   const colW=cols===2?(inner-36)/2:inner;
   for(let i=0;i<n;i++){
-    const it=state.items[i],e=CE[it.code];
+    const R=RL[i],e=R.e;
     const col=cols===2&&i>=rows?1:0,r=col?i-rows:i,x0=P+col*(colW+36),y0=y+r*rowH;
     x.strokeStyle=LINE;x.lineWidth=1;x.beginPath();x.moveTo(x0,y0);x.lineTo(x0+colW,y0);x.stroke();
-    x.beginPath();x.arc(x0+15,y0+rowH/2,15,0,Math.PI*2);x.fillStyle=INK;x.fill();
-    x.fillStyle='#fff';x.font='700 15px '+FONT;x.textAlign='center';x.fillText(String(i+1),x0+15,y0+rowH/2+5.5);x.textAlign='left';
-    await drawFit(x,charmThumb(it.code,80),x0+38,y0+8,60);
+    if(R.ring){x.beginPath();x.arc(x0+15,y0+rowH/2,9,0,Math.PI*2);x.strokeStyle=KG.d;x.lineWidth=5;x.stroke();}
+    else{x.beginPath();x.arc(x0+15,y0+rowH/2,15,0,Math.PI*2);x.fillStyle=INK;x.fill();
+      x.fillStyle='#fff';x.font='700 15px '+FONT;x.textAlign='center';x.fillText(String(R.num),x0+15,y0+rowH/2+5.5);x.textAlign='left';}
+    await drawFit(x,charmThumb(R.code,80),x0+38,y0+8,60);
     const priceW=110;
-    x.fillStyle=INK;x.font='600 21px '+FONT;x.fillText(fitText(x,e.name,colW-110-priceW),x0+108,y0+33);
-    x.fillStyle=MUTE;x.font='400 17px '+FONT;x.fillText(fitText(x,`${e.vname?e.vname+' · ':''}${e.code}${e.stop?' · tặng kèm':''}`,colW-110-priceW),x0+108,y0+58);
-    x.textAlign='right';x.fillStyle=INK;x.font='500 19px '+FONT;x.fillText(e.stop?FREE:fmt(e.price),x0+colW,y0+33);x.textAlign='left';
+    x.fillStyle=INK;x.font='600 21px '+FONT;x.fillText(fitText(x,R.ring?`${e.name} × ${R.count}`:e.name,colW-110-priceW),x0+108,y0+33);
+    x.fillStyle=MUTE;x.font='400 17px '+FONT;x.fillText(fitText(x,R.ring?`${R.count} khoen · ${e.code}`:`${e.vname?e.vname+' · ':''}${e.code}${e.stop?' · tặng kèm':''}`,colW-110-priceW),x0+108,y0+58);
+    x.textAlign='right';x.fillStyle=R.ring?MUTE:INK;x.font='500 19px '+FONT;x.fillText(R.ring?'':e.stop?FREE:fmt(e.price),x0+colW,y0+33);x.textAlign='left';
   }
   if(!n){x.fillStyle=MUTE;x.font='400 19px '+FONT;x.fillText('Chưa có charm nào.',P,y+40);}
-  y+=rows*rowH+30;
+  y+=rows*rowH;
+  /* khoen tính tiền theo set */
+  if(RS.length){y+=12;
+    for(const r of RS){x.strokeStyle=LINE;x.lineWidth=1;x.beginPath();x.moveTo(P,y);x.lineTo(W-P,y);x.stroke();
+      await drawFit(x,charmThumb(r.code,80),P+38,y+8,60);
+      x.fillStyle=INK;x.font='600 21px '+FONT;x.fillText(fitText(x,`${r.e.name} · ${r.count} khoen`,inner-110-200),P+108,y+33);
+      x.fillStyle=MUTE;x.font='400 17px '+FONT;x.fillText(`${r.sets} set × ${fmt(r.e.price)} (1 set ${r.e.per} khoen)`,P+108,y+58);
+      x.textAlign='right';x.fillStyle=INK;x.font='500 19px '+FONT;x.fillText(fmt(r.sets*r.e.price),W-P,y+33);x.textAlign='left';
+      y+=rowH;}
+  }
+  y+=30;
   x.strokeStyle=INK;x.lineWidth=2;x.beginPath();x.moveTo(P,y);x.lineTo(W-P,y);x.stroke();
   x.fillStyle=INK;x.font='600 26px '+FONT;x.fillText('Tạm tính',P,y+56);
   x.textAlign='right';x.font='700 40px '+FONT;x.fillText(fmt(total()),W-P,y+60);x.textAlign='left';
@@ -2166,14 +2349,22 @@ document.addEventListener('click',e=>{
   if(ds.scat){const c=ds.scat==='all'?'all':(CAT.stopCats[+ds.scat]||'all');if(c!==stopCatId){stopCatId=c;renderCatalog(true);gridTop();}return;}
   if(ds.charm){
     const en=CE[ds.charm];if(!en)return;
+    if(!fitsStrap(en,strapE())){toast(en.ring?'Khoen chỉ dùng cho vòng kiềng':'Vòng kiềng không dùng hạt chặn');return;}
+    if(en.ring){addRingSet(en,b);return;}
     if(atLimit(en)){limitHit(b);return;}
+    if(!fitsRoom(en)){fullHit(b);return;}
     const i=selIndex(),n={uid:newUid(),code:en.code};
     commit(()=>{if(i>=0)state.items.splice(i+1,0,n);else state.items.push(n);sel=null;});
     $('live').textContent=`Đã gắn ${en.name}${en.vname?' '+en.vname:''}, vị trí ${state.items.indexOf(n)+1}`;return;
   }
   if(ds.strap){
     const en=SE[ds.strap];if(!en||state.strap===en.code)return;
-    commit(()=>{state.strap=en.code;});$('live').textContent=`Đã đổi sang ${en.name}${en.vname?' '+en.vname:''}`;return;
+    /* dây ↔ kiềng: gỡ món không dùng được cho loại vòng mới (hạt chặn / khoen), có Undo */
+    const drop=state.items.filter(it=>!fitsStrap(CE[it.code],en)),toB=isBangle(en);
+    commit(()=>{state.strap=en.code;if(drop.length){state.items=state.items.filter(it=>!drop.includes(it));if(sel!=null&&!state.items.some(x=>x.uid===sel))sel=null;}});
+    if(drop.length)toast(toB?`Đã gỡ ${drop.length} hạt chặn`:`Đã gỡ ${drop.length} khoen`,{sub:toB?'Vòng kiềng chỉ gắn charm + khoen':'Dây đan dùng hạt chặn, không dùng khoen',undo:true,ms:5000});
+    else $('live').textContent=`Đã đổi sang ${en.name}${en.vname?' '+en.vname:''}`;
+    return;
   }
   const a=ds.act;if(!a)return;
   if(a==='image'){if(!CAT.straps.length){toast('Đang tải danh mục, bạn đợi chút nhé');return;}return exportImage();}
@@ -2225,7 +2416,7 @@ function initState(announce){
 (async function boot(){
   let cached=null;
   if(STANDALONE){try{cached=JSON.parse(localStorage.getItem('punpun-sheet-v1')||'null');}catch(e){}}
-  if(cached&&cached.cr)applyTables(cached.cr,cached.sr||[],cached.hr||[]);
+  if(cached&&cached.cr)applyTables(cached.cr,cached.sr||[],cached.hr||[],cached.kr||[]);
   else if(STANDALONE){setCatalog([],[],'demo');CAT.loading=true;}
   else{const d=demoCatalog();setCatalog(d.charms,d.straps,'demo');}
   if(!CAT.loading)initState(true);else state={strap:'',size:STRAP_CM,items:[]};
@@ -2235,10 +2426,10 @@ function initState(announce){
   if(!STANDALONE)return;
   const wasLoading=CAT.loading,pan0=VIEW.pan;
   try{
-    const {cr,sr,hr}=await loadSheet();
-    try{localStorage.setItem('punpun-sheet-v1',JSON.stringify({cr,sr,hr}));}catch(e){}
+    const {cr,sr,hr,kr}=await loadSheet();
+    try{localStorage.setItem('punpun-sheet-v1',JSON.stringify({cr,sr,hr,kr}));}catch(e){}
     const keep=wasLoading?null:{strap:state.strap,size:state.size,items:state.items};
-    thumbCache.clear();applyTables(cr,sr,hr);
+    thumbCache.clear();applyTables(cr,sr,hr,kr);
     if(keep){state=keep;fitState();}else initState(true);
   }catch(err){
     if(wasLoading){const d=demoCatalog();setCatalog(d.charms,d.straps,'demo');initState(true);}
