@@ -604,7 +604,7 @@ let CAT={charms:[],straps:[],stops:[],cats:[],stopCats:[],source:'demo',loading:
 let CE={},SE={};
 /* độ dày dây (mm) theo kiểu */
 const THICK={snake:3,cable:3,leather:3.6,cord:2.6,braid:3};
-function sizeEntry(e){const h=e.w*(e.ar||1);e.h=h;if(e.kind==='dangle'){e.top=-Math.min(2.2,h*.15);e.bottom=h+e.top;e.strapW=Math.min(e.w,6);}else{e.top=-h/2;e.bottom=h/2;e.strapW=e.w;}return e;}
+function sizeEntry(e){const h=e.w*(e.ar||1);e.h=h;if(e.kind==='dangle'){e.top=-Math.min(2.2,h*.15);e.bottom=h+e.top;e.strapW=e.bailW?Math.min(e.w,e.bailW+.25):Math.min(e.w,6);}else{e.top=-h/2;e.bottom=h/2;e.strapW=e.w;}return e;}
 function demoCatalog(){
   const catName=Object.fromEntries(CATS.map(c=>[c.id,c.n]));
   const charms=[];CHARMS.forEach(p=>p.variants.forEach((v,vi)=>{const x=ext(p);charms.push({code:p.id+'-'+vi,name:p.name,vname:v.n,cat:catName[p.cat],price:v.p,kind:p.type==='dangle'?'dangle':'bead',w:x.w,h:x.h,top:x.top,bottom:x.bottom,strapW:DIMS[p.type].w,img:null,demo:{p,v}});}));
@@ -678,9 +678,24 @@ function loadImg(src){
   return rec;
 }
 const settle=(p,ms)=>Promise.race([p,new Promise(r=>setTimeout(r,ms||8000))]);
+/* charm treo (13/10, shop: "khoen nhỏ mà trống 1 khoảng, không thật"): trên dây chỉ có khoen treo chiếm chỗ, mặt charm treo lủng lẳng bên dưới.
+   Đo bề ngang khoen từ ảnh: phần hẹp trên cùng của ảnh (hẹp hơn nửa bề ngang lớn nhất, cao ≥ 8% ảnh) → e.bailW (mm).
+   Không thấy khoen (ảnh không có phần hẹp ở đỉnh) thì vẫn chiếm tối đa 6 mm như cũ */
+function bailOf(e,im){
+  try{
+    const W=Math.min(160,im.naturalWidth),H=Math.max(1,Math.round(im.naturalHeight*W/im.naturalWidth));
+    const c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d',{willReadFrequently:true});x.drawImage(im,0,0,W,H);
+    const d=x.getImageData(0,0,W,H).data,sp=new Int16Array(H);let mx=0,y0=-1;
+    for(let y=0;y<H;y++){let l=-1,r=-1;for(let i=0;i<W;i++)if(d[(y*W+i)*4+3]>110){if(l<0)l=i;r=i;}sp[y]=l<0?0:r-l+1;if(sp[y]){if(y0<0)y0=y;if(sp[y]>mx)mx=sp[y];}}
+    if(y0<0||!mx)return null;
+    let y1=y0,bw=0;while(y1<H&&sp[y1]<mx*.5){if(sp[y1]>bw)bw=sp[y1];y1++;}
+    if(y1-y0<H*.08||!bw)return null;
+    return Math.round(bw/W*e.w*100)/100;
+  }catch(err){return null;}
+}
 function charmImg(e){
   const rec=loadImg(e.img);
-  if(!e._hooked){e._hooked=true;const apply=()=>{if(rec.ok&&rec.el.naturalWidth&&!e.fixedAr){e.ar=rec.el.naturalHeight/rec.el.naturalWidth;sizeEntry(e);}scheduleRender();};
+  if(!e._hooked){e._hooked=true;const apply=()=>{if(rec.ok&&rec.el.naturalWidth){if(e.kind==='dangle'&&rec.cors)e.bailW=bailOf(e,rec.el);if(!e.fixedAr)e.ar=rec.el.naturalHeight/rec.el.naturalWidth;sizeEntry(e);}scheduleRender();};
     if(rec.ok||rec.failed)apply();else rec.waiters.push(apply);}
   return rec;
 }
@@ -1250,7 +1265,9 @@ function drawScene(ctx,W,H,o){
   /* charm đang kéo: phóng to (×1,5) và vẽ trên cùng; thả tay thì thu nhỏ lại mượt rồi mới về lớp thường */
   const zm=o.zoom&&o.zoom.uid!=null&&(o.zoom.v>1.001||o.drag===o.zoom.uid)?o.zoom:null,zOf=uid=>zm&&zm.uid===uid?zm.v:1;
   const topUid=o.drag||(zm?zm.uid:null);
-  const order=lay.list.filter(x=>!(topUid!=null&&x.it.uid===topUid));
+  const rest=lay.list.filter(x=>!(topUid!=null&&x.it.uid===topUid)),dg=x=>x.e.kind==='dangle';
+  /* charm treo vẽ trước (mặt treo nằm sau hạt / charm bên cạnh); charm treo đang chọn vẽ sau cùng cho thấy trọn */
+  const order=rest.filter(x=>dg(x)&&x.it.uid!==o.sel).concat(rest.filter(x=>!dg(x)),rest.filter(x=>dg(x)&&x.it.uid===o.sel));
   const dragged=lay.list.find(x=>topUid!=null&&x.it.uid===topUid);
   for(const x of order.concat(dragged?[dragged]:[])){
     const lifted=x===dragged,e=x.e,k=g.s*(lifted?(zm?zOf(x.it.uid):1.12):1)*x.pop;
@@ -1464,8 +1481,10 @@ function ensureSelVisible(){
 const canPanNow=()=>VIEW.target===1&&!VIEW.raf&&LAY&&LAY.g.panHi>LAY.g.panLo;
 function hit(px,py){
   if(!LAY||VIEW.raf)return null;
-  for(let i=LAY.list.length-1;i>=0;i--){
-    const x=LAY.list[i],e=x.e,ph=-x.rot,dx=px-x.x,dy=py-x.y;
+  /* 2 lượt: hạt / charm thường trước, charm treo sau (mặt treo nằm sau charm bên cạnh nên chạm chỗ chồng nhau là chọn charm bên cạnh) */
+  for(const pass of[0,1])for(let i=LAY.list.length-1;i>=0;i--){
+    const x=LAY.list[i],e=x.e;if((e.kind==='dangle')!==(pass===1))continue;
+    const ph=-x.rot,dx=px-x.x,dy=py-x.y;
     const lx=(dx*Math.cos(ph)-dy*Math.sin(ph))/LAY.s, ly=(dx*Math.sin(ph)+dy*Math.cos(ph))/LAY.s;
     const pad=Math.max(1.5,8/LAY.s-e.w/2);
     if(lx>=-e.w/2-pad&&lx<=e.w/2+pad&&ly>=e.top-1.5&&ly<=e.bottom+1.5)return x;
