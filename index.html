@@ -1749,7 +1749,7 @@ function renderCatalog(animate){
     side.hidden=true;gridHead.hidden=true;gridHead.innerHTML='';side.innerHTML='';
     const list=CAT.rings,r0=list[0];
     grid.innerHTML=list.map((e,i)=>charmCard(e,i,cn)).join('');
-    gridNote.textContent=r0?`Bấm 1 lần gắn 1 set ${r0.per} khoen (${fmt(r0.price)}), khoen tự rải đều giữa các charm; đang chọn charm thì gắn liền sau charm đó. Xoá bớt khoen vẫn tính trọn set.`:'Chưa có khoen.';
+    gridNote.textContent=r0?`Bấm 1 lần gắn 1 set ${r0.per} khoen (${fmt(r0.price)}), khoen tự rải giữa các charm, dồn nhiều ở giữa vòng; đang chọn charm thì gắn liền sau charm đó. Xoá bớt khoen vẫn tính trọn set.`:'Chưa có khoen.';
   }else if(ctab==='stop'){
     const cats=CAT.stopCats;side.hidden=!cats.length;gridHead.hidden=true;gridHead.innerHTML='';
     side.innerHTML=`<button data-scat="all" aria-current="${stopCatId==='all'}">Tất cả</button>`+cats.map((c,i)=>`<button data-scat="${i}" aria-current="${c===stopCatId}">${esc(c)}</button>`).join('');
@@ -2053,6 +2053,22 @@ function changed(){if(!CAT.loading)saveDraft();syncKind();renderSpecs();syncCata
 
 /* bấm khoen = gắn nguyên 1 set (13/10, shop chốt). Đang chọn món nào thì gắn liền sau món đó;
    không thì rải đều các khoen vào khoảng giữa các charm (và 2 đầu cụm) như vòng thật, chưa có charm thì gắn thành 1 cụm */
+/* chia n khoen vào m + 1 khe (trước charm đầu, giữa từng cặp charm, sau charm cuối) — giữa vòng luôn đầy (13/10, shop):
+   số charm chẵn → khe chính giữa 5 khoen; lẻ → 2 khe hai bên charm giữa, mỗi khe 3 khoen; còn lại rải đều các khe khác (phần dư cho khe gần giữa trước).
+   Khe khác không được nhiều bằng khe giữa: ít charm (rải đều ra > khe giữa) thì khe giữa tăng thêm tới khi khe khác ≤ khe giữa − 1. */
+function ringGaps(m,n){
+  const k=m+1,cnt=new Array(k).fill(0),mid=(k-1)/2;
+  const C=m%2===0?[m/2]:[(m-1)/2,(m+1)/2],c0=m%2===0?5:3;
+  const rest=[...Array(k).keys()].filter(g=>!C.includes(g));
+  if(!rest.length){C.forEach((g,i)=>{cnt[g]=Math.floor(n/C.length)+(i<n%C.length?1:0);});return cnt;}
+  let c=Math.min(c0,Math.floor(n/C.length));
+  while((c+1)*C.length<=n&&Math.ceil((n-c*C.length)/rest.length)>c-1)c++;
+  C.forEach(g=>cnt[g]=c);let left=n-c*C.length;
+  const base=Math.floor(left/rest.length);rest.forEach(g=>cnt[g]=base);left-=base*rest.length;
+  const pr=rest.slice().sort((a,b)=>Math.abs(a-mid)-Math.abs(b-mid)||a-b);
+  for(let i=0;left>0;i++,left--)cnt[pr[i]]++;
+  return cnt;
+}
 function addRingSet(en,card){
   const n=en.per;
   if(!fitsRoom(en,n)){fullHit(card);return;}
@@ -2064,10 +2080,7 @@ function addRingSet(en,card){
       const anchors=its.map((it,i)=>CE[it.code]&&!CE[it.code].ring?i:-1).filter(i=>i>=0);
       if(!anchors.length)its.push(...news);
       else{
-        /* khe: trước charm đầu, giữa từng cặp charm, sau charm cuối; chia đều, phần dư ưu tiên khe ở giữa */
-        const k=anchors.length+1,base=Math.floor(n/k),cnt=new Array(k).fill(base);let rem=n-base*k;
-        const prio=Array.from({length:Math.max(0,k-2)},(_,i)=>i+1).sort((a,b)=>Math.abs(a-(k-1)/2)-Math.abs(b-(k-1)/2)).concat([0,k-1]);
-        for(let i=0;rem>0;i++){cnt[prio[i%prio.length]]++;rem--;}
+        const k=anchors.length+1,cnt=ringGaps(anchors.length,n);
         const out=[];let q=0;
         its.forEach((it,i)=>{const a=anchors.indexOf(i);if(a>=0){for(let c=0;c<cnt[a];c++)out.push(news[q++]);}out.push(it);});
         for(let c=0;c<cnt[k-1];c++)out.push(news[q++]);
