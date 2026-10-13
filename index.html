@@ -2425,12 +2425,15 @@ function initState(announce){
   if(document.fonts&&document.fonts.load){Promise.all([document.fonts.load('700 20px "Be Vietnam Pro"'),document.fonts.load('600 20px "Be Vietnam Pro"')]).then(()=>{thumbCache.clear();renderCatalog();renderStage();}).catch(()=>{});}
   if(!STANDALONE)return;
   const wasLoading=CAT.loading,pan0=VIEW.pan;
+  /* mở link thiết kế lúc danh mục lưu trong máy còn cũ (chưa có món mới như vòng kiềng, khoen): tải xong sheet thì mở lại link cho đủ món (13/10) */
+  const rawH=location.hash&&location.hash.length>1?location.hash.slice(1):'',dh=rawH&&!wasLoading?decode(rawH):null,
+    hashGap=!!dh&&(dh.missing>0||decodeURIComponent(rawH).split('~')[1]!==dh.strap),h0=hist.length;
   try{
     const {cr,sr,hr,kr}=await loadSheet();
     try{localStorage.setItem('punpun-sheet-v1',JSON.stringify({cr,sr,hr,kr}));}catch(e){}
     const keep=wasLoading?null:{strap:state.strap,size:state.size,items:state.items};
     thumbCache.clear();applyTables(cr,sr,hr,kr);
-    if(keep){state=keep;fitState();}else initState(true);
+    if(keep&&!(hashGap&&hist.length===h0)){state=keep;fitState();}else initState(true);
   }catch(err){
     if(wasLoading){const d=demoCatalog();setCatalog(d.charms,d.straps,'demo');initState(true);}
     console.warn('Không tải được Google Sheet',err);
