@@ -887,25 +887,25 @@ function startReflow(from){
 }
 
 /* ---------- hình sợi dây ----------
-   Dây đan — khoá khoen + nút rút, vẽ theo ảnh vòng thật shop gửi 12/10:
-   • đầu dây có chân quấn chỉ vàng + khoen chỉ vàng hình giọt nước;
-   • lúc đeo, vòng có hình giọt nước, mũi nhọn ở khoen (góc trên bên trái, như ảnh thật): dây chạy từ chân khoen xuống cạnh trái,
-     vòng qua đáy, lên cạnh phải, qua nút rút, theo đỉnh vòng tới khoen; ở đó dây XUYÊN NGANG qua lỗ khoen (đè lên một chân khoen),
-     gập lại ra phía ngoài (chỗ gập nằm dưới chân bên kia + đầu khoen), chạy song song sát sợi vòng (đoạn chồng đôi): chốt 1 ngay sát
-     khoen, chốt 2 (nút rút) ở cuối đoạn chồng đôi — 2 chốt cùng màu dây, viền chỉ vàng (ảnh mẫu 13/10) — rồi ra đuôi quấn chỉ vàng
-     + đầu cắt. Chỉ ở Ngang (dây trải thẳng) mới thấy trọn khoen;
-   • 23 cm = vòng (chu vi lúc đeo C, mặc định WORN_MM = 16 cm) + đoạn chồng đôi + chỗ gập + đuôi. Charm không qua được nút rút
-     nên gắn nhiều charm thì vòng nới ra (đoạn chồng đôi ngắn lại), như vòng thật.
-   u (mm) chạy dọc sợi dây từ đầu khoen (uS) tới đầu đuôi (uE); u = 0 là đáy vòng (giữa cụm charm).
-   Lúc đeo, hình dây cho bằng góc tiếp tuyến aw(u) theo từng đoạn (thẳng / cong đều): cạnh trái thẳng, cung tròn bán kính r,
-   cạnh trên thẳng (2 cạnh thẳng tiếp xúc cung tròn, gặp nhau ở mũi nhọn Q dưới khoen), chỗ gập, sợi chồng đôi (thẳng rồi cong
-   đồng tâm bán kính r + 2ru), chỗ đuôi chĩa ra, đuôi thẳng.
+   Dây đan — vẽ theo ảnh mẫu vòng đỏ shop gửi 13/10 (vòng TRÒN đều, khoen vàng + 2 chốt viền vàng + đuôi bọc chỉ vàng):
+   • đầu dây có chân quấn chỉ vàng + khoen chỉ vàng hình giọt nước nằm DỌC theo vòng (từ chân khoen lùi ngược chiều dây, uốn theo vòng);
+   • lúc đeo dây chạy trọn một vòng tròn: từ chân khoen xuống trái, qua đáy, lên phải, qua đỉnh, luồn vào lỗ khoen từ phía đầu khoen,
+     gập lại trong lỗ khoen (KN.foldIn), rồi chạy ngược lại CHỒNG lên sợi vòng (lệch ra ngoài 2ru = KN.dbl·T nên nhìn gần như 1 sợi —
+     shop: ở Tròn không cần thấy dây gập đôi): ra khỏi đầu khoen là tới chốt 1, chạy tiếp tới chốt 2 (nút rút), rồi ra đuôi quấn chỉ vàng + đầu cắt.
+   • 23 cm = vòng (chu vi C, mặc định DEF_C) + đoạn chồng đôi + chỗ gập + đuôi. Mặc định đoạn chồng đôi giữa 2 chốt ~60° như ảnh mẫu
+     (shop: không cần đoạn dây thừa dài); khoen + 2 chốt nằm đối xứng quanh đỉnh vòng, cụm charm ở đáy. Charm không qua được chốt 2
+     nên gắn nhiều charm thì vòng nới ra (đoạn chồng đôi ngắn lại, chốt 2 tiến lại gần chốt 1), như vòng thật.
+   u (mm) chạy dọc sợi dây từ đầu khoen (uS) tới đầu đuôi (uE); u = 0 là đáy vòng (giữa cụm charm). Đoạn ảo trước uS (dài bằng khoen)
+   chỉ để đặt khoen uốn theo vòng, không vẽ dây.
+   Lúc đeo, hình dây cho bằng góc tiếp tuyến aw(u) theo từng đoạn: cung tròn bán kính R (khoen + sợi vòng), chỗ gập (bán kính ru),
+   sợi chồng đôi (cung đồng tâm bán kính R + 2ru, chạy ngược chiều), chỗ đuôi chĩa ra, đuôi thẳng.
    Chuyển sang Ngang: góc = aw(u)·(1 − e), e = 1 là đường thẳng — độ dài sợi dây luôn giữ nguyên, dây tự duỗi ra.
    Dây kim loại / da / dù (dữ liệu mẫu): vẫn là vòng tròn 23 cm có khoá 2 nửa như trước. */
-const WORN_MM=160;
-/* corner: góc gãy ở mũi giọt nước (rad); cornerDir: hướng mũi nhọn tính từ tâm vòng (225° = trên bên trái);
-   dA: từ mũi nhọn Q lùi theo cạnh trái tới đầu dây (chân khoen); dP: từ Q tới chỗ bắt đầu gập theo cạnh trên (âm = vượt qua Q) */
-const KN={collar:5.5,eyeLen:9.4,eyeW:6.6,cord:1.4,corner:55*Math.PI/180,cornerDir:225*Math.PI/180,dA:3.4,dP:-.8,knotL:5.2,rimW:1.02,k1:7.1,kGap:.35,kinkL:2.5,kink:.42,wrap:8.5,tip:1,minArc:4,pad:.5,gap:.35};
+/* chu vi vòng mặc định (mm): 23 cm dây − đoạn chồng đôi ~60° − đuôi; vòng nới từ đây khi gắn nhiều charm */
+const DEF_C=182;
+/* foldIn: dây luồn vào lỗ khoen bao xa (tính từ đầu khoen) rồi mới gập; dbl: sợi chồng đôi lệch ra ngoài sợi vòng bao nhiêu (× bề dày dây);
+   k1gap: khe từ đầu khoen tới mép chốt 1; kGap: khe giữa 2 chốt khi sát nhau */
+const KN={collar:5.5,eyeLen:9.4,eyeW:6.6,cord:1.4,foldIn:5.4,dbl:.22,knotL:5.2,rimW:1.02,k1gap:.35,kGap:.35,kinkL:2.5,kink:.1,wrap:8.5,tip:1,pad:.5,gap:.35};
 const PH=.25;
 let PM_CACHE={key:'',pm:null};
 function pathModel(st,need){
@@ -916,32 +916,31 @@ function pathModel(st,need){
     const R=L/(2*Math.PI);
     pm={braid:false,L,T,C:L,R,Rref:R,ru:0,uS:-L/2,uE:L/2,uP:L/2,uB:L/2,uMin:-L/2+6.5,uMax:L/2-6.5,topExt:3.6,endX:2.5,a0:-L/2*(-1/R),segs:[{u0:-L/2,u1:L/2,k:-1/R}]};
   }else{
-    /* ru: bán kính chỗ gập (2 sợi nằm sát nhau); after: nửa nút + chỗ đuôi chĩa ra + đuôi;
-       a1: hướng cạnh trái (từ chân khoen đi xuống), sao cho mũi nhọn nằm đúng hướng cornerDir */
-    const ru=T*.51,after=KN.knotL/2+KN.wrap+KN.tip,K=KN.corner,tk=Math.tan(K/2),a1=KN.cornerDir-K/2-Math.PI/2;
-    /* với chu vi C (đi vòng qua mũi nhọn): r = bán kính cung tròn, Sc = cạnh thẳng (tiếp điểm → Q), Lr = dài sợi chồng đôi
-       (từ hết chỗ gập tới giữa nút), arcR = phần cong của sợi chồng đôi, span = đoạn gắn được charm (chân khoen → nút) */
-    const geo=C=>{const r=C/(2*tk+2*Math.PI-K),Sc=r*tk,Rp=r+2*ru,uT1=-a1*r,uS=uT1-(Sc-KN.dA),uT2=uT1+r*(2*Math.PI-K),
-      Lr=L-(C-KN.dA-KN.dP)-Math.PI*ru-after,arcR=Lr-(Sc-KN.dP),uBl=uT2-arcR*r/Rp;
-      return{C,r,Sc,Rp,uT1,uS,uT2,Lr,arcR,uMin:uS+KN.collar+KN.pad,uMax:uBl-KN.knotL/2-KN.pad,span:uBl-KN.knotL/2-KN.pad-(uS+KN.collar+KN.pad)};};
-    let G=geo(WORN_MM);
+    /* ru: bán kính chỗ gập; after: nửa chốt 2 + đuôi; k1: từ hết chỗ gập tới giữa chốt 1 (ra khỏi đầu khoen + khe + nửa chốt) */
+    const ru=T*KN.dbl/2,after=KN.knotL/2+KN.wrap+KN.tip,k1=KN.foldIn+KN.k1gap+KN.knotL/2,LrMin=k1+KN.knotL+KN.kGap;
+    /* với chu vi C: R = bán kính vòng, Lm = sợi vòng (chân khoen → chỗ gập), Lr = sợi chồng đôi (hết chỗ gập → giữa chốt 2),
+       uBl = vị trí trên sợi vòng nằm dưới chốt 2 (tính từ chân khoen), lo/hi = đoạn gắn được charm (sau chân khoen → trước chốt 2) */
+    const geo=C=>{const R=C/(2*Math.PI),Rp=R+2*ru,Lm=C-KN.eyeLen+KN.foldIn,Lr=L-Lm-Math.PI*ru-after,uBl=Lm-Lr*R/Rp,
+      lo=KN.collar+KN.pad,hi=uBl-KN.knotL/2-KN.pad;return{C,R,Rp,Lm,Lr,lo,hi,span:hi-lo};};
+    let G=geo(DEF_C);
     if(need>G.span){
-      /* vòng nới ra tới khi đoạn chồng đôi chỉ còn phần thẳng + KN.minArc */
-      let lo=WORN_MM,hi=L;for(let i=0;i<40;i++){const mid=(lo+hi)/2;if(geo(mid).arcR>KN.minArc)lo=mid;else hi=mid;}
-      const Cmax=lo;
-      if(geo(Cmax).span<=need)G=geo(Cmax);
-      else{lo=WORN_MM;hi=Cmax;for(let i=0;i<40;i++){const mid=(lo+hi)/2;if(geo(mid).span<need)lo=mid;else hi=mid;}G=geo(hi);}
+      /* vòng nới ra tới khi chốt 2 nằm sát chốt 1 */
+      const Cm=L-Math.PI*ru-after-LrMin+KN.eyeLen-KN.foldIn;
+      if(geo(Cm).span<=need)G=geo(Cm);
+      else{let lo=DEF_C,hi=Cm;for(let i=0;i<40;i++){const mid=(lo+hi)/2;if(geo(mid).span<need)lo=mid;else hi=mid;}G=geo(hi);}
     }
-    const {C,r,Sc,Rp,uT1,uS,uT2,Lr,arcR}=G,uP=uT2+Sc-KN.dP,uT=uP+Math.PI*ru,uR=uT+Sc-KN.dP,uB=uT+Lr,uK=uB+KN.knotL/2,uW=uK+KN.kinkL,uE=uS+L;
-    pm={braid:true,L,T,C,R:r,Rp,Rref:WORN_MM/(2*tk+2*Math.PI-K),ru,uS,uE,uP,uB,uK,uK1:uT+KN.k1,uMin:G.uMin,uMax:G.uMax,
-      topExt:2*ru+T/2+.6,endX:KN.eyeLen,a0:a1,
-      segs:[{u0:uS,u1:uT1,k:0},{u0:uT1,u1:uT2,k:-1/r},{u0:uT2,u1:uP,k:0},{u0:uP,u1:uT,k:1/ru},{u0:uT,u1:uR,k:0},{u0:uR,u1:uK,k:1/Rp},{u0:uK,u1:uW,k:-KN.kink/KN.kinkL},{u0:uW,u1:uE,k:0}]};
+    /* cụm khoen + 2 chốt đối xứng quanh đỉnh vòng: đoạn gắn charm đối xứng quanh đáy (u = 0) */
+    const {C,R,Rp,Lm,Lr}=G,uS=-(G.lo+G.hi)/2,uX=uS-KN.eyeLen-1,uP=uS+Lm,uT=uP+Math.PI*ru,uB=uT+Lr,uK=uB+KN.knotL/2,uW=uK+KN.kinkL,uE=uS+L;
+    const Dk=Math.max(T*2.1,T+2*ru+2.2);
+    pm={braid:true,L,T,C,R,Rp,Rref:DEF_C/(2*Math.PI),ru,uS,uE,uP,uB,uK,uK1:uT+k1,uMin:uS+G.lo,uMax:uS+G.hi,
+      topExt:Math.max(KN.eyeW/2,ru+Dk/2)+.6,endX:KN.eyeLen,a0:-uX/R,
+      segs:[{u0:uX,u1:uP,k:-1/R},{u0:uP,u1:uT,k:1/ru},{u0:uT,u1:uK,k:1/Rp},{u0:uK,u1:uW,k:-KN.kink/KN.kinkL},{u0:uW,u1:uE,k:0}]};
   }
-  /* góc tiếp tuyến lúc đeo ở đầu mỗi đoạn (pm.a0 = góc ở uS, chọn sao cho aw(0) = 0: đáy vòng, dây nằm ngang) */
+  /* góc tiếp tuyến lúc đeo ở đầu mỗi đoạn (pm.a0 = góc ở đầu đoạn đầu tiên, chọn sao cho aw(0) = 0: đáy vòng, dây nằm ngang) */
   let a=pm.a0;
   pm.segs.forEach(sg=>{sg.a0=a;a+=sg.k*(sg.u1-sg.u0);});
   /* lấy mẫu sẵn aw(u) trên lưới u = i·PH; bảng toạ độ ở mỗi trạng thái chỉ cần nhân (1 − e) rồi cộng dồn */
-  const iS=Math.floor(pm.uS/PH),iE=Math.ceil(pm.uE/PH),n=iE-iS+1,AW=new Float32Array(n),sgs=pm.segs,last=sgs[sgs.length-1];
+  const iS=Math.floor(pm.segs[0].u0/PH),iE=Math.ceil(pm.uE/PH),n=iE-iS+1,AW=new Float32Array(n),sgs=pm.segs,last=sgs[sgs.length-1];
   for(let j=0,si=0;j<n;j++){const u=Math.max(sgs[0].u0,Math.min(last.u1,(iS+j)*PH));while(si<sgs.length-1&&u>sgs[si].u1)si++;const sg=sgs[si];AW[j]=sg.a0+sg.k*(u-sg.u0);}
   pm.iS=iS;pm.n=n;pm.AW=AW;pm.tabCache=null;
   PM_CACHE={key,pm};return pm;
@@ -972,7 +971,7 @@ function geom(W,H,m,o){
   const dLo=pm.uMin,dHi=pm.braid?pm.uB-KN.knotL*1.5-KN.kGap-KN.pad:pm.uMax,
     cMid=Math.max(dLo+Wk/2,Math.min(dHi-Wk/2,(dLo+dHi)/2)),shF=cMid-(u0+Wk/2);
   const reserve=o.reserve!=null?o.reserve:reserveR;
-  /* cỡ vẽ: vòng đeo mặc định (chu vi WORN_MM) có bán kính R0 = 30% chiều cao khung.
+  /* cỡ vẽ: vòng mặc định (chu vi DEF_C) có bán kính R0 = 30% chiều cao khung.
      Gắn nhiều charm vòng nới ra thì vòng trên màn hình to lên, tối đa 12%; quá nữa thì thu cỡ vẽ lại cho vừa khung */
   const R0=H*.3,s0=R0/pm.Rref,cxOf=r=>Math.max(r+12,Math.min(W/2,(W-reserve)/2));
   let R=pm.R*s0*Math.min(1,1.12*pm.Rref/pm.R),cyC=H*.45;
@@ -1029,7 +1028,6 @@ function drawStrapCurve(ctx,g,st){
   const tex=strapTex(st),tex2=strapTex2(st),T=st.thick||THICK[st.kind]||3;
   ctx.save();ctx.lineJoin='round';ctx.lineCap='butt';
   ctx.strokeStyle='rgba(40,30,15,.10)';ctx.lineWidth=(tex||st.kind==='braid'?T*1.2:3.6)*s;path(0,1.3*s);ctx.stroke();
-  if(pm.braid){ctx.save();drawEye(ctx,g,'back');ctx.restore();}
   if(tex){
     /* lát ảnh dây đặt theo đường cong; dây 2 màu: phần trước đáy vòng (u < 0) dùng ảnh 1, phần sau dùng ảnh nửa phải */
     const SA=texStrip(st,tex,g.L),SB=tex2?texStrip(st,tex2,g.L):SA,step=Math.max(.3,Math.min(1.5,2.2/s));
@@ -1142,28 +1140,21 @@ function goldWrap(ctx,g,u0,u1,hh,dev){
   /* hai mép đoạn quấn: gờ tối mảnh */
   for(const u of[u0+.07,u1-.07]){const p=curvePt(g,u);ctx.save();lineFrame(ctx,p.x,p.y,p.a,s);ctx.fillStyle=rgba(GT.e,.6);ctx.fillRect(-.07,-hh/2,.14,hh);ctx.restore();}
 }
-/* khoen ở đầu dây: vòng chỉ vàng hình giọt nước, chân khoen nằm trong đoạn quấn chỉ ở đầu dây.
-   Vẽ 2 lần: part = 'back' (trọn khoen, trước khi vẽ sợi dây) rồi 'front' (sau sợi dây): chỉ chân khoen phía bên kia + đầu khoen,
-   nên lúc đeo thấy dây xuyên ngang qua lỗ khoen — đè lên chân khoen phía dây đi tới, chỗ gập nằm dưới chân bên kia + đầu khoen. */
-function drawEye(ctx,g,part){
-  const pm=g.pm,s=g.s,p=curvePt(g,pm.uS),G=METAL.gold,c=KN.cord,x0=-.6,Lc=KN.eyeLen-c/2,Wc=KN.eyeW-c,dev=devScale(ctx);
-  const dir=p.a+Math.PI,flip=Math.cos(dir)<-1e-6;
-  let fs=1;
-  if(part==='front'){
-    /* phía sợi dây đi tới (lấy một điểm trên cạnh trên, trước chỗ gập 6 mm): chân khoen phía đó nằm dưới dây */
-    const q=curvePt(g,pm.uP-6),vx=q.x-p.x,vy=q.y-p.y,side=Math.cos(dir)*vy-Math.sin(dir)*vx;
-    fs=-(side>=0?1:-1)*(flip?-1:1);
-  }
-  ctx.save();ctx.translate(p.x,p.y);ctx.rotate(dir);if(flip)ctx.scale(1,-1);ctx.scale(s,s);
-  if(part==='front'){ctx.beginPath();ctx.rect(x0-2,fs>0?-.15:-KN.eyeW,KN.eyeLen+4,KN.eyeW+.15);ctx.rect(Lc-2.2,-KN.eyeW,4,KN.eyeW*2);ctx.clip('nonzero');}
-  const N=72,P=[];for(let i=0;i<=N;i++){const t=i/N*Math.PI*2,q=(1-Math.cos(t))/2;P.push([x0+(Lc-x0)*q,Wc/2*Math.sin(t)*Math.pow(q,.55)]);}
-  ctx.lineJoin='round';ctx.beginPath();P.forEach((q,i)=>i?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1]));ctx.closePath();
-  shadowOn(ctx);ctx.strokeStyle=GT.e;ctx.lineWidth=c;ctx.stroke();shadowOff(ctx);
+/* khoen ở đầu dây: vòng chỉ vàng hình giọt nước, chân khoen nằm trong đoạn quấn chỉ ở đầu dây, thân khoen uốn theo vòng
+   (đặt theo đoạn ảo trước uS: x = khoảng cách từ chân khoen lùi ngược chiều dây, y = lệch ngang theo pháp tuyến).
+   Vẽ SAU sợi dây: sợi vòng luồn vào lỗ khoen từ phía đầu khoen, gập lại trong lỗ — thấy dây nằm trong lỗ, đầu khoen đè lên dây.
+   Ngang: đoạn ảo duỗi thẳng nên khoen nằm thẳng ở đầu trái, thấy trọn lỗ */
+function drawEye(ctx,g){
+  const pm=g.pm,s=g.s,c=KN.cord,x0=-.6,Lc=KN.eyeLen-c/2,Wc=KN.eyeW-c,dev=devScale(ctx);
+  const map=(x,y)=>{const p=curvePt(g,pm.uS-x);return[p.x+p.nx*y*s,p.y+p.ny*y*s];};
+  const N=72,P=[];for(let i=0;i<=N;i++){const t=i/N*Math.PI*2,q=(1-Math.cos(t))/2;P.push(map(x0+(Lc-x0)*q,Wc/2*Math.sin(t)*Math.pow(q,.55)));}
+  ctx.save();ctx.lineJoin='round';ctx.beginPath();P.forEach((q,i)=>i?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1]));ctx.closePath();
+  shadowOn(ctx);ctx.strokeStyle=GT.e;ctx.lineWidth=c*s;ctx.stroke();shadowOff(ctx);
   /* sợi khoen bọc chỉ vàng: lát dải chỉ đặt dọc đường khoen */
   const S=goldStrip(s*dev,c,true),pp=S.ppm;let acc=0;
-  for(let i=0;i<N;i++){const a=P[i],b=P[i+1],dl=Math.hypot(b[0]-a[0],b[1]-a[1]);if(dl<1e-4)continue;
+  for(let i=0;i<N;i++){const a=P[i],b=P[i+1],dl=Math.hypot(b[0]-a[0],b[1]-a[1])/s;if(dl<1e-4)continue;
     const sx=Math.min(S.width-2,acc*pp);acc+=dl;
-    ctx.save();ctx.translate((a[0]+b[0])/2,(a[1]+b[1])/2);ctx.rotate(Math.atan2(b[1]-a[1],b[0]-a[0]));
+    ctx.save();ctx.translate((a[0]+b[0])/2,(a[1]+b[1])/2);ctx.rotate(Math.atan2(b[1]-a[1],b[0]-a[0]));ctx.scale(s,s);
     ctx.drawImage(S,sx,0,Math.max(1,Math.min(dl*pp,S.width-sx)),S.height,-dl/2-.04,-c/2,dl+.08,c);ctx.restore();}
   ctx.restore();
 }
@@ -1214,7 +1205,7 @@ function drawKnot(ctx,g,u,st,tex,idx,dev){
 /* khoá dây đan: khoen + chân quấn chỉ (đầu trái); chốt 1 sát khoen, chốt 2 (nút rút) cuối đoạn chồng đôi; đuôi quấn chỉ + đầu cắt */
 function drawClosure(ctx,g,st,tex,texR){
   const pm=g.pm,T=pm.T,dev=devScale(ctx),tx=texR||tex,base=tx&&tx.avg?tx.avg:(st.c||metalOf(st.m).b);
-  drawEye(ctx,g,'front');
+  drawEye(ctx,g);
   goldWrap(ctx,g,pm.uS,pm.uS+KN.collar,T*1.12,dev);
   goldWrap(ctx,g,pm.uK+.1,pm.uE-KN.tip,T*1.04,dev);
   /* đầu sợi cắt gọn (thấy màu dây), bo tròn phía ngoài */
