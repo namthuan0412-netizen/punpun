@@ -113,10 +113,9 @@ button:disabled{cursor:default}
 
 .toolbar{display:flex; align-items:flex-start; gap:2px; padding:8px 0 10px}
 .tools{display:flex; justify-content:center; gap:2px; flex:1; min-width:0}
-/* hàng công cụ 3 ↔ 4 nút (12/10): mỗi ô (.slot) chứa nút lúc chưa chọn + nút lúc đang chọn chồng lên nhau, đổi qua lại bằng mờ + phóng;
-   ô thứ 4 (Xoá) nở bề ngang từ 0 → 64px nên 3 nút kia trượt sang trái nhường chỗ, cả hàng luôn canh giữa */
+/* hàng công cụ 4 nút (13/10 thêm Redo): mỗi ô (.slot) chứa nút lúc chưa chọn + nút lúc đang chọn chồng lên nhau, đổi qua lại bằng mờ + phóng.
+   Chưa chọn: Undo, Redo, Reset, Copy link; đang chọn: Qua trái, Qua phải, Nhân đôi, Xoá — 2 chế độ cùng 4 ô nên nút không dời chỗ */
 .slot{display:grid; justify-items:center; flex:0 1 64px; min-width:58px; transition:flex-basis 480ms cubic-bezier(.3,.7,.2,1), min-width 480ms cubic-bezier(.3,.7,.2,1), margin 480ms cubic-bezier(.3,.7,.2,1)}
-.toolbar[data-mode="idle"] .slot.s4{flex-basis:0; min-width:0; margin-left:-2px}
 .tool{grid-area:1 / 1; width:100%; display:flex; flex-direction:column; align-items:center; gap:4px; font-size:12px; color:var(--fg); white-space:nowrap;
   transition:opacity 300ms var(--ease) 120ms, transform 420ms var(--ease-out) 120ms, visibility 0s}
 .slot.s4 .tool{width:64px}
@@ -423,9 +422,9 @@ textarea.copybox{width:100%; min-height:240px; border-radius:12px; border:1px so
     <div class="toolbar" id="toolbar" data-mode="idle">
       <div class="tools" id="tools" role="group" aria-label="Công cụ">
         <span class="slot"><button class="tool" data-tool="undo" data-ctx="idle" id="undoBtn"><span class="ic"><svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></span>Undo</button><button class="tool" data-tool="left" data-ctx="sel"><span class="ic"><svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5m0 0 6-6m-6 6 6 6"/></svg></span>Qua trái</button></span>
-        <span class="slot"><button class="tool" data-tool="clear" data-ctx="idle" id="clearBtn"><span class="ic"><svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg></span>Reset</button><button class="tool" data-tool="right" data-ctx="sel"><span class="ic"><svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14m0 0-6-6m6 6-6 6"/></svg></span>Qua phải</button></span>
-        <span class="slot"><button class="tool" data-act="link" data-ctx="idle" id="linkBtn"><span class="ic"><svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1 1"/><path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1-1"/></svg></span>Copy link</button><button class="tool" data-tool="dup" data-ctx="sel"><span class="ic"><svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="8" y="8" width="11" height="11" rx="2.5"/><path d="M16 5.5A2.5 2.5 0 0 0 13.5 5H7.5A2.5 2.5 0 0 0 5 7.5v6A2.5 2.5 0 0 0 5.5 16"/></svg></span>Nhân đôi</button></span>
-        <span class="slot s4"><button class="tool" data-tool="del" data-ctx="sel"><span class="ic"><svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><path d="m9 9 6 6m0-6-6 6"/></svg></span>Xoá</button></span>
+        <span class="slot"><button class="tool" data-tool="redo" data-ctx="idle" id="redoBtn"><span class="ic"><svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14l5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg></span>Redo</button><button class="tool" data-tool="right" data-ctx="sel"><span class="ic"><svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14m0 0-6-6m6 6-6 6"/></svg></span>Qua phải</button></span>
+        <span class="slot"><button class="tool" data-tool="clear" data-ctx="idle" id="clearBtn"><span class="ic"><svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg></span>Reset</button><button class="tool" data-tool="dup" data-ctx="sel"><span class="ic"><svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="8" y="8" width="11" height="11" rx="2.5"/><path d="M16 5.5A2.5 2.5 0 0 0 13.5 5H7.5A2.5 2.5 0 0 0 5 7.5v6A2.5 2.5 0 0 0 5.5 16"/></svg></span>Nhân đôi</button></span>
+        <span class="slot s4"><button class="tool" data-act="link" data-ctx="idle" id="linkBtn"><span class="ic"><svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1 1"/><path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1-1"/></svg></span>Copy link</button><button class="tool" data-tool="del" data-ctx="sel"><span class="ic"><svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><path d="m9 9 6 6m0-6-6 6"/></svg></span>Xoá</button></span>
       </div>
     </div>
   </section>
@@ -806,14 +805,14 @@ let uidSeq=1;
 const newUid=()=>uidSeq++;
 let state={strap:'',size:STRAP_CM,items:[]};
 let sel=null, showNums=false, drag=null, catId='all', stopCatId='all', ctab='charm';
-const hist=[];
+const hist=[],redoHist=[];
 const SAMPLE=['c01-1','g01-0','e01-0','l02-15','l02-20','l02-13','d01-3','b01-1','g01-1','c01-1'];
 function defaultState(){
   if(CAT.source==='demo'&&SE['br-0'])return{strap:'br-0',size:STRAP_CM,items:SAMPLE.filter(c=>CE[c]).map(code=>({uid:newUid(),code}))};
   return{strap:CAT.straps[0].code,size:STRAP_CM,items:[]};
 }
 const snap=()=>JSON.stringify({strap:state.strap,size:state.size,items:state.items,sel});
-function pushHist(){hist.push(snap());if(hist.length>80)hist.shift();}
+function pushHist(){hist.push(snap());if(hist.length>80)hist.shift();redoHist.length=0;}
 function commit(fn){const from=posSnap();pushHist();fn();startReflow(from);changed();}
 const selIndex=()=>state.items.findIndex(i=>i.uid===sel);
 const selItem=()=>state.items.find(i=>i.uid===sel)||null;
@@ -1891,7 +1890,7 @@ function refreshSel(){
   pillShow(has&&!quiet);setLift(has&&!quiet?1:0);
   if(has){const e=CE[it.code],i=selIndex();$('selNum').textContent=`Vị trí ${i+1}:`;$('selName').textContent=e.name;$('selVar').textContent=e.vname||'';$('selVar').hidden=!e.vname;$('selPrice').textContent=e.stop?FREE:fmt(e.price);
     document.querySelector('[data-tool="left"]').disabled=i<=0;document.querySelector('[data-tool="right"]').disabled=i>=state.items.length-1;}
-  $('undoBtn').disabled=!hist.length;
+  $('undoBtn').disabled=!hist.length;$('redoBtn').disabled=!redoHist.length;
   $('clearBtn').disabled=!state.items.length;
   renderStage();
   updateHint();
@@ -1906,10 +1905,12 @@ function changed(){if(!CAT.loading)saveDraft();renderSpecs();syncCatalog();refre
 /* ---------- tools ---------- */
 function tool(t){
   const i=selIndex();
-  if(t==='undo'){
-    if(!hist.length)return;const from=posSnap();const s=JSON.parse(hist.pop());
+  /* Undo / Redo (13/10 thêm Redo): undo cất trạng thái hiện tại vào redoHist; thao tác mới (pushHist) xoá redoHist */
+  if(t==='undo'||t==='redo'){
+    const src=t==='undo'?hist:redoHist,dst=t==='undo'?redoHist:hist;
+    if(!src.length)return;const from=posSnap();dst.push(snap());const s=JSON.parse(src.pop());
     state={strap:s.strap,size:s.size,items:s.items};fitState();sel=s.sel!=null&&state.items.some(x=>x.uid===s.sel)?s.sel:null;
-    startReflow(from);changed();$('live').textContent='Đã undo';return;
+    startReflow(from);changed();$('live').textContent=t==='undo'?'Đã undo':'Đã redo';return;
   }
   if(t==='clear'){if(state.items.length)openSheet('confirmClear');return;}
   if(i<0)return;
@@ -1964,6 +1965,7 @@ overlay.addEventListener('click',e=>{if(e.target===overlay)closeSheet();});
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'&&sheetKind){e.preventDefault();closeSheet();return;}
   if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&(e.key==='z'||e.key==='Z')&&!sheetKind&&!/^(INPUT|TEXTAREA)$/.test((document.activeElement||{}).tagName||'')){e.preventDefault();tool('undo');}
+  if((e.ctrlKey||e.metaKey)&&((e.shiftKey&&(e.key==='z'||e.key==='Z'))||(!e.shiftKey&&(e.key==='y'||e.key==='Y')))&&!sheetKind&&!/^(INPUT|TEXTAREA)$/.test((document.activeElement||{}).tagName||'')){e.preventDefault();tool('redo');}
 });
 /* vuốt xuống ở đầu bảng để đóng (điện thoại) */
 let sDrag=null;
