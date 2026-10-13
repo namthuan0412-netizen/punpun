@@ -841,7 +841,7 @@ function onStrapTex(){clearTimeout(texTimer);texTimer=setTimeout(()=>{scheduleRe
 let uidSeq=1;
 const newUid=()=>uidSeq++;
 let state={strap:'',size:STRAP_CM,items:[]};
-let sel=null, showNums=false, drag=null, catId='all', stopCatId='all', ctab='charm';
+let sel=null, showNums=false, drag=null, catId='all', stopCatId='all', ctab='charm', vcat=null;
 const hist=[],redoHist=[];
 const SAMPLE=['c01-1','g01-0','e01-0','l02-15','l02-20','l02-13','d01-3','b01-1','g01-1','c01-1'];
 function defaultState(){
@@ -1541,7 +1541,7 @@ function syncSideBar(){
   const el=$('cside'),b=el&&!el.hidden?el.querySelector('button[aria-current="true"]'):null;
   if(!el)return;
   if(!b||!b.offsetHeight){el.classList.add('cs-off');SIDEBAR.key='';return;}
-  const key=ctab+'|'+(b.dataset.cat!=null?b.dataset.cat:b.dataset.scat),last=SIDEBAR.key;
+  const key=ctab+'|'+(b.dataset.cat!=null?b.dataset.cat:b.dataset.scat!=null?b.dataset.scat:b.dataset.vcat),last=SIDEBAR.key;
   const anim=el.classList.contains('ready')&&!el.classList.contains('cs-off')&&!!last&&last.split('|')[0]===ctab&&last!==key;
   SIDEBAR.key=key;
   if(!anim)el.classList.add('cs-now');
@@ -1758,14 +1758,14 @@ function renderCatalog(animate){
     grid.innerHTML=list.map((e,i)=>charmCard(e,i,cn)).join('');
     gridNote.textContent=list.length?'Hạt chặn được tặng miễn phí khi mua vòng mix charm. Bấm 1 lần gắn 1 hạt, thường gắn 2 hạt ở hai đầu cụm charm để giữ charm.':'Chưa có hạt chặn.';
   }else{
-    /* tab Vòng (13/10): chọn loại vòng trước — mục Dây đan + mục Vòng kiềng */
-    side.hidden=true;gridHead.hidden=true;gridHead.innerHTML='';
-    const ds=CAT.straps.filter(e=>!isBangle(e)),bs=CAT.straps.filter(isBangle);let i=0;
-    const sec=(t,k)=>`<p class="gsec">${t} · ${k}</p>`;
-    /* kiềng ít mẫu nên đứng trước, không bị chìm dưới ~30 màu dây */
-    grid.innerHTML=bs.length?sec('Vòng kiềng',bs.length)+bs.map(e=>strapCard(e,i++)).join('')+sec('Dây đan',ds.length)+ds.map(e=>strapCard(e,i++)).join('')
-      :ds.map(e=>strapCard(e,i++)).join('');
-    gridNote.textContent=bs.length?'Vòng kiềng kim loại chu vi 23 cm, dùng khoen thay hạt chặn. Dây đan dài 23 cm, có nút rút chỉnh vừa cổ tay, dùng hạt chặn. Đổi loại vòng thì charm giữ nguyên; hạt chặn / khoen được cất lại, chọn lại loại vòng cũ là có lại.'
+    /* tab Vòng (13/10): cột nhóm bên trái như tab Charm — Dây đan / Vòng kiềng; mặc định mở nhóm của vòng đang chọn */
+    gridHead.hidden=true;gridHead.innerHTML='';
+    const ds=CAT.straps.filter(e=>!isBangle(e)),bs=CAT.straps.filter(isBangle);
+    const g=bs.length?(vcat||(bangleOn()?'bangle':'cord')):'cord';
+    side.hidden=!bs.length;
+    side.innerHTML=bs.length?`<button data-vcat="cord" aria-current="${g==='cord'}">Dây đan</button><button data-vcat="bangle" aria-current="${g==='bangle'}">Vòng kiềng</button>`:'';
+    grid.innerHTML=(g==='bangle'?bs:ds).map((e,i)=>strapCard(e,i)).join('');
+    gridNote.textContent=bs.length?(g==='bangle'?'Vòng kiềng kim loại chu vi 23 cm, dùng khoen thay hạt chặn.':'Dây đan dài 23 cm, có nút rút chỉnh vừa cổ tay, dùng hạt chặn.')+' Đổi loại vòng thì charm giữ nguyên; hạt chặn / khoen được cất lại, chọn lại loại vòng cũ là có lại.'
       :'Tất cả dây dài 23 cm, có nút rút để chỉnh vừa cổ tay. Bấm vào dây để đổi dây cho vòng.';
   }
   syncSideBar();
@@ -2387,6 +2387,7 @@ document.addEventListener('click',e=>{
   if(ds.tool)return tool(ds.tool);
   if(ds.ctab){if(ds.ctab!==ctab){ctab=ds.ctab;renderCatalog(true);gridTop();}return;}
   if(ds.cat){const c=ds.cat==='all'?'all':(CAT.cats[+ds.cat]||'all');if(c!==catId){catId=c;renderCatalog(true);gridTop();}return;}
+  if(ds.vcat){const g=ds.vcat==='bangle'?'bangle':'cord',cur=vcat||(bangleOn()?'bangle':'cord');if(g!==cur){vcat=g;renderCatalog(true);gridTop();}return;}
   if(ds.scat){const c=ds.scat==='all'?'all':(CAT.stopCats[+ds.scat]||'all');if(c!==stopCatId){stopCatId=c;renderCatalog(true);gridTop();}return;}
   if(ds.charm){
     const en=CE[ds.charm];if(!en)return;
