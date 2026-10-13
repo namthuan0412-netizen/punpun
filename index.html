@@ -214,7 +214,11 @@ mark{background:var(--hl); color:var(--on-hl); border-radius:3px; padding:0 1px;
 /* chữ tab nhỏ lại (12/10: 15px → 13px) nhưng vùng bấm giữ nguyên: cao 44px, nới ngang ra hết nửa khoảng cách giữa 2 tab */
 .ctab{min-height:44px; padding:8px 0; font-weight:600; font-size:13px; white-space:nowrap; color:var(--muted); border-bottom:2px solid transparent; margin-bottom:-1px; transition:color 400ms var(--ease)}
 .ctab::after{content:""; position:absolute; top:0; bottom:0; left:-12px; right:-12px}
-/* 4 tab Charm · Hạt chặn · Dây · Kiềng (13/10): máy rất hẹp (< 360px) thu khoảng cách giữa các tab cho vừa hàng */
+/* tab Hạt chặn ↔ Khoen đổi tên khi đổi loại vòng: chữ sáng lên 1 lần cho khách thấy (13/10) */
+.ctab.flash{animation:tabFlash 1.1s var(--ease)}
+@keyframes tabFlash{0%,100%{color:var(--muted)}25%,55%{color:var(--fg)}}
+@media (prefers-reduced-motion:reduce){.ctab.flash{animation:none}}
+/* máy rất hẹp (< 360px) thu khoảng cách giữa các tab cho vừa hàng */
 @media (max-width:359px){.ctabs{gap:16px}.ctab::after{left:-8px; right:-8px}}
 .ctab[aria-selected="true"]{color:var(--fg)}
 /* chưa đặt được vị trí thanh trượt (lần vẽ đầu) thì tab đang chọn tự có viền dưới như cũ */
@@ -438,10 +442,9 @@ textarea.copybox{width:100%; min-height:240px; border-radius:12px; border:1px so
   <section class="catalog" aria-label="Danh mục">
     <div class="cbar" id="cbar">
       <div class="ctabs" id="ctabs" role="tablist" aria-label="Danh mục">
+        <button class="ctab" role="tab" id="tabStrap" data-ctab="strap" aria-selected="false" aria-controls="cpanel" tabindex="-1">Vòng</button>
         <button class="ctab" role="tab" id="tabCharm" data-ctab="charm" aria-selected="true" aria-controls="cpanel" tabindex="0">Charm</button>
         <button class="ctab" role="tab" id="tabStop" data-ctab="stop" aria-selected="false" aria-controls="cpanel" tabindex="-1">Hạt chặn</button>
-        <button class="ctab" role="tab" id="tabStrap" data-ctab="strap" aria-selected="false" aria-controls="cpanel" tabindex="-1">Dây</button>
-        <button class="ctab" role="tab" id="tabBangle" data-ctab="bangle" aria-selected="false" aria-controls="cpanel" tabindex="-1" hidden>Kiềng</button>
       </div>
       <div class="csearch" id="csearch" role="search"><div class="cfield">
         <input id="q" type="search" inputmode="search" enterkeyhint="search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Tìm charm, hạt chặn, dây…" aria-label="Tìm trong danh mục" aria-describedby="qHint">
@@ -845,7 +848,7 @@ function defaultState(){
   if(CAT.source==='demo'&&SE['br-0'])return{strap:'br-0',size:STRAP_CM,items:SAMPLE.filter(c=>CE[c]).map(code=>({uid:newUid(),code}))};
   return{strap:CAT.straps[0].code,size:STRAP_CM,items:[]};
 }
-const snap=()=>JSON.stringify({strap:state.strap,size:state.size,items:state.items,sel});
+const snap=()=>JSON.stringify({strap:state.strap,size:state.size,items:state.items,stash:state.stash||null,sel});
 function pushHist(){hist.push(snap());if(hist.length>80)hist.shift();redoHist.length=0;}
 function commit(fn){const from=posSnap();pushHist();fn();startReflow(from);changed();}
 const selIndex=()=>state.items.findIndex(i=>i.uid===sel);
@@ -1521,7 +1524,7 @@ function syncSeg(){
   segEl.style.setProperty('--seg-x',b.offsetLeft+'px');segEl.style.setProperty('--seg-w',b.offsetWidth+'px');
   if(!segEl.classList.contains('ready'))requestAnimationFrame(()=>requestAnimationFrame(()=>segEl.classList.add('ready')));
 }
-/* thanh gạch dưới tab Charm / Hạt chặn / Dây / Kiềng: đổi tab thì trượt sang tab mới; còn lại (lần đầu, font tải xong, đổi cỡ màn hình) thì đặt ngay, không trượt */
+/* thanh gạch dưới tab Vòng / Charm / Hạt chặn: đổi tab thì trượt sang tab mới; còn lại (lần đầu, font tải xong, đổi cỡ màn hình) thì đặt ngay, không trượt */
 const TABBAR={on:''};
 function syncTabBar(){
   const el=$('ctabs'),b=el&&el.querySelector('[aria-selected="true"]');if(!b||!b.offsetWidth)return;
@@ -1725,11 +1728,9 @@ function strapCard(e,i,toks){
   return`<button class="card${on?' on':''}" data-strap="${esc(e.code)}" style="--i:${Math.min(i,14)}" aria-pressed="${on}" aria-label="${esc(e.name+(e.vname?' – '+e.vname:'')+', '+fmt(e.price))}"><span class="ph"><img src="${esc(strapThumb(e.code))}" alt=""></span><span class="nm">${T(e.name)}</span>${e.vname?`<span class="tag">${T(e.vname)}</span>`:''}${codeHit?`<span class="cd">${T(e.code)}</span>`:''}<span class="pr">${fmt(e.price)}</span>${on?CHECK:''}</button>`;
 }
 function renderCatalog(animate){
-  /* tab Kiềng (13/10, shop: vòng kiềng 1 tab riêng chỉ có mình nó): chỉ hiện khi sheet có vòng kiềng */
-  const hasB=CAT.straps.some(isBangle);$('tabBangle').hidden=!hasB;if(ctab==='bangle'&&!hasB)ctab='strap';
   document.querySelectorAll('[data-ctab]').forEach(b=>{const on=b.dataset.ctab===ctab;b.setAttribute('aria-selected',String(on));b.tabIndex=on?0:-1;});
   syncTabBar();
-  $('cpanel').setAttribute('aria-labelledby',{charm:'tabCharm',stop:'tabStop',strap:'tabStrap',bangle:'tabBangle'}[ctab]);
+  $('cpanel').setAttribute('aria-labelledby',{charm:'tabCharm',stop:'tabStop',strap:'tabStrap'}[ctab]);
   if(CAT.loading&&!CAT.charms.length){
     side.hidden=false;side.innerHTML='<div class="sk"></div><div class="sk"></div><div class="sk"></div>';
     gridHead.hidden=true;
@@ -1756,14 +1757,16 @@ function renderCatalog(animate){
     const list=CAT.stops.filter(e=>stopCatId==='all'||e.cat===stopCatId);
     grid.innerHTML=list.map((e,i)=>charmCard(e,i,cn)).join('');
     gridNote.textContent=list.length?'Hạt chặn được tặng miễn phí khi mua vòng mix charm. Bấm 1 lần gắn 1 hạt, thường gắn 2 hạt ở hai đầu cụm charm để giữ charm.':'Chưa có hạt chặn.';
-  }else if(ctab==='bangle'){
-    side.hidden=true;gridHead.hidden=true;gridHead.innerHTML='';
-    grid.innerHTML=CAT.straps.filter(isBangle).map((e,i)=>strapCard(e,i)).join('');
-    gridNote.textContent='Vòng kiềng kim loại, chu vi 23 cm, gắn charm và khoen (không dùng hạt chặn). Bấm vào vòng kiềng để chọn.';
   }else{
+    /* tab Vòng (13/10): chọn loại vòng trước — mục Dây đan + mục Vòng kiềng */
     side.hidden=true;gridHead.hidden=true;gridHead.innerHTML='';
-    grid.innerHTML=CAT.straps.filter(e=>!isBangle(e)).map((e,i)=>strapCard(e,i)).join('');
-    gridNote.textContent='Tất cả dây dài 23 cm, có nút rút để chỉnh vừa cổ tay. Bấm vào dây để đổi dây cho vòng.';
+    const ds=CAT.straps.filter(e=>!isBangle(e)),bs=CAT.straps.filter(isBangle);let i=0;
+    const sec=(t,k)=>`<p class="gsec">${t} · ${k}</p>`;
+    /* kiềng ít mẫu nên đứng trước, không bị chìm dưới ~30 màu dây */
+    grid.innerHTML=bs.length?sec('Vòng kiềng',bs.length)+bs.map(e=>strapCard(e,i++)).join('')+sec('Dây đan',ds.length)+ds.map(e=>strapCard(e,i++)).join('')
+      :ds.map(e=>strapCard(e,i++)).join('');
+    gridNote.textContent=bs.length?'Vòng kiềng kim loại chu vi 23 cm, dùng khoen thay hạt chặn. Dây đan dài 23 cm, có nút rút chỉnh vừa cổ tay, dùng hạt chặn. Đổi loại vòng thì charm giữ nguyên; hạt chặn / khoen được cất lại, chọn lại loại vòng cũ là có lại.'
+      :'Tất cả dây dài 23 cm, có nút rút để chỉnh vừa cổ tay. Bấm vào dây để đổi dây cho vòng.';
   }
   syncSideBar();
   sweepThumbs();
@@ -1806,7 +1809,7 @@ function renderResults(cn){
   let i=0;const sec=(t,k)=>`<p class="gsec">${t} · ${k}</p>`;
   grid.innerHTML=(cs.length?sec('Charm',cs.length)+cs.map(e=>charmCard(e,i++,cn,toks)).join(''):'')
     +(ss.length?sec(bo?'Khoen':'Hạt chặn',ss.length)+ss.map(e=>charmCard(e,i++,cn,toks)).join(''):'')
-    +(ds.length?sec('Dây',ds.length)+ds.map(e=>strapCard(e,i++,toks)).join(''):'')
+    +(ds.length?sec('Dây đan',ds.length)+ds.map(e=>strapCard(e,i++,toks)).join(''):'')
     +(bs.length?sec('Vòng kiềng',bs.length)+bs.map(e=>strapCard(e,i++,toks)).join(''):'');
   gridNote.textContent=n?'':'Thử gõ tên khác, màu (vd. hồng, xanh) hoặc mã (vd. HK-12).';
   $('live').textContent=n?`${n} kết quả cho ${q}`:`Không tìm thấy ${q}`;
@@ -2045,7 +2048,8 @@ function syncKind(){
   if(!CAT.straps.length)return;
   const b=bangleOn();if(KIND_ON===b)return;const first=KIND_ON===null;KIND_ON=b;
   const co=document.querySelector('.corner');if(co)co.classList.toggle('only-ring',b);
-  $('tabStop').textContent=b?'Khoen':'Hạt chặn';
+  const ts=$('tabStop');ts.textContent=b?'Khoen':'Hạt chặn';
+  if(!first&&!reduceMotion()){ts.classList.remove('flash');void ts.offsetWidth;ts.classList.add('flash');clearTimeout(ts._ft);ts._ft=setTimeout(()=>ts.classList.remove('flash'),1200);}
   if(b&&VIEW.target===1)setView('circle',first,true);
   if(ctab==='stop'||(SEARCH.open&&SEARCH.shown))renderCatalog();else syncTabBar();
 }
@@ -2091,6 +2095,16 @@ function addRingSet(en,card){
   });
   $('live').textContent=`Đã gắn 1 set ${n} khoen`;
 }
+/* gắn lại hạt chặn / khoen đã cất: mỗi món về sau charm đứng trước nó lúc cất (charm đó đã bị xoá thì lùi về charm trước nữa, không còn thì về đầu) */
+function restoreStash(seq,st){
+  const cur=state.items,have=new Set(cur.map(it=>it.uid)),after=new Map();let anchor=null,n=0;
+  seq.forEach(it=>{const e=CE[it.code];if(!e)return;
+    if(have.has(it.uid)){anchor=it.uid;return;}
+    if(!(e.stop||e.ring)||!fitsStrap(e,st))return;
+    const k=anchor||'';if(!after.has(k))after.set(k,[]);after.get(k).push({uid:it.uid,code:it.code});n++;});
+  const out=(after.get('')||[]).slice();cur.forEach(it=>{out.push(it);const a=after.get(it.uid);if(a)out.push(...a);});
+  state.items=out;return n;
+}
 /* ---------- tools ---------- */
 function tool(t){
   const i=selIndex();
@@ -2098,7 +2112,7 @@ function tool(t){
   if(t==='undo'||t==='redo'){
     const src=t==='undo'?hist:redoHist,dst=t==='undo'?redoHist:hist;
     if(!src.length)return;const from=posSnap();dst.push(snap());const s=JSON.parse(src.pop());
-    state={strap:s.strap,size:s.size,items:s.items};fitState();sel=s.sel!=null&&state.items.some(x=>x.uid===s.sel)?s.sel:null;
+    state={strap:s.strap,size:s.size,items:s.items,stash:s.stash||null};fitState();sel=s.sel!=null&&state.items.some(x=>x.uid===s.sel)?s.sel:null;
     startReflow(from);changed();$('live').textContent=t==='undo'?'Đã undo':'Đã redo';return;
   }
   if(t==='clear'){if(state.items.length)openSheet('confirmClear');return;}
@@ -2386,10 +2400,24 @@ document.addEventListener('click',e=>{
   }
   if(ds.strap){
     const en=SE[ds.strap];if(!en||state.strap===en.code)return;
-    /* dây ↔ kiềng: gỡ món không dùng được cho loại vòng mới (hạt chặn / khoen), có Undo */
-    const drop=state.items.filter(it=>!fitsStrap(CE[it.code],en)),toB=isBangle(en);
-    commit(()=>{state.strap=en.code;if(drop.length){state.items=state.items.filter(it=>!drop.includes(it));if(sel!=null&&!state.items.some(x=>x.uid===sel))sel=null;}});
-    if(drop.length)toast(toB?`Đã gỡ ${drop.length} hạt chặn`:`Đã gỡ ${drop.length} khoen`,{sub:toB?'Vòng kiềng chỉ gắn charm + khoen':'Dây đan không thể dùng khoen',undo:true,ms:5000});
+    /* dây ↔ kiềng (13/10): charm đi theo; hạt chặn / khoen không dùng được thì CẤT lại cho loại vòng cũ (không xoá),
+       chọn lại loại vòng đó thì gắn lại đúng chỗ cũ (sau charm đứng trước nó) */
+    const fromK=bangleOn()?'bangle':'cord',toK=isBangle(en)?'bangle':'cord';
+    const drop=state.items.filter(it=>!fitsStrap(CE[it.code],en));
+    const back=fromK!==toK&&state.stash&&state.stash[toK]||null;let nBack=0;
+    commit(()=>{
+      const stash=Object.assign({},state.stash||{});
+      if(fromK!==toK){
+        if(drop.length)stash[fromK]=state.items.map(it=>({uid:it.uid,code:it.code}));else delete stash[fromK];
+        state.items=state.items.filter(it=>!drop.includes(it));
+        if(back){nBack=restoreStash(back,en);delete stash[toK];}
+      }
+      state.stash=Object.keys(stash).length?stash:null;state.strap=en.code;
+      if(sel!=null&&!state.items.some(x=>x.uid===sel))sel=null;
+    });
+    const kind=fromK==='cord'?'hạt chặn':'khoen',kind2=toK==='cord'?'hạt chặn':'khoen';
+    if(drop.length||nBack)toast(drop.length?`Đã cất ${drop.length} ${kind} cho ${fromK==='cord'?'dây đan':'vòng kiềng'}`:`Đã gắn lại ${nBack} ${kind2}`,
+      {sub:drop.length?(nBack?`Đã gắn lại ${nBack} ${kind2}. `:'')+`Chọn lại ${fromK==='cord'?'dây đan':'vòng kiềng'} là có lại`:'',ms:4000});
     else $('live').textContent=`Đã đổi sang ${en.name}${en.vname?' '+en.vname:''}`;
     return;
   }
@@ -2423,7 +2451,7 @@ document.addEventListener('click',e=>{
 $('numBtn').addEventListener('click',()=>{showNums=!showNums;$('numBtn').setAttribute('aria-pressed',String(showNums));renderStage();});
 /* phím mũi tên cho nhóm Tròn/Ngang và tab Charm/Dây */
 $('viewSeg').addEventListener('keydown',e=>{if(!/^Arrow/.test(e.key))return;const mode=VIEW.target===1?'circle':'line';setView(mode);document.querySelector(`[data-view="${mode}"]`).focus();e.preventDefault();});
-$('ctabs').addEventListener('keydown',e=>{if(e.key!=='ArrowLeft'&&e.key!=='ArrowRight')return;const T=['charm','stop','strap'].concat($('tabBangle').hidden?[]:['bangle']),i=T.indexOf(ctab);ctab=T[(i+(e.key==='ArrowRight'?1:T.length-1))%T.length];renderCatalog(true);gridTop();document.querySelector(`[data-ctab="${ctab}"]`).focus();e.preventDefault();});
+$('ctabs').addEventListener('keydown',e=>{if(e.key!=='ArrowLeft'&&e.key!=='ArrowRight')return;const T=['strap','charm','stop'],i=T.indexOf(ctab);ctab=T[(i+(e.key==='ArrowRight'?1:T.length-1))%T.length];renderCatalog(true);gridTop();document.querySelector(`[data-ctab="${ctab}"]`).focus();e.preventDefault();});
 new ResizeObserver(()=>sizeStage()).observe($('canvasWrap'));
 addEventListener('resize',sizeStage);
 const themeChanged=()=>{TOK=null;renderStage();};
