@@ -247,6 +247,8 @@ mark{background:var(--hl); color:var(--on-hl); border-radius:3px; padding:0 1px;
 .card{display:flex; flex-direction:column; align-items:center; gap:3px; padding:0 0 4px; border-radius:14px; text-align:center; min-width:0}
 .card .ph{width:100%; aspect-ratio:1; border-radius:14px; background:var(--stage); display:grid; place-items:center; overflow:hidden; margin-bottom:5px; transition:transform var(--fast) var(--ease), box-shadow var(--fast)}
 .card .ph img{width:84%; height:84%; object-fit:contain; display:block; transition:opacity 220ms var(--ease)}
+/* ô vòng: ảnh đoạn dây phóng to phủ kín ô, vòm chạy ra tới 2 mép (13/10) */
+.card[data-strap] .ph img{width:100%; height:100%}
 /* ảnh charm chưa tải xong: ô ảnh là khung xương (nền xám + vệt sáng chạy), ảnh hiện mờ dần khi tải xong */
 .card .ph.ld{background:var(--soft)}
 .card .ph.ld img{opacity:0}
@@ -1096,7 +1098,7 @@ function drawStrapCurve(ctx,g,st){
   const P=(p,off)=>[p.x+p.nx*off*s,p.y+p.ny*off*s];
   const tex=strapTex(st),tex2=strapTex2(st),T=st.thick||THICK[st.kind]||3;
   ctx.save();ctx.lineJoin='round';ctx.lineCap='butt';
-  ctx.strokeStyle='rgba(40,30,15,.10)';ctx.lineWidth=(tex||st.kind==='braid'||pm.bangle?T*1.2:3.6)*s;path(0,1.3*s);ctx.stroke();
+  if(!g.noShadow){ctx.strokeStyle='rgba(40,30,15,.10)';ctx.lineWidth=(tex||st.kind==='braid'||pm.bangle?T*1.2:3.6)*s;path(0,1.3*s);ctx.stroke();}
   /* khoen vẽ TRƯỚC sợi dây (13/10, shop: ảnh thật không thấy trọn vòng khoen vàng): dây luồn vào khoen đè lên đầu khoen + chỗ gập, chỉ lộ 2 chân khoen gần chân quấn chỉ; Ngang thì không có gì đè nên thấy trọn khoen */
   if(pm.braid){ctx.save();drawEye(ctx,g);ctx.restore();}
   if(tex){
@@ -1699,14 +1701,23 @@ function charmThumb(code,px){
   const url=c.toDataURL();thumbCache.set(key,url);return url;
 }
 /* ảnh nhỏ của dây: vẽ sợi dây thành vòng tròn (dây ảnh thật cũng được uốn tròn như trên vòng) */
-function strapThumb(code,px){
+function strapThumb(code,px,full){
   const e=SE[code];if(!e)return'';
-  px=px||96;const tex=strapTex(e),key='S'+code+'.'+px+(tex?'.t':'')+(strapTex2(e)?'2':'');
+  px=px||96;const tex=strapTex(e),key='S'+code+'.'+px+(full?'.f':'')+(tex?'.t':'')+(strapTex2(e)?'2':'');
   if(thumbCache.has(key))return thumbCache.get(key);
   const D=2,c=document.createElement('canvas');c.width=c.height=px*D;const x=c.getContext('2d');x.scale(D,D);
-  /* vòng lúc đeo (cỡ mặc định), có cả khoen + nút rút ở đỉnh vòng như trên khung vòng */
-  const pm=pathModel(e,0),s=px*.66/(2*pm.R+pm.topExt),R=pm.R*s;
-  SH={c:'rgba(38,26,8,.2)',b:2*D,y:1*D};drawStrapCurve(x,{pm,tab:pathTab(pm,0),L:pm.L,e:0,s,ax:px/2,ay:px/2+pm.topExt*s/2+R},e);SH=null;
+  const pm=pathModel(e,0);
+  if(full){
+    /* ảnh xuất: cả vòng lúc đeo (cỡ mặc định), có cả khoen + nút rút ở đỉnh vòng như trên khung vòng */
+    const s=px*.66/(2*pm.R+pm.topExt),R=pm.R*s;
+    SH={c:'rgba(38,26,8,.2)',b:2*D,y:1*D};drawStrapCurve(x,{pm,tab:pathTab(pm,0),L:pm.L,e:0,s,ax:px/2,ay:px/2+pm.topExt*s/2+R},e);SH=null;
+  }else{
+    /* ô danh mục (13/10, shop: không cần thấy cả vòng, phóng to 1 đoạn cho dễ lựa màu): đoạn dây trơn ở đáy vòng,
+       lật ngược thành vòm ∩ chạy ngang hết ô (bán kính trên ảnh = bề ngang ô, đỉnh vòm ở 44% chiều cao, ảnh phủ kín ô) */
+    const R=px,s=R/pm.R;
+    x.translate(px/2,px*.44);x.rotate(Math.PI);
+    drawStrapCurve(x,{pm,tab:pathTab(pm,0),L:pm.L,e:0,s,ax:0,ay:0,noShadow:true},e);
+  }
   let url='';try{url=c.toDataURL();}catch(err){}
   thumbCache.set(key,url);return url;
 }
@@ -2284,7 +2295,7 @@ async function buildImage(){
   }
   const st=strapE(),bg=isBangle(st);
   x.fillStyle=MUTE;x.font='600 16px '+FONT;x.fillText(bg?'VÒNG':'DÂY',P,y);
-  await drawFit(x,strapThumb(st.code,80),P,y+14,64);
+  await drawFit(x,strapThumb(st.code,80,true),P,y+14,64);
   x.fillStyle=INK;x.font='600 25px '+FONT;x.fillText(fitText(x,`${st.name}${st.vname?' – '+st.vname:''}`,inner-84-160),P+84,y+42);
   x.fillStyle=MUTE;x.font='400 19px '+FONT;x.fillText(`${bg?'Chu vi':'Dài'} ${STRAP_CM} cm · ${st.code}`,P+84,y+70);
   x.textAlign='right';x.fillStyle=INK;x.font='500 22px '+FONT;x.fillText(fmt(st.price),W-P,y+42);x.textAlign='left';
@@ -2417,8 +2428,7 @@ document.addEventListener('click',e=>{
       if(sel!=null&&!state.items.some(x=>x.uid===sel))sel=null;
     });
     const kind=fromK==='cord'?'hạt chặn':'khoen',kind2=toK==='cord'?'hạt chặn':'khoen';
-    if(drop.length||nBack)toast(drop.length?`Đã cất ${drop.length} ${kind} cho ${fromK==='cord'?'dây đan':'vòng kiềng'}`:`Đã gắn lại ${nBack} ${kind2}`,
-      {sub:drop.length?(nBack?`Đã gắn lại ${nBack} ${kind2}. `:'')+`Chọn lại ${fromK==='cord'?'dây đan':'vòng kiềng'} là có lại`:'',ms:4000});
+    if(drop.length||nBack)toast(drop.length?`Đã cất ${drop.length} ${kind} cho ${fromK==='cord'?'dây đan':'vòng kiềng'}`:`Đã gắn lại ${nBack} ${kind2}`,{ms:3000});
     else $('live').textContent=`Đã đổi sang ${en.name}${en.vname?' '+en.vname:''}`;
     return;
   }
