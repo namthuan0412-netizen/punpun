@@ -868,7 +868,9 @@ const charmCount=()=>state.items.reduce((a,it)=>a+(CE[it.code]&&!CE[it.code].sto
 const atLimit=e=>!!e&&!e.stop&&!e.ring&&charmCount()>=MAX_CHARMS;
 /* vòng kiềng không nới ra được: còn bao nhiêu mm chỗ gắn (ngoài ống khoá) */
 function roomLeft(){if(!bangleOn())return Infinity;const pm=pathModel(strapE(),0),cl=clusterOf();return pm.uMax-pm.uMin-cl.W;}
-const fitsRoom=(e,n)=>roomLeft()>=(n||1)*(e.strapW+KN.gap)-.01;
+/* khoảng cách giữa 2 món kề nhau: dây đan KN.gap (.35 mm); vòng kiềng 0,1 mm — khoen + charm sát nhau (13/10, shop) */
+const gapNow=()=>bangleOn()?.1:KN.gap;
+const fitsRoom=(e,n)=>roomLeft()>=(n||1)*(e.strapW+gapNow())-.01;
 function fullHit(card){
   toast('Vòng kiềng đã kín chỗ',{sub:'Xoá bớt charm hoặc khoen rồi gắn tiếp',ms:4000});
   if(!card)return;card.classList.remove('limit');void card.offsetWidth;card.classList.add('limit');
@@ -1021,7 +1023,7 @@ function pathTab(pm,e){
 }
 function clusterOf(){
   const its=state.items.filter(it=>CE[it.code]),ents=its.map(it=>CE[it.code]),ws=ents.map(e=>e.strapW);
-  const W=ws.reduce((a,b)=>a+b,0)+KN.gap*Math.max(0,ws.length-1);
+  const W=ws.reduce((a,b)=>a+b,0)+gapNow()*Math.max(0,ws.length-1);
   return{its,ents,ws,W,L:state.size*10};
 }
 function geom(W,H,m,o){
@@ -1029,7 +1031,7 @@ function geom(W,H,m,o){
   const st=CAT.straps.length?strapE():null,cl=clusterOf(),pm=pathModel(st,cl.W),L=pm.L;
   /* cụm charm: giữa cụm ở đáy vòng (u = 0), không vượt khỏi đoạn gắn được charm (chân khoen → nút rút); quá dài thì ép sát lại */
   const span=pm.uMax-pm.uMin,kc=cl.W>span?span/cl.W:1,Wk=cl.W*kc,u0=Math.max(pm.uMin,Math.min(pm.uMax-Wk,-Wk/2));
-  let acc=0;const cs=cl.ws.map(w=>{const c=(acc+w/2)*kc;acc+=w+KN.gap;return c;});
+  let acc=0;const gp=gapNow(),cs=cl.ws.map(w=>{const c=(acc+w/2)*kc;acc+=w+gp;return c;});
   /* Ngang (13/10, shop yêu cầu): cụm charm trượt dọc dây vào GIỮA sợi dây trải thẳng — giữa đoạn từ chân khoen tới chốt 1
      (lúc này chốt 1 đã nằm sát chốt 2 ở đầu đuôi). Trượt theo e nên lúc vòng đang duỗi ra charm tự chạy vào giữa; Tròn không đổi */
   const dLo=pm.uMin,dHi=pm.braid?pm.uB-KN.knotL*1.5-KN.kGap-KN.pad:pm.uMax,
