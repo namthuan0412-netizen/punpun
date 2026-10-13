@@ -350,51 +350,6 @@ textarea.copybox{width:100%; min-height:240px; border-radius:12px; border:1px so
 .toast button::after{content:""; position:absolute; inset:-4px}
 .toast button:active{background:rgba(128,128,128,.25)}
 
-/* ---------- Thử vòng trên tay bằng camera (13/10) ----------
-   Nút AR ở góc dưới trái khung vòng (cùng kiểu nút # và i). Màn camera luôn tối (như app camera), không theo sáng/tối của web. */
-.ar-btn{top:auto; bottom:8px; left:8px; transition:background-color var(--fast), color var(--fast), border-color var(--fast), opacity 240ms var(--ease) 60ms, transform 240ms var(--ease) 60ms, visibility 0s}
-/* đang chọn charm: nút lùi đi nhường chỗ cho viên thông tin charm ở đáy khung */
-.ar-btn.away{opacity:0; transform:scale(.8); visibility:hidden; pointer-events:none; transition:opacity 160ms var(--ease-in), transform 160ms var(--ease-in), visibility 0s linear 160ms}
-.ar{position:fixed; inset:0; z-index:60; background:#000; color:#fff; overflow:hidden; touch-action:none; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none}
-.ar video,.ar .ar-photo,.ar .ar-cv{position:absolute; inset:0; width:100%; height:100%; display:block}
-.ar video{object-fit:cover}
-.ar video.mir{transform:scaleX(-1)}
-.ar .ar-photo{object-fit:contain}
-.ar-top{position:absolute; left:0; right:0; top:0; z-index:3; padding:calc(10px + env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-right,0px)) 0 max(12px,env(safe-area-inset-left,0px)); display:flex; align-items:center; justify-content:space-between; pointer-events:none}
-.ar-bot{position:absolute; left:0; right:0; bottom:0; z-index:3; padding:0 max(28px,env(safe-area-inset-right,0px)) calc(24px + env(safe-area-inset-bottom,0px)) max(28px,env(safe-area-inset-left,0px)); display:grid; grid-template-columns:1fr auto 1fr; align-items:center; pointer-events:none}
-.ar-bot > :first-child{justify-self:start} .ar-bot > :last-child{justify-self:end}
-.ar-ib{pointer-events:auto; width:48px; height:48px; border-radius:50%; display:grid; place-items:center; color:#fff; background:rgba(22,20,18,.42); -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px); transition:background-color var(--fast), transform var(--fast) var(--ease), opacity var(--med)}
-.ar-ib::after{content:""; position:absolute; inset:-4px}
-.ar-ib:active{background:rgba(22,20,18,.62); transform:scale(.94)}
-.ar-ib:focus-visible,.ar-shut:focus-visible,.ar-pill:focus-visible{outline:2px solid #fff; outline-offset:3px}
-.ar-shut{pointer-events:auto; width:76px; height:76px; border-radius:50%; border:4px solid #fff; display:grid; place-items:center; transition:opacity var(--med)}
-.ar-shut::before{content:""; width:60px; height:60px; border-radius:50%; background:#fff; transition:transform 140ms var(--ease)}
-.ar-shut:active::before{transform:scale(.86)}
-.ar-shut:disabled{opacity:.35}
-.ar-hint{position:absolute; left:50%; z-index:3; bottom:calc(124px + env(safe-area-inset-bottom,0px)); transform:translateX(-50%); width:max-content; max-width:calc(100% - 32px); display:flex; align-items:center; gap:8px; padding:9px 16px; border-radius:20px; background:rgba(22,20,18,.58); -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px); font-size:13.5px; font-weight:500; line-height:1.4; text-align:center; text-wrap:balance; pointer-events:none; transition:opacity 260ms var(--ease), visibility 0s}
-.ar-hint.off{opacity:0; visibility:hidden; transition:opacity 260ms var(--ease), visibility 0s linear 260ms}
-.ar-hint .spin{flex:none; width:14px; height:14px; border-radius:50%; border:2px solid rgba(255,255,255,.3); border-top-color:#fff; animation:arSpin .8s linear infinite}
-@keyframes arSpin{to{transform:rotate(360deg)}}
-/* lỗi camera / quyền: thẻ giữa màn hình, có Thử lại + Chọn ảnh tay */
-.ar-msg{position:absolute; left:50%; top:50%; z-index:4; transform:translate(-50%,-50%); width:min(330px,calc(100% - 40px)); padding:24px 20px 20px; border-radius:22px; background:rgba(34,33,31,.94); text-align:center; display:grid; justify-items:center; gap:10px}
-.ar-msg svg{color:rgba(255,255,255,.85)}
-.ar-msg h3{margin:2px 0 0; font-size:17px; font-weight:700; letter-spacing:-.01em; text-wrap:balance}
-.ar-msg p{margin:0; font-size:13.5px; line-height:1.5; color:rgba(255,255,255,.76); text-wrap:pretty}
-.ar-msg .acts{display:flex; flex-wrap:wrap; justify-content:center; gap:8px; margin-top:8px}
-.ar-pill{pointer-events:auto; height:46px; padding:0 20px; border-radius:999px; display:inline-flex; align-items:center; justify-content:center; gap:8px; font-weight:600; font-size:14px; color:#fff; background:rgba(255,255,255,.16); transition:background-color var(--fast), transform var(--fast) var(--ease)}
-.ar-pill:active{transform:scale(.97); background:rgba(255,255,255,.24)}
-.ar-pill.pri{background:#fff; color:#1C1B19}
-.ar-pill.pri:active{background:#E9E7E3}
-/* ảnh vừa chụp: xem lại rồi Lưu ảnh / Chụp lại */
-.ar-shot{position:absolute; inset:0; z-index:2; background:#000; display:flex; flex-direction:column}
-.ar-shot img{flex:1; min-height:0; width:100%; object-fit:contain; display:block; -webkit-touch-callout:default}
-.ar-shot .bar{flex:none; display:flex; justify-content:center; gap:10px; padding:14px 16px calc(18px + env(safe-area-inset-bottom,0px))}
-.ar-flash{position:absolute; inset:0; z-index:5; background:#fff; opacity:0; pointer-events:none}
-.ar-flash.go{animation:arFlash 420ms var(--ease-out)}
-@keyframes arFlash{from{opacity:.85} to{opacity:0}}
-/* đang mở màn camera: toast nằm trên hàng nút chụp */
-#ar:not([hidden]) ~ .toast{bottom:calc(126px + env(safe-area-inset-bottom,0px))}
-
 /* điện thoại xoay ngang: vòng bên trái, danh mục bên phải */
 /* :root:not(.kb) — webview Android thu nhỏ trang khi bàn phím bật: không nhảy sang bố cục ngang */
 @media (orientation:landscape) and (max-height:520px){
@@ -468,7 +423,6 @@ textarea.copybox{width:100%; min-height:240px; border-radius:12px; border:1px so
       </div>
       <button class="stage-btn num-btn" id="numBtn" aria-pressed="false" aria-label="STT: hiện số thứ tự charm trên vòng" title="Hiện số thứ tự"><svg aria-hidden="true" focusable="false" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 9h15M4 15h15M10 4 8 20M16 4l-2 16"/></svg></button>
       <button class="stage-btn info-btn" id="infoBtn" aria-expanded="false" aria-controls="specs" aria-label="Thông tin vòng: số charm, độ dài đã dùng, tạm tính"><svg aria-hidden="true" focusable="false" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.2 10H12v9"/><path d="M12 5.2v.1" stroke-width="2.8"/></svg></button>
-      <button class="stage-btn ar-btn" id="arBtn" type="button" aria-label="Thử vòng trên tay bằng camera" title="Thử vòng trên tay"><svg aria-hidden="true" focusable="false" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 7V4.5a2 2 0 0 1 2-2H7M17 2.5h2.5a2 2 0 0 1 2 2V7M21.5 17v2.5a2 2 0 0 1-2 2H17M7 21.5H4.5a2 2 0 0 1-2-2V17"/><path d="M12 5.6l5.6 3.2v6.4L12 18.4l-5.6-3.2V8.8z"/><path d="M6.4 8.8 12 12l5.6-3.2M12 12v6.4"/></svg></button>
       <dl class="specs" id="specs" hidden>
         <div><dt>Số charm</dt><dd id="spCount">0</dd></div>
         <div><dt>Đã dùng</dt><dd id="spUsed">0 cm</dd></div>
@@ -518,33 +472,6 @@ textarea.copybox{width:100%; min-height:240px; border-radius:12px; border:1px so
 </div>
 
 <div class="overlay" id="overlay" hidden><div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="shTitle"></div></div>
-<div class="ar" id="ar" role="dialog" aria-modal="true" aria-label="Thử vòng trên tay" data-state="off" hidden>
-  <video id="arVideo" playsinline muted autoplay aria-hidden="true"></video>
-  <img class="ar-photo" id="arPhoto" alt="Ảnh tay đang thử vòng" hidden>
-  <canvas class="ar-cv" id="arCv" aria-hidden="true"></canvas>
-  <div class="ar-shot" id="arShot" hidden>
-    <img id="arShotImg" alt="Ảnh thử vòng vừa chụp">
-    <div class="bar">
-      <button class="ar-pill" type="button" data-ar="retake"><svg aria-hidden="true" focusable="false" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg><span id="arRetakeT">Chụp lại</span></button>
-      <button class="ar-pill pri" type="button" data-ar="save"><svg aria-hidden="true" focusable="false" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0-4-4m4 4 4-4M5 21h14"/></svg>Lưu ảnh</button>
-    </div>
-  </div>
-  <div class="ar-msg" id="arMsg" hidden></div>
-  <div class="ar-top">
-    <button class="ar-ib" type="button" data-ar="close" id="arClose" aria-label="Đóng camera thử vòng"><svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
-  </div>
-  <div class="ar-hint off" id="arHint" role="status" aria-live="polite"><span class="spin" id="arSpin" aria-hidden="true" hidden></span><span id="arHintT"></span><span id="arHintP" aria-hidden="true"></span></div>
-  <div class="ar-bot" id="arBot">
-    <button class="ar-ib" type="button" data-ar="photo" aria-label="Chọn ảnh tay có sẵn" title="Chọn ảnh tay có sẵn"><svg aria-hidden="true" focusable="false" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="1.7"/><path d="m21 15.5-4.6-4.6L7 20"/></svg></button>
-    <button class="ar-shut" type="button" data-ar="shot" id="arShut" aria-label="Chụp ảnh thử vòng"></button>
-    <span class="ar-r">
-      <button class="ar-ib" type="button" data-ar="flip" id="arFlip" aria-label="Đổi camera trước / sau" title="Đổi camera" hidden><svg aria-hidden="true" focusable="false" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.5 19H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4.5"/><path d="M13.5 6H19a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-4.5"/><circle cx="12" cy="12.5" r="2.6"/><path d="m16 22-2.5-3 2.5-3"/><path d="m8 3 2.5 3L8 9"/></svg></button>
-      <button class="ar-ib" type="button" data-ar="cam" id="arCam" aria-label="Quay lại camera" title="Quay lại camera" hidden><svg aria-hidden="true" focusable="false" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.6A1.6 1.6 0 0 1 4.6 7h2.2l1.7-2.4h7l1.7 2.4h2.2A1.6 1.6 0 0 1 21 8.6v9.2a1.6 1.6 0 0 1-1.6 1.6H4.6A1.6 1.6 0 0 1 3 17.8z"/><circle cx="12" cy="13" r="3.4"/></svg></button>
-    </span>
-  </div>
-  <div class="ar-flash" id="arFlash" aria-hidden="true"></div>
-  <input class="vh" type="file" accept="image/*" id="arFile" tabindex="-1" aria-hidden="true">
-</div>
 <div class="toast" id="toast"></div>
 <div class="vh" id="live" role="status" aria-live="polite" aria-atomic="true"></div>
 
@@ -1136,7 +1063,7 @@ function geom(W,H,m,o){
   const fitWhole=(W*.94)/(L+pm.endX+12);
   /* Ngang trên khung vòng: luôn giữ một cỡ (bằng cỡ vòng đeo mặc định lúc Tròn), gắn nhiều charm cũng không thu nhỏ dây — xem phần còn lại bằng vuốt / nút ‹ › (12/10, shop yêu cầu).
      Ảnh xuất (fit 'whole') vẫn thu cả sợi dây vào khung */
-  const sL=o.ppm||(o.fit==='whole'?fitWhole:s0);
+  const sL=o.fit==='whole'?fitWhole:s0;
   const e=easeIO(Math.max(0,Math.min(1,m)));
   let ayL=H*(o.lineY||.7),tight=false;
   if(o.lineMin!=null){
@@ -1146,7 +1073,7 @@ function geom(W,H,m,o){
   }
   /* trượt ngang: pan (mm) = điểm u nằm giữa khung; giới hạn để luôn thấy được 2 đầu dây (khoen bên trái, đuôi bên phải) */
   const pLo=pm.uS-pm.endX-8+(W/2)/sL,pHi=pm.uE+8-(W/2)/sL,pMid=(pm.uS-pm.endX+pm.uE)/2,fits=pLo>pHi;
-  const panLo=fits?pMid:pLo,panHi=fits?pMid:pHi,pan=o.panFree?(o.pan||0):Math.max(panLo,Math.min(panHi,o.pan||0));
+  const panLo=fits?pMid:pLo,panHi=fits?pMid:pHi,pan=Math.max(panLo,Math.min(panHi,o.pan||0));
   return{cl,pm,L,u0:u0+shF*e,sh:shF*e,shF,cs,Wk,s:lerp(sC,sL,e),sL,ax:lerp(cxC,W/2-pan*sL,e),ay:lerp(cyC+R,ayL,e),e,W,H,R,cxC,cyC,pan,panLo,panHi,tight,tab:pathTab(pm,e)};
 }
 function curvePt(g,u){
@@ -1448,7 +1375,6 @@ function layout(W,H,m,o){
 }
 function drawScene(ctx,W,H,o){
   const lay=layout(W,H,o.m||0,o),g=lay.g;
-  if(o.noShadow)g.noShadow=true;
   if(o.bg){ctx.fillStyle=o.bg;ctx.fillRect(0,0,W,H);}
   if(!CAT.straps.length)return lay;
   SH={c:'rgba(38,26,8,.26)',b:3*o.k,y:1.4*o.k};
@@ -2124,7 +2050,6 @@ function refreshSel(){
   /* đang kéo một charm từ trạng thái chưa chọn: giữ vòng đứng yên, chưa hiện viên thông tin; thả tay mới hiện và nhích vòng lên */
   const quiet=!!(drag&&drag.moved&&drag.fromIdle);
   pillShow(has&&!quiet);setLift(has&&!quiet?1:0);
-  $('arBtn').classList.toggle('away',has&&!quiet);
   if(has){const e=CE[it.code],i=selIndex();$('selNum').textContent=`Vị trí ${i+1}:`;$('selName').textContent=e.name;$('selVar').textContent=e.vname||'';$('selVar').hidden=!e.vname;$('selPrice').textContent=e.stop?FREE:e.ring?fmt(e.price)+'/set':fmt(e.price);
     document.querySelector('[data-tool="left"]').disabled=i<=0;document.querySelector('[data-tool="right"]').disabled=i>=state.items.length-1;}
   $('undoBtn').disabled=!hist.length;$('redoBtn').disabled=!redoHist.length;
@@ -2450,454 +2375,6 @@ async function download(){
   setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1500);
 }
 
-/* ---------- Thử vòng trên tay bằng camera (13/10, shop: nút AR ở góc dưới trái khung vòng) ----------
-   • Bấm nút → màn camera toàn màn hình (camera sau, đổi được camera trước). MediaPipe Hand Landmarker (tải lười lần đầu bấm, ~10 MB:
-     thư viện + wasm ở jsDelivr, model ở Google) nhận diện bàn tay → vòng tự nằm ở cổ tay, xoay + to nhỏ theo tay.
-     Đang tải / không thấy tay: vòng mờ đứng giữa màn hình để khách tự canh. Tải không được: vòng đứng giữa, kéo / chụm 2 ngón để chỉnh.
-   • Hình vòng trên tay: vẽ 1 lần DẢI VÒNG THẲNG (như Ngang: dây + charm, giữa dải = giữa cụm charm) đúng cỡ mm, rồi mỗi khung hình
-     uốn dải quanh nửa trụ cổ tay bán kính AR_R (= vòng đeo DEF_C/2π): cắt dải thành AR_N cột theo góc θ quanh cổ tay, cột θ đặt ở
-     C + â·r·sinθ + f̂·r·t·(cosθ − 1)  (C: giữa vòng trên mặt cổ tay, f̂: hướng về ngón tay, â ⟂ f̂, t: cẳng tay chúi về / ra xa camera)
-     → charm ở rìa cổ tay hẹp lại, tối dần rồi khuất sau cổ tay. Bóng mềm trên da, tối mép, mờ mép vẽ sẵn vào dải.
-     Các cột ghép bằng 'lighter' (cộng) nên chỗ nối giữa 2 cột không lộ vệt.
-   • Chụp: ghép đúng phần camera đang thấy + vòng → xem lại → Lưu ảnh (chia sẻ / tải về như nút Lưu ảnh).
-   • Camera bị chặn (từ chối quyền, trình duyệt trong app TikTok / Zalo…) hoặc muốn dùng ảnh sẵn: chọn ảnh tay → vòng tự đặt lên cổ tay. */
-const MP_VER='1.0.1',MP_BASE='https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@'+MP_VER,
-  MP_MODEL='https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task';
-/* AR_R: bán kính vòng ôm cổ tay (mm); AR_TH: nửa góc nhìn thấy quanh cổ tay (rad, ~93°); AR_PPM: độ nét dải vòng (px/mm);
-   AR_OFF: vòng nằm lùi về phía khuỷu tay bao nhiêu mm so với điểm cổ tay của MediaPipe; AR_N: số cột khi uốn dải */
-const AR_R=DEF_C/(2*Math.PI),AR_TH=1.62,AR_PPM=18,AR_OFF=14,AR_N=72;
-const MOBILE=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
-const IOS=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
-const AR={open:false,hist:false,tok:0,camTok:0,mode:'live',facing:'environment',mirror:false,multi:false,camOk:false,stream:null,paused:false,
-  strip:null,lm:null,lmState:'idle',lmPct:0,lmMode:'VIDEO',errN:0,hand:null,manual:null,manualTouched:false,ppose:null,imgMap:null,
-  shown:null,dmode:'',bFrom:null,bT0:0,flip:false,F:null,vt:-1,raf:0,W:0,H:0,dpr:1,mul:1,lumT:0,err:'',shot:null,shotUrl:'',photoUrl:'',
-  photoHint:'',photoHintT:0,hintKey:'',last:null,newFrame:false,lastDet:0};
-const arEl=$('ar'),arV=$('arVideo'),arImg=$('arPhoto'),arCv=$('arCv'),arCx=arCv.getContext('2d'),
-  arDc=document.createElement('canvas'),arDx=arDc.getContext('2d'),arLc=document.createElement('canvas');
-arLc.width=arLc.height=16;const arLx=arLc.getContext('2d',{willReadFrequently:true});
-
-/* dải vòng thẳng (vẽ 1 lần mỗi lần mở): x = giữa dải + s·K (s mm dọc dây tính từ giữa cụm charm), yc = đường giữa sợi dây */
-async function arStrip(){
-  await assetsReady();
-  const st=strapE(),cl=clusterOf(),T=(st&&st.thick)||3,K=AR_PPM;
-  let up=T/2+1,down=T/2+1;cl.ents.forEach(en=>{up=Math.max(up,-en.top);down=Math.max(down,en.bottom);});
-  const M=3.6,half=AR_R*AR_TH+1.5,W=Math.ceil(2*half*K),H=Math.ceil((up+down+2*M)*K),yc=(up+M)*K;
-  const o={bg:null,k:K/2.7,m:1,ppm:K,panFree:true,reserve:0,lineY:yc/H,nums:false,sel:null,noShadow:true};
-  const g0=geom(W,H,1,o);o.pan=g0.u0+g0.Wk/2;
-  const a=document.createElement('canvas');a.width=W;a.height=H;drawScene(a.getContext('2d'),W,H,o);
-  const c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');
-  /* bóng trên da: 1 lớp mềm rộng + 1 lớp sát chân (không lệch về hướng nào vì không biết đèn ở đâu) */
-  x.shadowColor='rgba(28,14,4,.42)';x.shadowBlur=1.8*K;x.drawImage(a,0,0);
-  x.globalCompositeOperation='destination-over';x.shadowColor='rgba(28,14,4,.5)';x.shadowBlur=.55*K;x.shadowOffsetY=.15*K;x.drawImage(a,0,0);
-  x.shadowColor='transparent';x.shadowBlur=0;x.shadowOffsetY=0;
-  /* vòng quanh cổ tay: càng ra rìa càng tối (mặt vòng quay đi khỏi đèn / camera); qua ~75° mờ dần, hết hẳn ở ~93° (khuất sau cổ tay) */
-  const gd=x.createLinearGradient(0,0,W,0),ga=x.createLinearGradient(0,0,W,0);
-  for(let i=0;i<=40;i++){const f=i/40,th=(f*W-W/2)/K/AR_R,ct=Math.max(0,Math.cos(th)),q=Math.min(1,Math.max(0,(Math.abs(th)-1.3)/.32));
-    gd.addColorStop(f,`rgba(16,9,3,${(.46*(1-ct)).toFixed(3)})`);ga.addColorStop(f,`rgba(0,0,0,${(1-q*q*(3-2*q)).toFixed(3)})`);}
-  x.globalCompositeOperation='source-atop';x.fillStyle=gd;x.fillRect(0,0,W,H);
-  x.globalCompositeOperation='destination-in';x.fillStyle=ga;x.fillRect(0,0,W,H);
-  x.globalCompositeOperation='source-over';a.width=a.height=0;
-  const L=[{c,K,W,H,yc}];
-  for(let i=1;i<3;i++){const p=L[i-1],w=Math.ceil(p.W/2),h=Math.ceil(p.H/2),m=document.createElement('canvas');m.width=w;m.height=h;
-    const mx=m.getContext('2d');mx.imageSmoothingQuality='high';mx.drawImage(p.c,0,0,w,h);L.push({c:m,K:p.K*w/p.W,W:w,H:h,yc:p.yc*h/p.H});}
-  return{c,K,W,H,yc,L};
-}
-/* uốn dải quanh cổ tay. P (px của canvas đích): x,y = giữa vòng trên mặt cổ tay; fx,fy = hướng về ngón tay; ux,uy = phía "đỉnh" charm
-   (= f̂ hoặc −f̂); k = px/mm; t = độ nghiêng; a = độ đậm. Vẽ lên canvas trong suốt (lớp riêng) vì dùng phép cộng 'lighter' */
-function arDraw(ctx,S0,P){
-  if(!S0||!P||!(P.a>.01))return;
-  /* chọn bản dải nét vừa đủ (thu nhỏ không quá 2 lần) */
-  let S=S0.L[0];for(const l of S0.L)if(l.K>=P.k*1.05)S=l;
-  const r=AR_R*P.k,ax=-P.uy,ay=P.ux,ct=Math.sqrt(Math.max(0,1-P.t*P.t)),sv=P.k/S.K*ct,vx=-P.ux*sv,vy=-P.uy*sv,rt=r*P.t;
-  const pt=th=>{const s=r*Math.sin(th),c=rt*(Math.cos(th)-1);return[P.x+ax*s+P.fx*c,P.y+ay*s+P.fy*c];};
-  const k=S.K*AR_R,n=AR_N;let x0=0,p0=pt(-S.W/2/k);
-  ctx.save();ctx.globalCompositeOperation='lighter';ctx.globalAlpha=Math.min(1,P.a);
-  for(let i=1;i<=n;i++){
-    const x1=S.W*i/n,p1=pt((x1-S.W/2)/k),dw=x1-x0,a=(p1[0]-p0[0])/dw,b=(p1[1]-p0[1])/dw;
-    ctx.setTransform(a,b,vx,vy,p0[0]-a*x0-vx*S.yc,p0[1]-b*x0-vy*S.yc);
-    ctx.drawImage(S.c,x0,0,dw,S.H,x0,0,dw,S.H);
-    x0=x1;p0=p1;
-  }
-  ctx.restore();
-}
-/* tư thế mặc định (chưa thấy tay): giữa màn hình, dây nằm ngang, mờ — khách canh cổ tay vào */
-function arDefPose(){const W=AR.W,H=AR.H;return{x:W/2,y:H*.45,ux:0,uy:-1,fx:0,fy:-1,k:Math.min(W*.68,H*.5)/(2*AR_R),t:-.12,a:.55};}
-const angOf=(x,y)=>Math.atan2(y,x),wrapA=a=>Math.atan2(Math.sin(a),Math.cos(a));
-function lerpPose(A,B,e){
-  const L=(a,b)=>a+(b-a)*e,au=angOf(A.ux,A.uy),af=angOf(A.fx,A.fy),u=au+wrapA(angOf(B.ux,B.uy)-au)*e,f=af+wrapA(angOf(B.fx,B.fy)-af)*e;
-  return{x:L(A.x,B.x),y:L(A.y,B.y),ux:Math.cos(u),uy:Math.sin(u),fx:Math.cos(f),fy:Math.sin(f),k:Math.exp(L(Math.log(A.k),Math.log(B.k))),t:L(A.t,B.t),a:L(A.a,B.a)};
-}
-const scalePose=(P,s,dx,dy)=>Object.assign({},P,{x:(P.x-dx)*s,y:(P.y-dy)*s,k:P.k*s});
-/* toạ độ ảnh (0..1) → px CSS trên màn camera: video phủ kín màn (cover, camera trước thì soi gương); ảnh chọn từ máy nằm gọn (contain) */
-function arVidMap(){const iw=arV.videoWidth||1,ih=arV.videoHeight||1,W=AR.W,H=AR.H,sc=Math.max(W/iw,H/ih);return{iw,ih,sc,ox:(W-iw*sc)/2,oy:(H-ih*sc)/2,W,H,mir:AR.mirror};}
-function arImgMap(){const iw=arImg.naturalWidth||1,ih=arImg.naturalHeight||1,W=AR.W,H=AR.H,sc=Math.min(W/iw,H/ih);return{iw,ih,sc,ox:(W-iw*sc)/2,oy:(H-ih*sc)/2,W,H,mir:false};}
-/* 21 điểm bàn tay → vị trí vòng: hướng cổ tay → giữa 4 khớp gốc ngón = f̂; cỡ px/mm = (độ dài trên ảnh / độ dài thật) của các xương lòng bàn tay
-   (lấy 2 xương nằm song song mặt ảnh nhất = tỉ lệ lớn nhất); t = thành phần hướng về camera của f̂ (world landmarks, z xa camera là dương) */
-function arHandPose(L,Wl,m){
-  const P=i=>{let x=m.ox+L[i].x*m.iw*m.sc;const y=m.oy+L[i].y*m.ih*m.sc;if(m.mir)x=m.W-x;return[x,y];};
-  const p0=P(0),q=[5,9,13,17].map(P);
-  let fx=(q[0][0]+q[1][0]+q[2][0]+q[3][0])/4-p0[0],fy=(q[0][1]+q[1][1]+q[2][1]+q[3][1])/4-p0[1];const fl=Math.hypot(fx,fy);
-  if(!(fl>6))return null;fx/=fl;fy/=fl;
-  let k=0,t=0;
-  if(Wl&&Wl.length>17){
-    const rs=[[0,5],[0,17],[5,17],[0,9],[0,13],[5,9],[13,17]].map(([a,b])=>{const A=P(a),B=P(b),w=Math.hypot(Wl[a].x-Wl[b].x,Wl[a].y-Wl[b].y,Wl[a].z-Wl[b].z)*1000;return w>4?Math.hypot(A[0]-B[0],A[1]-B[1])/w:0;}).sort((a,b)=>b-a);
-    k=(rs[0]+rs[1])/2;
-    const hx=Wl[9].x-Wl[0].x,hy=Wl[9].y-Wl[0].y,hz=Wl[9].z-Wl[0].z;t=Math.max(-.5,Math.min(.5,.85*hz/(Math.hypot(hx,hy,hz)||1)));
-  }
-  if(!(k>0))k=fl/75;
-  return{x:p0[0]-fx*AR_OFF*k,y:p0[1]-fy*AR_OFF*k,fx,fy,ux:fx,uy:fy,k,t,a:1};
-}
-/* lọc rung (One Euro): tay đứng yên thì vòng không giật, tay đi nhanh thì vòng theo kịp */
-const OE=(mc,beta)=>({mc,beta,x:null,dx:0,t:0});
-function oe(f,x,t){
-  if(f.x==null||t-f.t>500){f.x=x;f.dx=0;f.t=t;return x;}
-  const dt=Math.max(.001,(t-f.t)/1000),al=c=>{const r=2*Math.PI*c*dt;return r/(r+1);};f.t=t;
-  f.dx+=al(1)*((x-f.x)/dt-f.dx);f.x+=al(f.mc+f.beta*Math.abs(f.dx))*(x-f.x);return f.x;
-}
-function arFilt(p,t){
-  const F=AR.F||(AR.F={x:OE(1.5,.012),y:OE(1.5,.012),a:OE(1.2,.5),k:OE(.9,.6),t:OE(.7,.3)});
-  let a=angOf(p.fx,p.fy);if(F.a.x!=null&&t-F.a.t<=500)a=F.a.x+wrapA(a-F.a.x);
-  const fa=oe(F.a,a,t),fx=Math.cos(fa),fy=Math.sin(fa);
-  /* charm luôn gần như đứng thẳng trên màn hình: ngón tay chĩa xuống thì "đỉnh" charm quay về phía khuỷu tay (có trễ, khỏi lật qua lật lại) */
-  const was=AR.flip;if(!AR.flip&&fy>.5)AR.flip=true;else if(AR.flip&&fy<.1)AR.flip=false;
-  if(was!==AR.flip)AR.reblend=true;
-  const s=AR.flip?-1:1;
-  return{x:oe(F.x,p.x,t),y:oe(F.y,p.y,t),fx,fy,ux:fx*s,uy:fy*s,k:Math.exp(oe(F.k,Math.log(p.k),t)),t:oe(F.t,p.t,t),a:1};
-}
-/* tải MediaPipe 1 lần (giữ lại cho lần mở sau). iPhone/iPad dùng CPU (GPU delegate trên Safari còn trục trặc), máy khác thử GPU trước */
-let MP=null,MPK=null;
-function arModel(onp){
-  return fetch(MP_MODEL).then(async r=>{
-    if(!r.ok)throw new Error('model '+r.status);
-    const total=+r.headers.get('content-length')||7.8e6;
-    if(!r.body||!r.body.getReader){const b=new Uint8Array(await r.arrayBuffer());onp(1);return b;}
-    const rd=r.body.getReader(),parts=[];let got=0;
-    for(;;){const {done,value}=await rd.read();if(done)break;parts.push(value);got+=value.length;onp(Math.min(.99,got/total));}
-    const out=new Uint8Array(got);let o=0;parts.forEach(p=>{out.set(p,o);o+=p.length;});onp(1);return out;
-  });
-}
-function arHands(){
-  if(MP)return MP;
-  MP=(async()=>{
-    /* import() bọc trong Function: trình duyệt quá cũ không hiểu cú pháp này cũng không làm hỏng cả trang */
-    const mod=await (new Function('u','return import(u)'))(MP_BASE+'/vision_bundle.mjs');
-    const [fs,buf]=await Promise.all([mod.FilesetResolver.forVisionTasks(MP_BASE+'/wasm'),arModel(p=>{AR.lmPct=p;})]);
-    MPK={mod,fs,buf};let err=null;
-    for(const d of IOS?['CPU']:['GPU','CPU']){try{return await arMake(d);}catch(e){err=e;}}
-    throw err||new Error('hand landmarker');
-  })();
-  MP.catch(()=>{MP=null;});
-  return MP;
-}
-async function arMake(d){
-  const lm=await MPK.mod.HandLandmarker.createFromOptions(MPK.fs,{baseOptions:{modelAssetBuffer:MPK.buf.slice(),delegate:d},runningMode:'VIDEO',numHands:1,minHandDetectionConfidence:.55,minHandPresenceConfidence:.5,minTrackingConfidence:.5});
-  lm._d=d;return lm;
-}
-/* nhận diện lỗi liên tục (vd. GPU mất ngữ cảnh khi app chạy nền): bản GPU thì đổi sang CPU, CPU cũng lỗi thì về chế độ tự canh */
-function arLmBroken(e){
-  const old=AR.lm;AR.lm=null;AR.errN=0;try{if(old)old.close();}catch(_){}
-  if(old&&old._d==='GPU'&&MPK){AR.lmState='loading';AR.lmPct=1;
-    MP=arMake('CPU').then(lm=>{AR.lm=lm;AR.lmMode='VIDEO';AR.lmState='ready';return lm;});
-    MP.catch(e2=>{MP=null;AR.lmState='failed';console.warn('Nhận diện tay (CPU) lỗi',e2);});return;}
-  MP=null;AR.lmState='failed';console.warn('Nhận diện tay lỗi',e);
-}
-function arLoadHands(){
-  if(AR.lm||AR.lmState==='loading')return;
-  AR.lmState='loading';AR.lmPct=0;
-  arHands().then(lm=>{AR.lm=lm;AR.lmMode='VIDEO';AR.lmState='ready';AR.errN=0;})
-    .catch(e=>{AR.lmState='failed';console.warn('Không tải được nhận diện tay',e);});
-}
-/* đổi chế độ ảnh / video của MediaPipe: xếp hàng từng lệnh một (ảnh ↔ camera bấm nhanh không chồng lệnh) */
-let modeQ=Promise.resolve();
-function arSetMode(m){
-  return modeQ=modeQ.then(async()=>{if(!AR.lm||AR.lmMode===m)return;AR.lmMode='switch';try{await AR.lm.setOptions({runningMode:m});AR.lmMode=m;}catch(e){AR.lmMode='?';}});
-}
-
-/* ---------- camera ---------- */
-function arCamStop(){if(AR.stream){AR.stream.getTracks().forEach(t=>t.stop());AR.stream=null;}try{arV.srcObject=null;}catch(e){}AR.camOk=false;}
-async function arCam(){
-  const tok=++AR.camTok;arCamStop();AR.err='';arMsg();arUI();
-  const md=navigator.mediaDevices;
-  if(!md||!md.getUserMedia){arFail('nocam');return;}
-  let s=null,err=null;
-  try{s=await md.getUserMedia({audio:false,video:{facingMode:{ideal:AR.facing},width:{ideal:1920},height:{ideal:1080}}});}
-  catch(e){err=e;if(e&&(e.name==='OverconstrainedError'||e.name==='NotReadableError'||e.name==='AbortError')){try{s=await md.getUserMedia({audio:false,video:true});err=null;}catch(e2){err=e2;}}}
-  if(tok!==AR.camTok||!AR.open||AR.mode!=='live'){if(s)s.getTracks().forEach(t=>t.stop());return;}
-  if(!s){arFail(err&&(err.name==='NotAllowedError'||err.name==='SecurityError')?'denied':'nocam');return;}
-  AR.stream=s;
-  const tr=s.getVideoTracks()[0],st=tr&&tr.getSettings?tr.getSettings():{};
-  /* camera trước thì soi gương như selfie; webcam máy tính không báo hướng → cũng soi gương */
-  AR.mirror=st.facingMode?st.facingMode==='user':(AR.facing==='user'||!MOBILE);
-  if(tr)tr.addEventListener('ended',()=>{if(AR.stream===s&&AR.open&&AR.mode==='live'&&!document.hidden)arFail('ended');});
-  arV.srcObject=s;arV.classList.toggle('mir',AR.mirror);
-  try{await arV.play();}catch(e){}
-  if(tok!==AR.camTok)return;
-  AR.camOk=true;AR.F=null;AR.hand=null;AR.vt=-1;AR.newFrame=true;
-  if(arV.requestVideoFrameCallback){const f=()=>{if(tok!==AR.camTok||!AR.open)return;AR.newFrame=true;arV.requestVideoFrameCallback(f);};arV.requestVideoFrameCallback(f);}
-  try{const ds=await md.enumerateDevices();AR.multi=ds.filter(d=>d.kind==='videoinput').length>1;}catch(e){}
-  if(tok===AR.camTok)arUI();
-}
-const AR_ERR={
-  denied:['Chưa có quyền dùng camera','Bấm Thử lại rồi chọn Cho phép. Nếu đã lỡ chặn, mở cài đặt của trang web (biểu tượng aA hoặc ổ khoá cạnh địa chỉ) để bật camera. Hoặc chọn một ảnh tay có sẵn.'],
-  inapp:['Không mở được camera ở đây','Trình duyệt trong app (TikTok, Zalo, Messenger…) thường chặn camera. Mở link bằng Safari hoặc Chrome, hoặc chọn một ảnh tay có sẵn.'],
-  nocam:['Không mở được camera','Máy không có camera hoặc camera đang bận với app khác. Bấm Thử lại, hoặc chọn một ảnh tay có sẵn.'],
-  ended:['Camera đã tắt','Bấm Thử lại để mở lại camera, hoặc chọn một ảnh tay có sẵn.'],
-  photo:['Không mở được ảnh này','Chọn ảnh khác (JPG, PNG, HEIC) hoặc quay lại camera.']
-};
-function arFail(kind){
-  arCamStop();
-  const inApp=/FBAN|FBAV|FB_IAB|Instagram|Zalo|TikTok|musical_ly|BytedanceWebview|Shopee|Line\//i.test(navigator.userAgent);
-  if(inApp&&(kind==='denied'||kind==='nocam'))kind='inapp';
-  AR.err=kind;const m=AR_ERR[kind]||AR_ERR.nocam;
-  arMsg(m[0],m[1],kind==='photo'?[['photo','Chọn ảnh khác',true],['cam','Quay lại camera']]:[['retry','Thử lại'],['photo','Chọn ảnh tay',true]]);
-  arUI();
-}
-function arMsg(title,text,btns){
-  const m=$('arMsg');if(!title){m.hidden=true;m.innerHTML='';return;}
-  m.innerHTML=`<svg aria-hidden="true" focusable="false" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.6A1.6 1.6 0 0 1 4.6 7h2.2l1.7-2.4h7l1.7 2.4h2.2A1.6 1.6 0 0 1 21 8.6v9.2a1.6 1.6 0 0 1-1.6 1.6H4.6A1.6 1.6 0 0 1 3 17.8z"/><circle cx="12" cy="13" r="3.4"/><path d="m3 3 18 18"/></svg><h3 id="arMsgT">${esc(title)}</h3><p>${esc(text)}</p><div class="acts">${(btns||[]).map(b=>`<button class="ar-pill${b[2]?' pri':''}" type="button" data-ar="${b[0]}">${esc(b[1])}</button>`).join('')}</div>`;
-  m.setAttribute('role','alert');m.hidden=false;
-  const f=m.querySelector('.ar-pill.pri')||m.querySelector('.ar-pill');if(f)f.focus({preventScroll:true});
-}
-function arUI(){
-  const live=AR.mode==='live',shot=!!AR.shot,err=!!AR.err;
-  arV.hidden=!live;arImg.hidden=live||!arImg.getAttribute('src');
-  $('arShot').hidden=!shot;$('arBot').hidden=shot||err;
-  $('arFlip').hidden=!(live&&AR.multi);$('arCam').hidden=live;
-  $('arShut').disabled=!AR.strip||(live?!AR.camOk:!AR.ppose);
-  $('arRetakeT').textContent=live?'Chụp lại':'Chỉnh lại';
-}
-/* gợi ý ở đáy màn: chỉ đổi DOM khi nội dung đổi; % tải nằm ở span aria-hidden để trình đọc màn hình khỏi đọc liên tục */
-function arHintSync(now){
-  let t='',p='',spin=false;
-  if(AR.err||AR.shot)t='';
-  else if(AR.mode==='photo'){
-    if(!AR.ppose){t=AR.lmState==='loading'&&AR.lmPct<.99?'Đang tải nhận diện tay…':'Đang tìm cổ tay trên ảnh…';spin=true;if(AR.lmState==='loading'&&AR.lmPct>0&&AR.lmPct<.99)p=Math.round(AR.lmPct*100)+'%';}
-    else if(AR.photoHintT&&now-AR.photoHintT<6000)t=AR.photoHint;
-  }
-  else if(!AR.camOk){t='Đang mở camera…';spin=true;}
-  else if(AR.lmState==='loading'){spin=true;if(AR.lmPct<.99){t='Đang tải nhận diện tay…';if(AR.lmPct>0)p=Math.round(AR.lmPct*100)+'%';}else t='Sắp xong, đang khởi động nhận diện tay…';}
-  else if(AR.lmState==='failed')t=AR.manualTouched?'':'Canh cổ tay vào giữa vòng, đưa tay gần / xa cho vừa';
-  else if(AR.dmode!=='hand')t='Xoè bàn tay, đưa cả cổ tay vào khung hình';
-  const key=t+'|'+p+'|'+spin;if(key===AR.hintKey)return;AR.hintKey=key;
-  const h=$('arHint');
-  if(t){$('arHintT').textContent=t;$('arHintP').textContent=p?' '+p:'';$('arSpin').hidden=!spin;}
-  h.classList.toggle('off',!t);
-}
-/* ---------- vòng lặp: nhận diện (mỗi khung camera mới) → chọn tư thế → vẽ ---------- */
-function arDetect(now){
-  const vw=arV.videoWidth,vh=arV.videoHeight,s=Math.min(1,640/Math.max(vw,vh)),w=Math.round(vw*s),h=Math.round(vh*s);
-  if(arDc.width!==w||arDc.height!==h){arDc.width=w;arDc.height=h;}
-  arDx.drawImage(arV,0,0,w,h);
-  let res=null;
-  try{res=AR.lm.detectForVideo(arDc,now);AR.errN=0;}
-  catch(e){if(++AR.errN>12)arLmBroken(e);return;}
-  const L=res&&res.landmarks&&res.landmarks[0];
-  if(L){const p=arHandPose(L,res.worldLandmarks&&res.worldLandmarks[0],arVidMap());if(p)AR.hand={t:now,p:arFilt(p,now)};}
-  /* độ sáng cả khung (16×16): phòng tối thì vòng tối theo một chút cho khỏi trông như dán lên ảnh */
-  if(now-AR.lumT>400){AR.lumT=now;try{arLx.drawImage(arDc,0,0,16,16);const d=arLx.getImageData(0,0,16,16).data;let y=0;
-    for(let i=0;i<d.length;i+=4)y+=.2126*d[i]+.7152*d[i+1]+.0722*d[i+2];y/=256*255;AR.mul+=(Math.max(.75,Math.min(1,.62+1.1*y))-AR.mul)*.5;}catch(e){}}
-}
-function arTick(now){
-  let tgt=null,mode;
-  if(AR.mode==='photo'){tgt=AR.ppose;mode='photo';}
-  else if(AR.hand&&now-AR.hand.t<700){tgt=AR.hand.p;mode='hand';}
-  else if(AR.lmState==='failed'){tgt=AR.manual||(AR.manual=Object.assign(arDefPose(),{a:1}));mode='manual';}
-  else{tgt=arDefPose();mode='def';}
-  if(!tgt){AR.shown=null;return;}
-  if(mode!==AR.dmode||AR.reblend){AR.reblend=false;AR.bFrom=AR.shown;AR.bT0=now;AR.dmode=mode;arEl.dataset.state=mode;}
-  const b=AR.bFrom&&!reduceMotion()?Math.min(1,(now-AR.bT0)/340):1;
-  AR.shown=b<1?lerpPose(AR.bFrom,tgt,easeIO(b)):tgt;
-}
-function arRender(){
-  const c=arCv,x=arCx;x.setTransform(1,0,0,1,0,0);
-  if(AR.shot||AR.err){if(AR.drawn){x.clearRect(0,0,c.width,c.height);AR.drawn=false;}return;}
-  x.clearRect(0,0,c.width,c.height);AR.drawn=false;
-  const P=AR.shown;if(!P||!AR.strip)return;
-  /* trên ảnh chọn từ máy: chỉ vẽ trong khung ảnh (phần thừa ra ngoài ảnh cũng không có trong ảnh chụp) */
-  const ph=AR.mode==='photo'?arImgMap():null;
-  if(ph){x.save();x.beginPath();x.rect(ph.ox*AR.dpr,ph.oy*AR.dpr,ph.iw*ph.sc*AR.dpr,ph.ih*ph.sc*AR.dpr);x.clip();}
-  arDraw(x,AR.strip,scalePose(P,AR.dpr,0,0));AR.drawn=true;
-  if(ph)x.restore();
-  if(AR.mul<.995){x.globalCompositeOperation='source-atop';x.fillStyle=`rgba(0,0,0,${(1-AR.mul).toFixed(3)})`;x.fillRect(0,0,c.width,c.height);x.globalCompositeOperation='source-over';}
-}
-function arLoop(){
-  AR.raf=0;if(!AR.open)return;
-  const now=performance.now();
-  if(AR.mode==='live'&&AR.lm&&AR.lmMode==='VIDEO'&&AR.camOk&&!AR.shot&&!AR.err&&arV.readyState>=2&&arV.videoWidth){
-    const fresh=arV.requestVideoFrameCallback?AR.newFrame:(arV.currentTime!==AR.vt||now-AR.lastDet>70);
-    if(fresh){AR.newFrame=false;AR.vt=arV.currentTime;AR.lastDet=now;arDetect(now);}
-  }
-  arTick(now);arRender();arHintSync(now);
-  AR.raf=requestAnimationFrame(arLoop);
-}
-function arSize(){
-  const W=arEl.clientWidth||innerWidth,H=arEl.clientHeight||innerHeight,d=Math.min(2,window.devicePixelRatio||1),o=AR.imgMap;
-  AR.W=W;AR.H=H;AR.dpr=d;const cw=Math.round(W*d),ch=Math.round(H*d);if(arCv.width!==cw||arCv.height!==ch){arCv.width=cw;arCv.height=ch;}
-  /* xoay máy lúc đang chỉnh trên ảnh: giữ vòng đúng chỗ trên ảnh; vòng tự canh (không có nhận diện) thì về giữa */
-  if(AR.mode==='photo'&&AR.ppose&&o){const n=arImgMap(),P=AR.ppose,s=n.sc/o.sc;AR.ppose=Object.assign({},P,{x:(P.x-o.ox)*s+n.ox,y:(P.y-o.oy)*s+n.oy,k:P.k*s});AR.imgMap=n;}
-  if(AR.manual&&!AR.manualTouched)AR.manual=null;
-}
-
-/* ---------- chọn ảnh tay có sẵn ---------- */
-async function arPhoto(f){
-  const url=URL.createObjectURL(f),tok=AR.tok;
-  ++AR.camTok;arCamStop();AR.mode='photo';AR.err='';arMsg();AR.ppose=null;AR.imgMap=null;AR.shot=null;AR.photoHintT=0;
-  try{arImg.src=url;await arImg.decode();}catch(e){if(tok===AR.tok&&arImg.src===url){URL.revokeObjectURL(url);arImg.removeAttribute('src');arFail('photo');}return;}
-  if(tok!==AR.tok||arImg.src!==url){URL.revokeObjectURL(url);return;}
-  if(AR.photoUrl)URL.revokeObjectURL(AR.photoUrl);AR.photoUrl=url;
-  arUI();arLoadHands();
-  let p=null;
-  try{
-    const lm=await arHands();
-    if(tok!==AR.tok||AR.mode!=='photo'||arImg.src!==url)return;
-    AR.lm=lm;AR.lmState='ready';await arSetMode('IMAGE');
-    if(tok!==AR.tok||AR.mode!=='photo'||arImg.src!==url)return;
-    /* ảnh lớn: thu nhỏ trước khi nhận diện cho nhanh */
-    const iw=arImg.naturalWidth,ih=arImg.naturalHeight,s=Math.min(1,1280/Math.max(iw,ih));
-    arDc.width=Math.max(1,Math.round(iw*s));arDc.height=Math.max(1,Math.round(ih*s));arDx.drawImage(arImg,0,0,arDc.width,arDc.height);
-    const res=AR.lmMode==='IMAGE'?lm.detect(arDc):null,L=res&&res.landmarks&&res.landmarks[0];
-    if(L)p=arHandPose(L,res.worldLandmarks&&res.worldLandmarks[0],arImgMap());
-  }catch(e){console.warn('Nhận diện tay trên ảnh lỗi',e);}
-  if(tok!==AR.tok||AR.mode!=='photo'||arImg.src!==url)return;
-  if(p){AR.flip=p.fy>.5;const s=AR.flip?-1:1;p.ux=p.fx*s;p.uy=p.fy*s;}
-  AR.ppose=p||Object.assign(arDefPose(),{a:1});AR.imgMap=arImgMap();
-  AR.photoHint=p?'Kéo để dời vòng, chụm 2 ngón để xoay / phóng to':'Chưa thấy rõ bàn tay — kéo vòng vào cổ tay, chụm 2 ngón để xoay / phóng to';
-  AR.photoHintT=performance.now();
-  arUI();
-  const ae=document.activeElement;if(!ae||ae===document.body||!arEl.contains(ae))$('arShut').focus({preventScroll:true});
-}
-async function arLive(){
-  AR.mode='live';AR.ppose=null;AR.imgMap=null;AR.err='';AR.shot=null;AR.hand=null;AR.F=null;arMsg();
-  if(AR.photoUrl){URL.revokeObjectURL(AR.photoUrl);AR.photoUrl='';}arImg.removeAttribute('src');
-  arUI();await arSetMode('VIDEO');if(AR.open&&AR.mode==='live')arCam();
-}
-/* kéo 1 ngón = dời vòng; chụm / xoay 2 ngón = phóng to + xoay quanh giữa 2 ngón (trên ảnh, hoặc khi không tải được nhận diện tay) */
-const AG={pts:new Map(),base:null,p0:null};
-const arGestOK=()=>AR.open&&!AR.shot&&!AR.err&&(AR.mode==='photo'?!!AR.ppose:AR.lmState==='failed');
-function arGestBase(){
-  const P=AR.mode==='photo'?AR.ppose:(AR.manual||(AR.manual=Object.assign(arDefPose(),{a:1})));
-  AG.base=P?Object.assign({},P):null;AG.p0=[...AG.pts.values()].map(p=>p.slice());
-}
-function arGestMove(){
-  const B=AG.base,p=[...AG.pts.values()],q=AG.p0;if(!B||!q||p.length!==q.length||!p.length)return;
-  const N=Object.assign({},B,{a:1});
-  if(p.length===1){N.x=B.x+p[0][0]-q[0][0];N.y=B.y+p[0][1]-q[0][1];}
-  else{
-    const m0=[(q[0][0]+q[1][0])/2,(q[0][1]+q[1][1])/2],m1=[(p[0][0]+p[1][0])/2,(p[0][1]+p[1][1])/2],
-      d0=Math.hypot(q[1][0]-q[0][0],q[1][1]-q[0][1])||1,d1=Math.hypot(p[1][0]-p[0][0],p[1][1]-p[0][1])||1,
-      da=Math.atan2(p[1][1]-p[0][1],p[1][0]-p[0][0])-Math.atan2(q[1][1]-q[0][1],q[1][0]-q[0][0]),
-      k0=arDefPose().k,sc=Math.max(k0*.3/B.k,Math.min(k0*4/B.k,d1/d0)),c=Math.cos(da),s=Math.sin(da),vx=B.x-m0[0],vy=B.y-m0[1];
-    N.x=m1[0]+(vx*c-vy*s)*sc;N.y=m1[1]+(vx*s+vy*c)*sc;N.k=B.k*sc;
-    N.ux=B.ux*c-B.uy*s;N.uy=B.ux*s+B.uy*c;N.fx=B.fx*c-B.fy*s;N.fy=B.fx*s+B.fy*c;
-  }
-  if(AR.mode==='photo'){AR.ppose=N;AR.imgMap=arImgMap();}else{AR.manual=N;AR.manualTouched=true;}
-  AR.photoHintT=0;
-}
-arCv.addEventListener('pointerdown',e=>{if(!arGestOK())return;try{arCv.setPointerCapture(e.pointerId);}catch(_){}AG.pts.set(e.pointerId,[e.clientX,e.clientY]);arGestBase();e.preventDefault();});
-arCv.addEventListener('pointermove',e=>{if(!AG.pts.has(e.pointerId))return;AG.pts.set(e.pointerId,[e.clientX,e.clientY]);arGestMove();});
-const arGestEnd=e=>{if(AG.pts.delete(e.pointerId))arGestBase();};
-arCv.addEventListener('pointerup',arGestEnd);arCv.addEventListener('pointercancel',arGestEnd);
-
-/* ---------- chụp + lưu ---------- */
-async function arShoot(){
-  const P=AR.shown;if(!AR.strip||AR.shot||!P)return;
-  let c,x,Q;
-  if(AR.mode==='photo'){
-    if(!arImg.naturalWidth)return;
-    const m=arImgMap(),s=Math.min(1,2400/Math.max(m.iw,m.ih));
-    c=document.createElement('canvas');c.width=Math.round(m.iw*s);c.height=Math.round(m.ih*s);x=c.getContext('2d');x.drawImage(arImg,0,0,c.width,c.height);
-    Q=Object.assign(scalePose(P,s/m.sc,m.ox,m.oy),{a:1});
-  }else{
-    if(!arV.videoWidth)return;
-    /* đúng phần camera đang thấy trên màn hình, ở độ phân giải gốc của camera */
-    const m=arVidMap(),cw=Math.round(m.W/m.sc),ch=Math.round(m.H/m.sc);
-    c=document.createElement('canvas');c.width=cw;c.height=ch;x=c.getContext('2d');
-    if(AR.mirror)x.setTransform(-1,0,0,1,cw,0);
-    x.drawImage(arV,(m.iw-cw)/2,(m.ih-ch)/2,cw,ch,0,0,cw,ch);x.setTransform(1,0,0,1,0,0);
-    Q=Object.assign(scalePose(P,1/m.sc,0,0),{a:1});
-  }
-  const L=document.createElement('canvas');L.width=c.width;L.height=c.height;const lx=L.getContext('2d');arDraw(lx,AR.strip,Q);
-  if(AR.mode==='live'&&AR.mul<.995){lx.globalCompositeOperation='source-atop';lx.fillStyle=`rgba(0,0,0,${(1-AR.mul).toFixed(3)})`;lx.fillRect(0,0,L.width,L.height);}
-  x.drawImage(L,0,0);L.width=L.height=0;
-  const fs=Math.round(Math.max(14,Math.min(c.width,c.height)*.032));
-  x.font=`700 ${fs}px ${FONT}`;x.textAlign='right';x.textBaseline='alphabetic';x.shadowColor='rgba(0,0,0,.4)';x.shadowBlur=fs*.35;x.fillStyle='rgba(255,255,255,.9)';
-  x.fillText('PunPun',c.width-fs*1.1,c.height-fs*1.1);
-  const fl=$('arFlash');if(!reduceMotion()){fl.classList.remove('go');void fl.offsetWidth;fl.classList.add('go');}
-  const blob=await new Promise(r=>{try{c.toBlob(r,'image/jpeg',.92);}catch(e){r(null);}});c.width=c.height=0;
-  if(!blob||!AR.open){if(AR.open)toast('Chưa chụp được, bạn thử lại nhé');return;}
-  if(AR.shotUrl)URL.revokeObjectURL(AR.shotUrl);
-  AR.shot=blob;AR.shotUrl=URL.createObjectURL(blob);$('arShotImg').src=AR.shotUrl;
-  arUI();const sb=$('arShot').querySelector('[data-ar="save"]');if(sb)sb.focus({preventScroll:true});
-}
-function arRetake(){
-  if(AR.shotUrl)URL.revokeObjectURL(AR.shotUrl);AR.shot=null;AR.shotUrl='';$('arShotImg').removeAttribute('src');
-  arUI();if(AR.mode==='live'&&!AR.stream&&!AR.err)arCam();$('arShut').focus({preventScroll:true});
-}
-async function arSave(){
-  const b=AR.shot;if(!b)return;const name='punpun-thu-vong.jpg';
-  if(DL){try{await DL.save({filename:name,data:b});toast('Đã lưu ảnh');}catch(e){if(e&&e.code==='declined')return;toast('Không tải được ở đây. Nhấn giữ ảnh để lưu nhé.');}return;}
-  try{const f=new File([b],name,{type:'image/jpeg'});if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:'Thử vòng PunPun'});return;}}
-  catch(e){if(e&&e.name==='AbortError')return;}
-  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=name;document.body.appendChild(a);a.click();
-  setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1500);
-  toast('Đã tải ảnh về máy');
-}
-
-/* ---------- mở / đóng ---------- */
-function openAr(){
-  if(AR.open)return;
-  if(!CAT.straps.length){toast('Đang tải danh mục, bạn đợi chút nhé');return;}
-  toggleInfo(false);hideToast();
-  Object.assign(AR,{open:true,mode:'live',err:'',shot:null,hand:null,manual:null,manualTouched:false,ppose:null,imgMap:null,shown:null,dmode:'',
-    bFrom:null,reblend:false,F:null,flip:false,vt:-1,mul:1,camOk:false,strip:null,paused:false,hintKey:'',photoHintT:0});
-  AR.last=document.activeElement;arEl.hidden=false;arEl.dataset.state='def';
-  try{shell.inert=true;}catch(e){}
-  try{history.pushState({ppAr:1},'');AR.hist=true;}catch(e){AR.hist=false;}
-  arSize();arMsg();arUI();$('arClose').focus({preventScroll:true});
-  const tok=++AR.tok;
-  arStrip().then(S=>{if(AR.open&&AR.tok===tok){AR.strip=S;arUI();}}).catch(e=>console.warn('Không vẽ được vòng để thử',e));
-  if(!AR.raf)AR.raf=requestAnimationFrame(arLoop);
-  arCam();arLoadHands();
-}
-function closeAr(fromPop){
-  if(!AR.open)return;
-  if(AR.hist&&!fromPop){AR.hist=false;try{history.back();}catch(e){}setTimeout(()=>{if(AR.open)closeAr(true);},600);return;}
-  AR.open=false;AR.hist=false;AR.tok++;AR.camTok++;arCamStop();
-  if(AR.raf){cancelAnimationFrame(AR.raf);AR.raf=0;}
-  AG.pts.clear();arEl.hidden=true;arEl.dataset.state='off';arMsg();
-  if(AR.shotUrl)URL.revokeObjectURL(AR.shotUrl);if(AR.photoUrl)URL.revokeObjectURL(AR.photoUrl);
-  AR.shotUrl=AR.photoUrl='';AR.shot=null;if(AR.strip)AR.strip.L.forEach(l=>{l.c.width=l.c.height=0;});AR.strip=null;arImg.removeAttribute('src');$('arShotImg').removeAttribute('src');
-  arCx.setTransform(1,0,0,1,0,0);arCx.clearRect(0,0,arCv.width,arCv.height);
-  arSetMode('VIDEO');
-  try{shell.inert=false;}catch(e){}
-  const l=AR.last;if(l&&l.focus&&document.contains(l))l.focus({preventScroll:true});
-}
-function arAct(a){
-  if(a==='close')return closeAr();
-  if(a==='shot')return arShoot();
-  if(a==='save')return arSave();
-  if(a==='retake')return arRetake();
-  if(a==='photo'){const f=$('arFile');f.value='';f.click();return;}
-  if(a==='cam')return arLive();
-  if(a==='flip'){AR.facing=AR.facing==='user'?'environment':'user';AR.flip=false;return arCam();}
-  if(a==='retry')return AR.mode==='photo'?arLive():arCam();
-}
-$('arFile').addEventListener('change',e=>{const f=e.target.files&&e.target.files[0];if(f&&AR.open)arPhoto(f);});
-addEventListener('popstate',()=>{if(AR.open)closeAr(true);});
-addEventListener('resize',()=>{if(AR.open)arSize();});
-/* ra khỏi trang (chuyển app, khoá máy): tắt camera; quay lại thì mở lại */
-document.addEventListener('visibilitychange',()=>{
-  if(!AR.open||AR.mode!=='live')return;
-  if(document.hidden){if(AR.stream){++AR.camTok;arCamStop();AR.paused=true;}}
-  else if(AR.paused){AR.paused=false;if(!AR.shot&&!AR.err)arCam();}
-});
-/* đang mở màn camera: Esc = đóng (đang xem ảnh vừa chụp thì quay lại chụp); các phím tắt của trang (Undo, mũi tên…) tạm tắt */
-document.addEventListener('keydown',e=>{
-  if(!AR.open)return;
-  if(e.key==='Escape'){e.preventDefault();if(AR.shot)arRetake();else closeAr();}
-  e.stopPropagation();
-},true);
-
 /* ---------- toast (có nút Undo khi vừa xoá) ---------- */
 let tt=null;
 function toast(m,opt){
@@ -2923,8 +2400,6 @@ document.addEventListener('click',e=>{
   const ds=b.dataset;
   if('close' in ds)return closeSheet();
   if('deselect' in ds){sel=null;refreshSel();return;}
-  if(ds.ar)return arAct(ds.ar);
-  if(b.id==='arBtn')return openAr();
   if('toastUndo' in ds){const t=$('toast');if(t.dataset.h!==''&&+t.dataset.h===hist.length)tool('undo');hideToast();return;}
   if(ds.pan){if(!LAY)return;const g=LAY.g,step=(CW*.6)/g.sL;panTo(Math.max(g.panLo,Math.min(g.panHi,VIEW.pan+(+ds.pan)*step)),340);return;}
   if(ds.view)return setView(ds.view);
