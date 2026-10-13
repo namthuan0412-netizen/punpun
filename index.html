@@ -1715,7 +1715,7 @@ function strapThumb(code,px,full){
     /* ô danh mục (13/10, shop gửi ảnh mẫu): phóng to góc trên của vòng — thấy rõ khoá (khoen, 2 chốt, đuôi / ống khoá kiềng) và vân dây.
        Đo khung bao của phần khoá (mm), cho khung đó (+ lề nửa bề dày dây) vừa khít bề ngang ô, ít nhất 44 mm vòng; tâm khung ở giữa ngang, 56% chiều cao */
     /* kiềng (13/10, shop: góc nghiêng như dây đan): dùng đúng khung hình của dây đan mặc định (cùng bán kính vòng),
-       xoay vòng kiềng 32° ngược chiều kim đồng hồ để ống khoá nằm lệch trái như chỗ khoá của dây */
+       xoay vòng kiềng 32° theo chiều kim đồng hồ: ống khoá lệch phải (~1 giờ) */
     const fm=pm.braid?pm:pathModel(null,0),tab=pathTab(fm,0),g0={tab,s:1,ax:0,ay:0};
     const rng=[[fm.uS-KN.eyeLen-1,fm.uS+KN.collar],[fm.uP-2,fm.uE]];
     let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;
@@ -1723,7 +1723,7 @@ function strapThumb(code,px,full){
     const m=fm.T*.5,W=Math.max(x1-x0+2*m,44),s=px/W,ax=px/2-(x0+x1)/2*s,ay=px*.56-(y0+y1)/2*s;
     SH={c:'rgba(38,26,8,.22)',b:2*D,y:1.2*D};
     if(pm.braid)drawStrapCurve(x,{pm,tab,L:pm.L,e:0,s,ax,ay},e);
-    else{const cy=ay-pm.R*s;x.translate(ax,cy);x.rotate(-32*Math.PI/180);x.translate(-ax,-cy);
+    else{const cy=ay-pm.R*s;x.translate(ax,cy);x.rotate(32*Math.PI/180);x.translate(-ax,-cy);
       drawStrapCurve(x,{pm,tab:pathTab(pm,0),L:pm.L,e:0,s,ax,ay},e);}
     SH=null;
   }
