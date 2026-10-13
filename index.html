@@ -1714,13 +1714,18 @@ function strapThumb(code,px,full){
   }else{
     /* ô danh mục (13/10, shop gửi ảnh mẫu): phóng to góc trên của vòng — thấy rõ khoá (khoen, 2 chốt, đuôi / ống khoá kiềng) và vân dây.
        Đo khung bao của phần khoá (mm), cho khung đó (+ lề nửa bề dày dây) vừa khít bề ngang ô, ít nhất 44 mm vòng; tâm khung ở giữa ngang, 56% chiều cao */
-    const tab=pathTab(pm,0),g0={tab,s:1,ax:0,ay:0};
-    const rng=pm.braid?[[pm.uS-KN.eyeLen-1,pm.uS+KN.collar],[pm.uP-2,pm.uE]]:[[pm.uS,pm.uS+KB.barL/2],[pm.uE-KB.barL/2,pm.uE]];
+    /* kiềng (13/10, shop: góc nghiêng như dây đan): dùng đúng khung hình của dây đan mặc định (cùng bán kính vòng),
+       xoay vòng kiềng 32° ngược chiều kim đồng hồ để ống khoá nằm lệch trái như chỗ khoá của dây */
+    const fm=pm.braid?pm:pathModel(null,0),tab=pathTab(fm,0),g0={tab,s:1,ax:0,ay:0};
+    const rng=[[fm.uS-KN.eyeLen-1,fm.uS+KN.collar],[fm.uP-2,fm.uE]];
     let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;
     rng.forEach(([a,b])=>{for(let u=a;u<=b+1e-6;u+=.5){const p=curvePt(g0,u);x0=Math.min(x0,p.x);x1=Math.max(x1,p.x);y0=Math.min(y0,p.y);y1=Math.max(y1,p.y);}});
-    const m=pm.T*.5,W=Math.max(x1-x0+2*m,44),s=px/W;
+    const m=fm.T*.5,W=Math.max(x1-x0+2*m,44),s=px/W,ax=px/2-(x0+x1)/2*s,ay=px*.56-(y0+y1)/2*s;
     SH={c:'rgba(38,26,8,.22)',b:2*D,y:1.2*D};
-    drawStrapCurve(x,{pm,tab,L:pm.L,e:0,s,ax:px/2-(x0+x1)/2*s,ay:px*.56-(y0+y1)/2*s},e);SH=null;
+    if(pm.braid)drawStrapCurve(x,{pm,tab,L:pm.L,e:0,s,ax,ay},e);
+    else{const cy=ay-pm.R*s;x.translate(ax,cy);x.rotate(-32*Math.PI/180);x.translate(-ax,-cy);
+      drawStrapCurve(x,{pm,tab:pathTab(pm,0),L:pm.L,e:0,s,ax,ay},e);}
+    SH=null;
   }
   let url='';try{url=c.toDataURL();}catch(err){}
   thumbCache.set(key,url);return url;
