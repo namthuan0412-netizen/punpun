@@ -1712,11 +1712,15 @@ function strapThumb(code,px,full){
     const s=px*.66/(2*pm.R+pm.topExt),R=pm.R*s;
     SH={c:'rgba(38,26,8,.2)',b:2*D,y:1*D};drawStrapCurve(x,{pm,tab:pathTab(pm,0),L:pm.L,e:0,s,ax:px/2,ay:px/2+pm.topExt*s/2+R},e);SH=null;
   }else{
-    /* ô danh mục (13/10, shop: không cần thấy cả vòng, phóng to 1 đoạn cho dễ lựa màu): đoạn dây trơn ở đáy vòng,
-       lật ngược thành vòm ∩ chạy ngang hết ô (bán kính trên ảnh = bề ngang ô, đỉnh vòm ở 44% chiều cao, ảnh phủ kín ô) */
-    const R=px,s=R/pm.R;
-    x.translate(px/2,px*.44);x.rotate(Math.PI);
-    drawStrapCurve(x,{pm,tab:pathTab(pm,0),L:pm.L,e:0,s,ax:0,ay:0,noShadow:true},e);
+    /* ô danh mục (13/10, shop gửi ảnh mẫu): phóng to góc trên của vòng — thấy rõ khoá (khoen, 2 chốt, đuôi / ống khoá kiềng) và vân dây.
+       Đo khung bao của phần khoá (mm), cho khung đó (+ lề nửa bề dày dây) vừa khít bề ngang ô, ít nhất 44 mm vòng; tâm khung ở giữa ngang, 56% chiều cao */
+    const tab=pathTab(pm,0),g0={tab,s:1,ax:0,ay:0};
+    const rng=pm.braid?[[pm.uS-KN.eyeLen-1,pm.uS+KN.collar],[pm.uP-2,pm.uE]]:[[pm.uS,pm.uS+KB.barL/2],[pm.uE-KB.barL/2,pm.uE]];
+    let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;
+    rng.forEach(([a,b])=>{for(let u=a;u<=b+1e-6;u+=.5){const p=curvePt(g0,u);x0=Math.min(x0,p.x);x1=Math.max(x1,p.x);y0=Math.min(y0,p.y);y1=Math.max(y1,p.y);}});
+    const m=pm.T*.5,W=Math.max(x1-x0+2*m,44),s=px/W;
+    SH={c:'rgba(38,26,8,.22)',b:2*D,y:1.2*D};
+    drawStrapCurve(x,{pm,tab,L:pm.L,e:0,s,ax:px/2-(x0+x1)/2*s,ay:px*.56-(y0+y1)/2*s},e);SH=null;
   }
   let url='';try{url=c.toDataURL();}catch(err){}
   thumbCache.set(key,url);return url;
