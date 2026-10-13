@@ -2373,7 +2373,7 @@ document.addEventListener('click',e=>{
     /* dây ↔ kiềng: gỡ món không dùng được cho loại vòng mới (hạt chặn / khoen), có Undo */
     const drop=state.items.filter(it=>!fitsStrap(CE[it.code],en)),toB=isBangle(en);
     commit(()=>{state.strap=en.code;if(drop.length){state.items=state.items.filter(it=>!drop.includes(it));if(sel!=null&&!state.items.some(x=>x.uid===sel))sel=null;}});
-    if(drop.length)toast(toB?`Đã gỡ ${drop.length} hạt chặn`:`Đã gỡ ${drop.length} khoen`,{sub:toB?'Vòng kiềng chỉ gắn charm + khoen':'Dây đan dùng hạt chặn, không dùng khoen',undo:true,ms:5000});
+    if(drop.length)toast(toB?`Đã gỡ ${drop.length} hạt chặn`:`Đã gỡ ${drop.length} khoen`,{sub:toB?'Vòng kiềng chỉ gắn charm + khoen':'Dây đan không thể dùng khoen',undo:true,ms:5000});
     else $('live').textContent=`Đã đổi sang ${en.name}${en.vname?' '+en.vname:''}`;
     return;
   }
