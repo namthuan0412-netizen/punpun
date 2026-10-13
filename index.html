@@ -973,7 +973,8 @@ function pathModel(st,need){
   if(st&&st.kind==='bangle'){
     /* vòng kiềng (13/10): vòng tròn kim loại chu vi 23 cm (shop: 1 size, cũng 23 cm như dây), 2 đầu gặp nhau trong ống khoá ở đỉnh vòng;
        không nới ra được — đoạn gắn charm là cả vòng trừ ống khoá */
-    const C=L,R=C/(2*Math.PI),h=KB.barL/2+KN.pad;
+    /* vẽ kiềng cùng cỡ vòng dây lúc đeo (chu vi DEF_C): charm trên kiềng và trên dây cùng cỡ, vòng cùng cỡ trên màn hình (13/10, shop: đổi dây ↔ kiềng không được khác size) */
+    const C=DEF_C,R=C/(2*Math.PI),h=KB.barL/2+KN.pad;
     pm={braid:false,bangle:true,L,T,C,R,Rref:R,ru:0,uS:-C/2,uE:C/2,uP:C/2,uB:C/2,uMin:-C/2+h,uMax:C/2-h,topExt:KB.barD/2+.6,endX:2.5,a0:C/2/R,segs:[{u0:-C/2,u1:C/2,k:-1/R}]};
   }else if(!braid){
     const R=L/(2*Math.PI);
