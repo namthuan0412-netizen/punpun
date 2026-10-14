@@ -1484,7 +1484,7 @@ function drawEntryFast(ctx,e,k,dpr){
    cả vòng + charm cùng tan rồi gom lại thành vòng Tròn. Undo / Redo đổi loại vòng cũng chạy hiệu ứng.
    Mỗi lớp (vòng + món đi kèm) vẽ sẵn 1 lần lúc bấm, kèm 3 mức mờ dựng sẵn ở bản thu nhỏ; mỗi khung chỉ trộn 2 mức gần nhất
    (không làm mờ lại mỗi khung — nhẹ cho iPhone). Trình duyệt chưa có ctx.filter (Safari) thì làm mờ bằng thu nhỏ nhiều nấc + trải 3×3. */
-const MORPH={on:false,pending:false,t0:0,dur:1150,raf:0,prep:0,old:null,neu:null,skip:null,parts:null};
+const MORPH={on:false,pending:false,t0:0,dur:1300,dark:false,raf:0,prep:0,old:null,neu:null,skip:null,parts:null};
 const MB=[0,2.5,6,12];
 let CANVAS_FILTER=null,MSCR=null;
 const c01=t=>t<0?0:t>1?1:t,sstep=(a,b,x)=>{const t=c01((x-a)/(b-a));return t*t*(3-2*t);},eOut3=t=>1-Math.pow(1-t,3);
@@ -1541,21 +1541,74 @@ function lvGet(L,i){
 /* vẽ trước 1 phần việc còn thiếu (sau khi khung hình đã hiện), theo thứ tự cần tới */
 function morphPrep(){
   MORPH.prep=0;const M=MORPH;if(!M.on)return;
+  /* ảnh sao màu vòng mới + vệt sao băng: vẽ sẵn trước khi sao bắt đầu bay về */
+  if(M.warm&&M.warm.length){M.warm.splice(0,6).forEach(f=>f());return;}
   const jobs=[[M.old,1],[M.neu,0],[M.old,2],[M.old,3],[M.neu,3],[M.neu,2],[M.neu,1]];
   for(const[L,i]of jobs)if(!L.lv[i]){lvGet(L,i);break;}
 }
-/* hạt bụi: sinh trên vòng cũ, bay ra (phần lớn ra phía ngoài vòng), rồi gom về điểm tương ứng trên vòng mới
+/* ---------- lấp lánh ánh sao (15/10, user: "mấy cái hình tròn nhìn xấu, làm thần tiên hơn, lấp lánh như ánh sao") ----------
+   Bụi tròn → sao lấp lánh 4 cánh (cánh dài mảnh như tia sáng, lõi sáng, quầng mờ), sao lớn 8 cánh (thêm 4 tia chéo ngắn).
+   Mỗi sao bật ra (phóng nhẹ quá đà rồi về), nhấp nháy theo nhịp riêng, xoay chậm; lúc bay về vòng mới kéo theo vệt sáng như sao băng.
+   Cuối hiệu ứng vài ngôi sao lớn loé lên trên vòng mới (như ánh kim loại bắt sáng). Nền tối: cộng sáng ('lighter') cho sao phát sáng;
+   nền sáng: vẽ thường, màu sao đậm hơn để còn thấy. Sao vẽ sẵn thành ảnh nhỏ (cache theo kiểu + màu + nền), mỗi khung chỉ dán ảnh. */
+const SPR=new Map();
+function sprCache(key,mk){let c=SPR.get(key);if(!c){c=mk();SPR.set(key,c);if(SPR.size>80)SPR.delete(SPR.keys().next().value);}return c;}
+function starSprite(kind,col,dark){
+  return sprCache('s|'+kind+'|'+col+'|'+(dark?1:0),()=>{
+    const N=96,h=N/2,c=mkCanvas(N,N),x=c.getContext('2d'),[r,g,b]=rgb(col),A=(a)=>`rgba(${r},${g},${b},${a})`;
+    const body=dark?mix(col,'#ffffff',.45):col,core=dark?'#FFFFFF':mix(col,'#ffffff',.7);
+    x.translate(h,h);
+    /* quầng sáng mờ */
+    const hg=x.createRadialGradient(0,0,0,0,0,h*.62);hg.addColorStop(0,A(dark?.5:.32));hg.addColorStop(.35,A(dark?.16:.1));hg.addColorStop(1,A(0));
+    x.fillStyle=hg;x.beginPath();x.arc(0,0,h*.62,0,6.2832);x.fill();
+    /* tia sáng: thon dần, sáng ở gốc, tắt ở đầu tia */
+    const ray=(ang,len,w)=>{x.save();x.rotate(ang);const gr=x.createLinearGradient(0,0,len,0);
+      gr.addColorStop(0,core);gr.addColorStop(.18,body);gr.addColorStop(.6,A(dark?.55:.6));gr.addColorStop(1,A(0));
+      x.fillStyle=gr;x.beginPath();x.moveTo(0,-w);x.quadraticCurveTo(len*.22,-w*.22,len,0);x.quadraticCurveTo(len*.22,w*.22,0,w);x.closePath();x.fill();x.restore();};
+    for(let i=0;i<4;i++)ray(i*Math.PI/2,h*.98,h*.12);
+    if(kind==='star8')for(let i=0;i<4;i++)ray(Math.PI/4+i*Math.PI/2,h*.5,h*.075);
+    /* thân sao 4 cánh lõm (✦) + lõi trắng */
+    const R=h*.3,k=h*.035;x.beginPath();x.moveTo(0,-R);x.quadraticCurveTo(k,-k,R,0);x.quadraticCurveTo(k,k,0,R);x.quadraticCurveTo(-k,k,-R,0);x.quadraticCurveTo(-k,-k,0,-R);
+    x.fillStyle=body;x.fill();
+    const cg=x.createRadialGradient(0,0,0,0,0,h*.16);cg.addColorStop(0,core);cg.addColorStop(.55,dark?'rgba(255,255,255,.75)':mix(col,'#ffffff',.45));cg.addColorStop(1,dark?'rgba(255,255,255,0)':A(0));
+    x.fillStyle=cg;x.beginPath();x.arc(0,0,h*.16,0,6.2832);x.fill();
+    return c;});
+}
+/* vệt sáng sao băng (ngang: đuôi trái mờ → đầu phải sáng) */
+function streakSprite(col,dark){
+  return sprCache('t|'+col+'|'+(dark?1:0),()=>{
+    const W=128,H=16,c=mkCanvas(W,H),x=c.getContext('2d'),[r,g,b]=rgb(col);
+    const gr=x.createLinearGradient(0,0,W,0);gr.addColorStop(0,`rgba(${r},${g},${b},0)`);gr.addColorStop(.75,`rgba(${r},${g},${b},${dark?.55:.5})`);gr.addColorStop(1,dark?'rgba(255,255,255,.9)':`rgba(${r},${g},${b},.85)`);
+    x.fillStyle=gr;x.fillRect(0,0,W,H);
+    x.globalCompositeOperation='destination-in';const vg=x.createLinearGradient(0,0,0,H);vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(.5,'rgba(0,0,0,1)');vg.addColorStop(1,'rgba(0,0,0,0)');
+    x.fillStyle=vg;x.fillRect(0,0,W,H);return c;});
+}
+/* màu sao: màu vòng (sáng hơn trên nền tối / đậm hơn trên nền sáng) xen vàng + trắng ấm cho ra chất ánh sao */
+function starPal(pal,dark){
+  const base=pal.slice(0,2).map(c=>mix(c,'#ffffff',dark?.2:.15));
+  return dark?base.concat(['#FFE9A8','#FFD36B','#FFF6E2']):base.concat(['#E6AE2E','#D9981C','#F0C24A']);
+}
+const eOutBack=t=>{const c=1.9;return 1+(c+1)*Math.pow(t-1,3)+c*Math.pow(t-1,2);};
+/* sao: sinh trên vòng cũ, bật ra (phần lớn ra phía ngoài vòng), rồi bay về điểm tương ứng trên vòng mới
    (cùng góc quanh tâm vòng; Ngang → Tròn thì theo thứ tự dọc sợi dây) */
-function makeParts(A,B){
-  let sd=7;const rnd=()=>(sd=(sd*16807)%2147483647)/2147483647,n=Math.round(Math.max(160,Math.min(300,CW*S/480))),P=[];
+function makeParts(A,B,dark){
+  let sd=7;const rnd=()=>(sd=(sd*16807)%2147483647)/2147483647,n=Math.round(Math.max(120,Math.min(210,CW*S/650))),P=[];
+  const pa=starPal(A.pal,dark),pb=starPal(B.pal,dark),pick=a=>a[Math.floor(rnd()*a.length)];
   for(let i=0;i<n;i++){
     const s=A.pts[Math.floor(rnd()*A.pts.length)];let t;
     if(!A.line&&!B.line){const want=s.ang+(rnd()-.5)*.3;let best=9;for(const q of B.pts){let d=Math.abs(q.ang-want);if(d>Math.PI)d=2*Math.PI-d;if(d<best){best=d;t=q;}}}
     else t=B.pts[Math.max(0,Math.min(B.pts.length-1,Math.round((s.f+(rnd()-.5)*.06)*B.pts.length)))];
-    const off=(rnd()-.5)*4,dir=rnd()<.8?1:-1,dist=(7+rnd()*24)*dir,x0=s.x+s.nx*off,y0=s.y+s.ny*off,toff=(rnd()-.5)*3;
-    P.push({x0,y0,x1:x0+s.nx*dist+(rnd()-.5)*12,y1:y0+s.ny*dist+(rnd()-.5)*12,x2:t.x+t.nx*toff,y2:t.y+t.ny*toff,
-      c0:rgb(A.pal[Math.floor(rnd()*A.pal.length)]),c1:rgb(B.pal[Math.floor(rnd()*B.pal.length)]),r:.8+rnd()*1.6,d:rnd()*.16,d2:rnd()*.1,glint:rnd()<.3,ph:rnd()*6.283});
+    const off=(rnd()-.5)*4,dir=rnd()<.8?1:-1,dist=(8+rnd()*26)*dir,x0=s.x+s.nx*off,y0=s.y+s.ny*off,toff=(rnd()-.5)*3;
+    /* cỡ (nửa bề ngang ảnh sao, px CSS): ~8% sao lớn 8 cánh, ~30% vừa, còn lại nhỏ li ti */
+    const rk=rnd(),kind=rk<.08?'star8':'star4',sz=rk<.08?9+rnd()*6:rk<.38?5+rnd()*3.5:2.2+rnd()*2.6;
+    P.push({x0,y0,x1:x0+s.nx*dist+(rnd()-.5)*14,y1:y0+s.ny*dist+(rnd()-.5)*14,x2:t.x+t.nx*toff,y2:t.y+t.ny*toff,
+      c0:pick(pa),c1:pick(pb),kind,sz,trail:sz>4.5,d:rnd()*.16,d2:rnd()*.1,ph:rnd()*6.283,w:16+rnd()*26,rot:(rnd()-.5)*.5,spin:(rnd()-.5)*1.4});
   }
+  /* loé sáng cuối: vài sao lớn bật lên rồi tắt trên vòng mới (ưu tiên nửa trên vòng, chỗ không bị charm che) */
+  const top=B.pts.filter(q=>B.line||q.y<B.cy+4),bl=[];
+  for(let i=0;i<5&&top.length;i++){const q=top[Math.floor(((i+.5)/5+(rnd()-.5)*.12)*top.length)%top.length];
+    bl.push({x:q.x,y:q.y,sz:11+rnd()*6,t0:.66+i*.045+rnd()*.02,rot:rnd()*.6});}
+  P.bling=bl;
   return P;
 }
 /* vẽ 1 lớp ở mức mờ b (0 nét → 1 mờ nhất), độ đậm a, phóng sc quanh tâm vòng */
@@ -1574,19 +1627,32 @@ function drawMorphLayer(ctx,L,b,a,sc,dy){
   ctx.drawImage(im,0,0,CW,S);ctx.restore();
 }
 function drawParts(ctx,p,dyO,dy){
-  const P=MORPH.parts;if(!P)return;
-  ctx.save();
+  const P=MORPH.parts,dark=MORPH.dark;if(!P)return;
+  const T0=ctx.getTransform(),D=T0.a,E=T0.e,F=T0.f;
+  /* dán ảnh sao: tâm (x, y), nửa cỡ s, xoay rot (đặt thẳng ma trận, khỏi save/restore từng sao) */
+  const put=(im,x,y,s,rot,a)=>{if(a<=.01||s<=.2)return;const c=Math.cos(rot)*D,si=Math.sin(rot)*D;ctx.globalAlpha=Math.min(1,a);ctx.setTransform(c,si,-si,c,E+x*D,F+y*D);ctx.drawImage(im,-s,-s,2*s,2*s);};
+  const at=(q,pp)=>{const tA=c01((pp-q.d)/.34),tB=c01((pp-.36-q.d2)/.44),eA=eOut3(tA),eB=easeIO(tB),xa=q.x0+(q.x1-q.x0)*eA,ya=q.y0+(q.y1-q.y0)*eA+dyO;return[xa+(q.x2-xa)*eB,ya+(q.y2+dy-ya)*eB];};
+  ctx.save();ctx.globalCompositeOperation=dark?'lighter':'source-over';
   for(const q of P){
     const tA=c01((p-q.d)/.34);if(tA<=0)continue;
     const tB=c01((p-.36-q.d2)/.44);if(tB>=1)continue;
-    const eA=eOut3(tA),eB=easeIO(tB),xa=q.x0+(q.x1-q.x0)*eA,ya=q.y0+(q.y1-q.y0)*eA+dyO,x=xa+(q.x2-xa)*eB,y=ya+(q.y2+dy-ya)*eB;
-    const a=Math.min(1,tA*3)*(1-sstep(.72,1,tB))*(.7+.3*Math.sin(p*40+q.ph));if(a<=.01)continue;
-    /* bụi đổi dần sang màu vòng mới trong lúc bay về */
-    const r=q.r*(.75+.25*eA)*(1-.35*eB),c0=q.c0,c1=q.c1,k=sstep(0,.6,tB);
-    ctx.globalAlpha=a;ctx.fillStyle=`rgb(${Math.round(c0[0]+(c1[0]-c0[0])*k)},${Math.round(c0[1]+(c1[1]-c0[1])*k)},${Math.round(c0[2]+(c1[2]-c0[2])*k)})`;
-    ctx.beginPath();ctx.arc(x,y,r,0,6.2832);ctx.fill();
-    if(q.glint){ctx.globalAlpha=a*.9;ctx.fillStyle='#FFF8E2';ctx.beginPath();ctx.arc(x,y,r*.45,0,6.2832);ctx.fill();}
+    const [x,y]=at(q,p),eB=easeIO(tB);
+    /* nhấp nháy: mỗi sao một nhịp riêng, sáng loé rồi dịu xuống */
+    const tw=.5+.5*Math.sin(p*q.w+q.ph),twk=tw*tw;
+    const a=Math.min(1,tA*2.5)*(1-sstep(.74,1,tB))*(.45+.55*twk);if(a<=.01)continue;
+    const s=q.sz*eOutBack(c01(tA*1.8))*(1-.3*eB)*(.6+.4*twk),rot=q.rot+q.spin*p,k=sstep(.1,.7,tB);
+    /* vệt sáng sao băng lúc bay về */
+    if(q.trail&&tB>0){const[px,py]=at(q,p-.045),vx=x-px,vy=y-py,L=Math.hypot(vx,vy);
+      if(L>1.5){const ang=Math.atan2(vy,vx),len=Math.min(46,L*2.2),c=Math.cos(ang)*D,si=Math.sin(ang)*D;
+        ctx.globalAlpha=Math.min(1,a*.75*sstep(1.5,8,L));ctx.setTransform(c,si,-si,c,E+x*D,F+y*D);ctx.drawImage(streakSprite(k<.5?q.c0:q.c1,dark),-len,-s*.32,len,s*.64);}}
+    /* đổi dần sang màu vòng mới trong lúc bay về */
+    if(k<.99)put(starSprite(q.kind,q.c0,dark),x,y,s,rot,a*(1-k));
+    if(k>.01)put(starSprite(q.kind,q.c1,dark),x,y,s,rot,a*k);
   }
+  /* loé sáng cuối trên vòng mới: luôn cộng sáng (cả nền sáng) — chỗ sao nằm trên vòng sáng bừng lên như kim loại bắt sáng */
+  ctx.globalCompositeOperation='lighter';
+  for(const b of P.bling||[]){const t=c01((p-b.t0)/.14);if(t<=0||t>=1)continue;const e=Math.pow(Math.sin(Math.PI*t),.8);
+    put(starSprite('star8','#FFF1C2',true),b.x,b.y+dy,b.sz*e,b.rot+t*.7,e);}
   ctx.restore();
 }
 /* thay cho sợi dây trong khung vòng lúc đang chạy hiệu ứng. dy: khung vòng nhích lên / xuống (bỏ chọn charm) sau khi đã dựng lớp */
@@ -1608,7 +1674,7 @@ function morphEnd(){
   if(MORPH.raf){cancelAnimationFrame(MORPH.raf);MORPH.raf=0;}
   if(MORPH.prep){clearTimeout(MORPH.prep);MORPH.prep=0;}
   if(!MORPH.on)return;
-  MORPH.on=false;MORPH.old=MORPH.neu=MORPH.parts=MORPH.skip=null;renderStage();
+  MORPH.on=false;MORPH.old=MORPH.neu=MORPH.parts=MORPH.skip=MORPH.warm=null;renderStage();
 }
 /* gọi TRƯỚC khi đổi state: dựng lớp vòng cũ (+ món sẽ bị cất). next = uid các món còn lại sau khi đổi; toB = đổi sang kiềng */
 function morphBegin(next,toB){
@@ -1626,7 +1692,14 @@ function morphStart(mo){
   if(VIEW.raf){cancelAnimationFrame(VIEW.raf);VIEW.raf=0;VIEW.m=VIEW.target;}
   const skip=new Set(state.items.filter(it=>mo.all||!mo.olds.has(it.uid)).map(it=>it.uid));
   let neu;try{neu=morphLayer(skip);}catch(e){return;}
-  Object.assign(MORPH,{on:true,t0:performance.now(),old:mo.old,neu,skip,parts:makeParts(mo.old,neu)});
+  /* nền khung vòng tối hay sáng (sao cộng sáng trên nền tối, vẽ thường trên nền sáng) */
+  const sc=rgb(tokens().stage||'#F3F2EF'),dark=.299*sc[0]+.587*sc[1]+.114*sc[2]<128;
+  const parts=makeParts(mo.old,neu,dark),ks=['star4','star8'],c0=new Set(parts.map(q=>q.c0)),c1=new Set(parts.map(q=>q.c1)),warm=[];
+  /* ảnh sao màu vòng cũ cần ngay khung đầu: vẽ luôn; màu vòng mới + vệt sáng để morphPrep vẽ ở các khung sau */
+  c0.forEach(c=>ks.forEach(k=>starSprite(k,c,dark)));
+  c1.forEach(c=>{ks.forEach(k=>warm.push(()=>starSprite(k,c,dark)));warm.push(()=>streakSprite(c,dark));});
+  c0.forEach(c=>warm.push(()=>streakSprite(c,dark)));warm.push(()=>starSprite('star8','#FFF1C2',true));
+  Object.assign(MORPH,{on:true,t0:performance.now(),old:mo.old,neu,skip,dark,parts,warm});
   renderStage();
   if(!MORPH.raf)MORPH.raf=requestAnimationFrame(morphTick);
   if(!MORPH.prep)MORPH.prep=setTimeout(morphPrep,0);
