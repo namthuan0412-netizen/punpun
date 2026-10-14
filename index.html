@@ -852,7 +852,7 @@ function defaultState(){
 }
 const snap=()=>JSON.stringify({strap:state.strap,size:state.size,items:state.items,stash:state.stash||null,sel});
 function pushHist(){hist.push(snap());if(hist.length>80)hist.shift();redoHist.length=0;}
-function commit(fn){const from=posSnap();pushHist();fn();startReflow(from);changed();}
+function commit(fn){morphEnd();const from=posSnap();pushHist();fn();startReflow(from);changed();}
 const selIndex=()=>state.items.findIndex(i=>i.uid===sel);
 const selItem=()=>state.items.find(i=>i.uid===sel)||null;
 const strapE=()=>SE[state.strap]||CAT.straps[0];
@@ -1378,11 +1378,15 @@ function drawScene(ctx,W,H,o){
   if(o.bg){ctx.fillStyle=o.bg;ctx.fillRect(0,0,W,H);}
   if(!CAT.straps.length)return lay;
   SH={c:'rgba(38,26,8,.26)',b:3*o.k,y:1.4*o.k};
-  if(o.fast&&!VIEW.raf)drawStrapCached(ctx,g,strapE(),W,H,o.k);else drawStrapCurve(ctx,g,strapE());
+  /* o.under: đang chạy hiệu ứng đổi dây ↔ kiềng — vẽ lớp vòng cũ / mới + bụi thay cho sợi dây (14/10) */
+  if(o.under)o.under(ctx,g);
+  else if(o.fast&&!VIEW.raf)drawStrapCached(ctx,g,strapE(),W,H,o.k);else drawStrapCurve(ctx,g,strapE());
   /* charm đang kéo: phóng to (×1,5) và vẽ trên cùng; thả tay thì thu nhỏ lại mượt rồi mới về lớp thường */
   const zm=o.zoom&&o.zoom.uid!=null&&(o.zoom.v>1.001||o.drag===o.zoom.uid)?o.zoom:null,zOf=uid=>zm&&zm.uid===uid?zm.v:1;
   const topUid=o.drag||(zm?zm.uid:null);
-  const rest=lay.list.filter(x=>!(topUid!=null&&x.it.uid===topUid)),dg=x=>x.e.kind==='dangle';
+  /* o.skip: món không vẽ (đang nằm trong lớp hiệu ứng); o.only: chỉ vẽ các món này (dựng lớp hiệu ứng) */
+  const hide=x=>(o.skip&&o.skip.has(x.it.uid))||(o.only&&!o.only.has(x.it.uid));
+  const rest=lay.list.filter(x=>!(topUid!=null&&x.it.uid===topUid)&&!hide(x)),dg=x=>x.e.kind==='dangle';
   /* charm treo vẽ trước (mặt treo nằm sau hạt / charm bên cạnh); charm treo đang chọn vẽ sau cùng cho thấy trọn */
   const order=rest.filter(x=>dg(x)&&x.it.uid!==o.sel).concat(rest.filter(x=>!dg(x)),rest.filter(x=>dg(x)&&x.it.uid===o.sel));
   const dragged=lay.list.find(x=>topUid!=null&&x.it.uid===topUid);
@@ -1400,7 +1404,7 @@ function drawScene(ctx,W,H,o){
     const br=Math.max(7.5,Math.min(11,2.3*g.s));
     ctx.font=`700 ${Math.round(br*1.05)}px "Be Vietnam Pro", system-ui, sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
     /* khoen không đánh số (nhiều quá rối mắt); số của charm / hạt chặn đếm bỏ qua khoen, khớp danh sách trong ảnh xuất */
-    let num=0;lay.list.forEach(x=>{if(x.e.ring)return;num++;const d=(x.e.top*zOf(x.it.uid)-3.6)*g.s,px=x.x+x.nx*d,py=x.y+x.ny*d,on=o.sel===x.it.uid&&o.selRing;ctx.beginPath();ctx.arc(px,py,br,0,Math.PI*2);ctx.fillStyle=on?o.selRing:o.numBg;ctx.fill();ctx.fillStyle=on?o.selFg:o.numFg;ctx.fillText(String(num),px,py+.5);});
+    let num=0;lay.list.forEach(x=>{if(x.e.ring)return;num++;if(hide(x))return;const d=(x.e.top*zOf(x.it.uid)-3.6)*g.s,px=x.x+x.nx*d,py=x.y+x.ny*d,on=o.sel===x.it.uid&&o.selRing;ctx.beginPath();ctx.arc(px,py,br,0,Math.PI*2);ctx.fillStyle=on?o.selRing:o.numBg;ctx.fill();ctx.fillStyle=on?o.selFg:o.numFg;ctx.fillText(String(num),px,py+.5);});
   }
   if(o.bg&&g.e>0){
     const fw=Math.min(28,W*.08);
@@ -1473,10 +1477,165 @@ function drawEntryFast(ctx,e,k,dpr){
   const px=Math.max(1,Math.round(k*dpr*10)/10),sp=charmSprite(e,rec,px),pm=sp.pad/px;
   ctx.drawImage(sp.c,-e.w/2-pm,e.top-pm,sp.c.width/px,sp.c.height/px);
 }
+/* ---------- hiệu ứng đổi dây đan ↔ vòng kiềng (14/10, user: "tan biến, blur blur xong rồi gom lại") ----------
+   Vòng cũ mờ nhoè dần, phồng nhẹ ra rồi tan thành bụi (màu vòng cũ + ánh vàng); bụi bay gom về dáng vòng mới, đổi dần sang màu vòng mới;
+   vòng mới hiện từ mờ nhoè → nét và thu nhẹ vào đúng chỗ. Charm giữ nguyên, vẽ trên cùng (chỉ trượt chỗ như khi thêm / xoá);
+   hạt chặn bị cất tan cùng vòng cũ, khoen gắn lại hiện cùng vòng mới. Đang ở Ngang mà đổi sang kiềng (kiềng chỉ có Tròn):
+   cả vòng + charm cùng tan rồi gom lại thành vòng Tròn. Undo / Redo đổi loại vòng cũng chạy hiệu ứng.
+   Mỗi lớp (vòng + món đi kèm) vẽ sẵn 1 lần lúc bấm, kèm 3 mức mờ dựng sẵn ở bản thu nhỏ; mỗi khung chỉ trộn 2 mức gần nhất
+   (không làm mờ lại mỗi khung — nhẹ cho iPhone). Trình duyệt chưa có ctx.filter (Safari) thì làm mờ bằng thu nhỏ nhiều nấc + trải 3×3. */
+const MORPH={on:false,pending:false,t0:0,dur:1150,raf:0,prep:0,old:null,neu:null,skip:null,parts:null};
+const MB=[0,2.5,6,12];
+let CANVAS_FILTER=null,MSCR=null;
+const c01=t=>t<0?0:t>1?1:t,sstep=(a,b,x)=>{const t=c01((x-a)/(b-a));return t*t*(3-2*t);},eOut3=t=>1-Math.pow(1-t,3);
+function canvasFilterOK(){
+  if(CANVAS_FILTER!==null)return CANVAS_FILTER;
+  try{const c=document.createElement('canvas');c.width=c.height=12;const x=c.getContext('2d',{willReadFrequently:true});
+    x.filter='blur(2px)';if(x.filter!=='blur(2px)')return CANVAS_FILTER=false;
+    x.fillStyle='#000';x.fillRect(5,5,2,2);CANVAS_FILTER=x.getImageData(2,6,1,1).data[3]>0;}
+  catch(e){CANVAS_FILTER=false;}
+  return CANVAS_FILTER;
+}
+const mkCanvas=(w,h)=>{const c=document.createElement('canvas');c.width=Math.max(1,Math.round(w));c.height=Math.max(1,Math.round(h));return c;};
+/* bản mờ ~r px (CSS) của lớp src (k0 px ảnh trên 1 px CSS), lưu ở độ phân giải k */
+function blurLayer(src,k0,r,k){
+  const W=CW,H=S;
+  if(canvasFilterOK()){const c=mkCanvas(W*k,H*k),x=c.getContext('2d');x.filter=`blur(${(r*k).toFixed(2)}px)`;x.drawImage(src,0,0,c.width,c.height);return c;}
+  let cur=src,ck=k0;const tk=Math.min(k,1/r);
+  const step=nk=>{const c=mkCanvas(W*nk,H*nk),x=c.getContext('2d');x.imageSmoothingEnabled=true;try{x.imageSmoothingQuality='high';}catch(e){}x.drawImage(cur,0,0,c.width,c.height);cur=c;ck=nk;};
+  while(ck/2>=tk)step(ck/2);
+  if(ck>tk*1.05)step(tk);
+  {const c=mkCanvas(cur.width,cur.height),x=c.getContext('2d'),w=[1,2,1];x.globalCompositeOperation='lighter';
+    for(let j=-1;j<=1;j++)for(let i=-1;i<=1;i++){x.globalAlpha=w[i+1]*w[j+1]/16;x.drawImage(cur,i,j);}cur=c;}
+  while(ck*2<=k)step(ck*2);
+  if(Math.abs(ck-k)>1e-3)step(k);
+  return cur;
+}
+/* màu bụi của một vòng: dây đan = màu trung bình vân dây (2 nửa nếu dây 2 màu) + chút chỉ vàng; kiềng = vàng KG */
+function strapPal(st){
+  if(!st)return[KG.b];
+  if(isBangle(st))return[KG.d,KG.b,KG.b,KG.l,KG.h];
+  const t=strapTex(st),t2=strapTex2(st),a=(t&&t.avg)||st.c||metalOf(st.m).b,b=(t2&&t2.avg)||a;
+  return[a,b,shade(a,.28),shade(b,-.12),GT.l];
+}
+/* 1 lớp = vòng hiện tại + các món trong only, ở đúng khung hình đang thấy (không nền, không số).
+   Lúc tạo chỉ tính hình (rẻ); ảnh lớp (lv[0]) + các mức mờ (lv[1..3]) vẽ dần ở các khung sau (morphPrep) hoặc khi cần tới (lvGet),
+   để cú bấm không bị khựng. Sợi dây vẽ qua drawStrapCached: lớp vòng cũ dùng lại ảnh dây đang có sẵn, lớp vòng mới vẽ 1 lần và
+   để sẵn cho khung vòng sau khi hiệu ứng xong. */
+function morphLayer(only){
+  const o={k:dpr,m:VIEW.m,pan:VIEW.pan,lineMin:specsBottom+8,avoid:CORNER,lift:LIFT.v,only,under:(x,g)=>drawStrapCached(x,g,strapE(),CW,S,dpr)};
+  /* điểm sinh / điểm đến của bụi: rải đều 1 vòng (dây đan Tròn: từ đầu khoen tới chỗ gập — bỏ đoạn chồng đôi + đuôi để bụi không dồn hết lên đỉnh vòng) */
+  const g=geom(CW,S,o.m,o),line=g.e>.5,cx=line?CW/2:g.cxC,cy=line?g.ay:g.cyC,pm=g.pm,a=pm.braid?pm.uS-KN.eyeLen*.6:pm.uS+(pm.bangle?0:5),b=pm.braid&&!line?pm.uP:pm.bangle?pm.uE:pm.uE-(pm.braid?0:5),pts=[];
+  for(let i=0;i<180;i++){const p=curvePt(g,a+(b-a)*(i+.5)/180);pts.push({x:p.x,y:p.y,nx:p.nx,ny:p.ny,f:(i+.5)/180,ang:Math.atan2(p.y-cy,p.x-cx)});}
+  return{o,lv:[],g,cx,cy,line,pts,pal:strapPal(strapE())};
+}
+function lvBase(L){
+  if(L.lv[0])return L.lv[0];
+  const c=mkCanvas(CW*dpr,S*dpr),x=c.getContext('2d');x.setTransform(dpr,0,0,dpr,0,0);drawScene(x,CW,S,L.o);
+  return L.lv[0]={c,k:dpr};
+}
+function lvGet(L,i){
+  if(!L.lv[i]){const b=lvBase(L);if(i){const k=Math.min(dpr,2.5/MB[i]);L.lv[i]={c:blurLayer(b.c,dpr,MB[i],k),k};}}
+  return L.lv[i];
+}
+/* vẽ trước 1 phần việc còn thiếu (sau khi khung hình đã hiện), theo thứ tự cần tới */
+function morphPrep(){
+  MORPH.prep=0;const M=MORPH;if(!M.on)return;
+  const jobs=[[M.old,1],[M.neu,0],[M.old,2],[M.old,3],[M.neu,3],[M.neu,2],[M.neu,1]];
+  for(const[L,i]of jobs)if(!L.lv[i]){lvGet(L,i);break;}
+}
+/* hạt bụi: sinh trên vòng cũ, bay ra (phần lớn ra phía ngoài vòng), rồi gom về điểm tương ứng trên vòng mới
+   (cùng góc quanh tâm vòng; Ngang → Tròn thì theo thứ tự dọc sợi dây) */
+function makeParts(A,B){
+  let sd=7;const rnd=()=>(sd=(sd*16807)%2147483647)/2147483647,n=Math.round(Math.max(160,Math.min(300,CW*S/480))),P=[];
+  for(let i=0;i<n;i++){
+    const s=A.pts[Math.floor(rnd()*A.pts.length)];let t;
+    if(!A.line&&!B.line){const want=s.ang+(rnd()-.5)*.3;let best=9;for(const q of B.pts){let d=Math.abs(q.ang-want);if(d>Math.PI)d=2*Math.PI-d;if(d<best){best=d;t=q;}}}
+    else t=B.pts[Math.max(0,Math.min(B.pts.length-1,Math.round((s.f+(rnd()-.5)*.06)*B.pts.length)))];
+    const off=(rnd()-.5)*4,dir=rnd()<.8?1:-1,dist=(7+rnd()*24)*dir,x0=s.x+s.nx*off,y0=s.y+s.ny*off,toff=(rnd()-.5)*3;
+    P.push({x0,y0,x1:x0+s.nx*dist+(rnd()-.5)*12,y1:y0+s.ny*dist+(rnd()-.5)*12,x2:t.x+t.nx*toff,y2:t.y+t.ny*toff,
+      c0:rgb(A.pal[Math.floor(rnd()*A.pal.length)]),c1:rgb(B.pal[Math.floor(rnd()*B.pal.length)]),r:.8+rnd()*1.6,d:rnd()*.16,d2:rnd()*.1,glint:rnd()<.3,ph:rnd()*6.283});
+  }
+  return P;
+}
+/* vẽ 1 lớp ở mức mờ b (0 nét → 1 mờ nhất), độ đậm a, phóng sc quanh tâm vòng */
+function drawMorphLayer(ctx,L,b,a,sc,dy){
+  if(a<=.004)return;
+  const rb=b*MB[MB.length-1];let i=0;while(i<MB.length-2&&rb>MB[i+1])i++;
+  const t=c01((rb-MB[i])/(MB[i+1]-MB[i]));let im;
+  if(t<.02)im=lvGet(L,i).c;else if(t>.98)im=lvGet(L,i+1).c;
+  else{/* trộn 2 mức mờ kề nhau (cộng 'lighter' trên nền trong suốt = nội suy đúng, không bị đậm lên ở giữa) */
+    const A=lvGet(L,i).c,B=lvGet(L,i+1).c,w=A.width,h=A.height;
+    if(!MSCR)MSCR=document.createElement('canvas');if(MSCR.width!==w||MSCR.height!==h){MSCR.width=w;MSCR.height=h;}
+    const x=MSCR.getContext('2d');x.setTransform(1,0,0,1,0,0);x.globalCompositeOperation='source-over';x.globalAlpha=1;x.clearRect(0,0,w,h);
+    x.globalAlpha=1-t;x.drawImage(A,0,0,w,h);x.globalCompositeOperation='lighter';x.globalAlpha=t;x.drawImage(B,0,0,w,h);
+    x.globalCompositeOperation='source-over';x.globalAlpha=1;im=MSCR;}
+  ctx.save();ctx.globalAlpha=a;ctx.translate(L.cx,L.cy+dy);ctx.scale(sc,sc);ctx.translate(-L.cx,-L.cy);
+  ctx.drawImage(im,0,0,CW,S);ctx.restore();
+}
+function drawParts(ctx,p,dyO,dy){
+  const P=MORPH.parts;if(!P)return;
+  ctx.save();
+  for(const q of P){
+    const tA=c01((p-q.d)/.34);if(tA<=0)continue;
+    const tB=c01((p-.36-q.d2)/.44);if(tB>=1)continue;
+    const eA=eOut3(tA),eB=easeIO(tB),xa=q.x0+(q.x1-q.x0)*eA,ya=q.y0+(q.y1-q.y0)*eA+dyO,x=xa+(q.x2-xa)*eB,y=ya+(q.y2+dy-ya)*eB;
+    const a=Math.min(1,tA*3)*(1-sstep(.72,1,tB))*(.7+.3*Math.sin(p*40+q.ph));if(a<=.01)continue;
+    /* bụi đổi dần sang màu vòng mới trong lúc bay về */
+    const r=q.r*(.75+.25*eA)*(1-.35*eB),c0=q.c0,c1=q.c1,k=sstep(0,.6,tB);
+    ctx.globalAlpha=a;ctx.fillStyle=`rgb(${Math.round(c0[0]+(c1[0]-c0[0])*k)},${Math.round(c0[1]+(c1[1]-c0[1])*k)},${Math.round(c0[2]+(c1[2]-c0[2])*k)})`;
+    ctx.beginPath();ctx.arc(x,y,r,0,6.2832);ctx.fill();
+    if(q.glint){ctx.globalAlpha=a*.9;ctx.fillStyle='#FFF8E2';ctx.beginPath();ctx.arc(x,y,r*.45,0,6.2832);ctx.fill();}
+  }
+  ctx.restore();
+}
+/* thay cho sợi dây trong khung vòng lúc đang chạy hiệu ứng. dy: khung vòng nhích lên / xuống (bỏ chọn charm) sau khi đã dựng lớp */
+function morphDraw(ctx,g){
+  const M=MORPH,p=c01((performance.now()-M.t0)/M.dur),dy=g.ay-M.neu.g.ay,dyO=M.old.line?0:dy;
+  drawMorphLayer(ctx,M.old,eOut3(c01(p/.4)),1-sstep(.1,.44,p),1+.05*eOut3(c01(p/.45)),dyO);
+  const q=c01((p-.36)/.64);
+  drawMorphLayer(ctx,M.neu,Math.pow(1-q,2.2),sstep(0,.5,q),1+.05*Math.pow(1-q,2),dy);
+  drawParts(ctx,p,dyO,dy);
+}
+function morphTick(){
+  MORPH.raf=0;if(!MORPH.on)return;
+  if(performance.now()-MORPH.t0>=MORPH.dur){morphEnd();return;}
+  try{renderStage();}catch(e){morphEnd();return;}
+  MORPH.raf=requestAnimationFrame(morphTick);
+  if(!MORPH.prep)MORPH.prep=setTimeout(morphPrep,0);
+}
+function morphEnd(){
+  if(MORPH.raf){cancelAnimationFrame(MORPH.raf);MORPH.raf=0;}
+  if(MORPH.prep){clearTimeout(MORPH.prep);MORPH.prep=0;}
+  if(!MORPH.on)return;
+  MORPH.on=false;MORPH.old=MORPH.neu=MORPH.parts=MORPH.skip=null;renderStage();
+}
+/* gọi TRƯỚC khi đổi state: dựng lớp vòng cũ (+ món sẽ bị cất). next = uid các món còn lại sau khi đổi; toB = đổi sang kiềng */
+function morphBegin(next,toB){
+  morphEnd();
+  if(reduceMotion()||!LAY||!CAT.straps.length||!CW||!S)return null;
+  const all=!!toB&&(VIEW.m>.001||VIEW.target===1);
+  const only=new Set(state.items.filter(it=>all||!next.has(it.uid)).map(it=>it.uid));
+  let old;try{old=morphLayer(only);lvBase(old);}catch(e){return null;}
+  MORPH.pending=true;
+  return{all,olds:new Set(state.items.map(it=>it.uid)),old};
+}
+/* gọi SAU khi đổi state: tính hình vòng mới (+ món mới gắn lại) rồi chạy; ảnh lớp vòng mới vẽ ở các khung sau */
+function morphStart(mo){
+  MORPH.pending=false;if(!mo)return;
+  if(VIEW.raf){cancelAnimationFrame(VIEW.raf);VIEW.raf=0;VIEW.m=VIEW.target;}
+  const skip=new Set(state.items.filter(it=>mo.all||!mo.olds.has(it.uid)).map(it=>it.uid));
+  let neu;try{neu=morphLayer(skip);}catch(e){return;}
+  Object.assign(MORPH,{on:true,t0:performance.now(),old:mo.old,neu,skip,parts:makeParts(mo.old,neu)});
+  renderStage();
+  if(!MORPH.raf)MORPH.raf=requestAnimationFrame(morphTick);
+  if(!MORPH.prep)MORPH.prep=setTimeout(morphPrep,0);
+}
 function renderStage(){
-  const T=tokens();
+  /* giữa morphBegin và morphStart (đang đổi state): khỏi vẽ sợi dây mới — khung này không hiện ra, morphStart vẽ lại ngay */
+  const T=tokens(),mo=MORPH.on?MORPH:null,under=mo?morphDraw:MORPH.pending?()=>{}:null;
   cx2.setTransform(dpr,0,0,dpr,0,0);cx2.clearRect(0,0,CW,S);
-  LAY=drawScene(cx2,CW,S,{bg:T.stage,k:dpr,m:VIEW.m,pan:VIEW.pan,lineMin:specsBottom+8,avoid:CORNER,lift:LIFT.v,nums:showNums,sel,drag:drag&&drag.moved?drag.uid:null,dragU:drag&&drag.moved?drag.u:null,fast:true,anim:ANIM,zoom:ZOOM,ring:T.fg,selRing:T.accent,selFg:T.onAccent,numBg:T.fg,numFg:T.bg,empty:T.muted});
+  LAY=drawScene(cx2,CW,S,{bg:T.stage,k:dpr,m:VIEW.m,pan:VIEW.pan,lineMin:specsBottom+8,avoid:CORNER,lift:LIFT.v,nums:showNums,sel,drag:drag&&drag.moved?drag.uid:null,dragU:drag&&drag.moved?drag.u:null,fast:true,anim:ANIM,zoom:ZOOM,ring:T.fg,selRing:T.accent,selFg:T.onAccent,numBg:T.fg,numFg:T.bg,empty:T.muted,under,skip:mo?mo.skip:null});
   VIEW.pan=LAY.g.pan;
   syncPanUI();
 }
@@ -1501,7 +1660,7 @@ function viewSize(){
   return VP;
 }
 function sizeStage(){
-  const wrap=$('canvasWrap'),vp=viewSize(),vw=vp.w,vh=vp.h;
+  const wrap=$('canvasWrap'),vp=viewSize(),vw=vp.w,vh=vp.h,was=[S,CW,dpr].join();
   LAND=vw>vh&&vh<=520;WIDE=!LAND&&vw>=900;
   const avail=Math.floor(wrap.clientWidth);
   reserveR=0;const hRes=WIDE?150:LAND?104:76;
@@ -1514,6 +1673,8 @@ function sizeStage(){
   const co=document.querySelector('.corner'),wr=wrap.getBoundingClientRect(),cr=co?co.getBoundingClientRect():null;
   CORNER=cr?{l:cr.left-wr.left,r:cr.right-wr.left,b:cr.bottom-wr.top}:null;specsBottom=CORNER?CORNER.b:0;
   dpr=Math.min(3,window.devicePixelRatio||1);
+  /* khung vòng đổi cỡ giữa lúc đang chạy hiệu ứng đổi vòng: lớp dựng sẵn không còn khớp → kết thúc ngay */
+  if(MORPH.on&&[S,CW,dpr].join()!==was)morphEnd();
   cv.style.width=CW+'px';cv.style.height=S+'px';cv.width=Math.round(CW*dpr);cv.height=Math.round(S*dpr);
   panUI='';renderStage();
   syncSeg();syncTabBar();syncSideBar();
@@ -1557,6 +1718,7 @@ function syncSideBar(){
 try{document.fonts.ready.then(()=>{syncSeg();syncTabBar();syncSideBar();});}catch(e){}
 function setView(mode,instant,keepPref){
   if(mode==='line'&&bangleOn())return;
+  morphEnd();
   const target=mode==='line'?1:0;
   document.querySelectorAll('[data-view]').forEach(b=>{const on=b.dataset.view===mode;b.setAttribute('aria-checked',String(on));b.tabIndex=on?0:-1;});
   syncSeg();
@@ -1622,6 +1784,7 @@ function hit(px,py){
 }
 function ptr(e){const b=cv.getBoundingClientRect();return[e.clientX-b.left,e.clientY-b.top];}
 cv.addEventListener('pointerdown',e=>{
+  morphEnd();
   if(VIEW.raf)return;
   stopPan();
   const[x,y]=ptr(e);const h=hit(x,y);
@@ -2070,7 +2233,8 @@ function syncKind(){
   const co=document.querySelector('.corner');if(co)co.classList.toggle('only-ring',b);
   const ts=$('tabStop');ts.textContent=b?'Khoen':'Hạt chặn';
   if(!first&&!reduceMotion()){ts.classList.remove('flash');void ts.offsetWidth;ts.classList.add('flash');clearTimeout(ts._ft);ts._ft=setTimeout(()=>ts.classList.remove('flash'),1200);}
-  if(b&&VIEW.target===1)setView('circle',first,true);
+  /* đang chạy hiệu ứng đổi vòng: về Tròn ngay (hiệu ứng tan – gom lo phần chuyển) */
+  if(b&&VIEW.target===1)setView('circle',first||MORPH.pending,true);
   if(ctab==='stop'||(SEARCH.open&&SEARCH.shown))renderCatalog();else syncTabBar();
 }
 function changed(){if(!CAT.loading)saveDraft();syncKind();renderSpecs();syncCatalog();refreshSel();ensureSelVisible();if(CAT.straps.length)cv.setAttribute('aria-label',stageLabel());}
@@ -2131,9 +2295,13 @@ function tool(t){
   /* Undo / Redo (13/10 thêm Redo): undo cất trạng thái hiện tại vào redoHist; thao tác mới (pushHist) xoá redoHist */
   if(t==='undo'||t==='redo'){
     const src=t==='undo'?hist:redoHist,dst=t==='undo'?redoHist:hist;
-    if(!src.length)return;const from=posSnap();dst.push(snap());const s=JSON.parse(src.pop());
+    if(!src.length)return;
+    /* undo / redo đổi dây đan ↔ kiềng thì cũng chạy hiệu ứng tan – gom (14/10) */
+    const nx=JSON.parse(src[src.length-1]),toB=isBangle(SE[nx.strap]||CAT.straps[0]);
+    const mo=CAT.straps.length&&toB!==bangleOn()?morphBegin(new Set((nx.items||[]).map(it=>it.uid)),toB):(morphEnd(),null);
+    const from=posSnap();dst.push(snap());const s=JSON.parse(src.pop());
     state={strap:s.strap,size:s.size,items:s.items,stash:s.stash||null};fitState();sel=s.sel!=null&&state.items.some(x=>x.uid===s.sel)?s.sel:null;
-    startReflow(from);changed();$('live').textContent=t==='undo'?'Đã undo':'Đã redo';return;
+    startReflow(from);changed();morphStart(mo);$('live').textContent=t==='undo'?'Đã undo':'Đã redo';return;
   }
   if(t==='clear'){if(state.items.length)openSheet('confirmClear');return;}
   if(i<0)return;
@@ -2426,6 +2594,8 @@ document.addEventListener('click',e=>{
     const fromK=bangleOn()?'bangle':'cord',toK=isBangle(en)?'bangle':'cord';
     const drop=state.items.filter(it=>!fitsStrap(CE[it.code],en));
     const back=fromK!==toK&&state.stash&&state.stash[toK]||null;let nBack=0;
+    /* đổi dây đan ↔ kiềng: vòng cũ tan ra rồi gom lại thành vòng mới (14/10); đổi màu dây đan thì đổi ngay như cũ */
+    const mo=fromK!==toK?morphBegin(new Set(state.items.filter(it=>!drop.includes(it)).map(it=>it.uid)),toK==='bangle'):null;
     commit(()=>{
       const stash=Object.assign({},state.stash||{});
       if(fromK!==toK){
@@ -2436,6 +2606,7 @@ document.addEventListener('click',e=>{
       state.stash=Object.keys(stash).length?stash:null;state.strap=en.code;
       if(sel!=null&&!state.items.some(x=>x.uid===sel))sel=null;
     });
+    morphStart(mo);
     const kind=fromK==='cord'?'hạt chặn':'khoen',kind2=toK==='cord'?'hạt chặn':'khoen';
     if(drop.length||nBack)toast(drop.length?`Đã cất ${drop.length} ${kind} cho ${fromK==='cord'?'dây đan':'vòng kiềng'}`:`Đã gắn lại ${nBack} ${kind2}`,{ms:3000});
     else $('live').textContent=`Đã đổi sang ${en.name}${en.vname?' '+en.vname:''}`;
