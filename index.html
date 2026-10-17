@@ -153,7 +153,7 @@ button:disabled{cursor:default}
 .cbar.searching .ctabs{transform:translate3d(var(--tabs-out,-120%),0,0); pointer-events:none; transition:transform var(--s-dur) var(--s-ease) var(--s-delay)}
 /* ẩn hẳn (cho trình đọc màn hình / phím Tab) khi đã trượt ra hết; ô nhập lúc đóng cũng ẩn hẳn khi đã lùi xong — gắn bằng JS, không dùng transition visibility */
 .cbar.s-gone .ctabs{visibility:hidden}
-.sbtn{flex:none; align-self:center; width:40px; height:40px; margin-bottom:1px; border-radius:50%; display:grid; place-items:center; color:var(--fg); background:var(--surface); z-index:2; transition:background-color var(--fast)}
+.sbtn{flex:none; align-self:center; width:40px; height:40px; margin-bottom:1px; border-radius:50%; display:grid; place-items:center; color:var(--fg); background:var(--surface); z-index:1; transition:background-color var(--fast)}
 .sbtn::after{content:""; position:absolute; inset:-2px}
 .sbtn:active{background:var(--soft)}
 .sbtn svg{overflow:visible}
@@ -174,50 +174,26 @@ button:disabled{cursor:default}
 .cbar.s-from .ctabs{transform:translate3d(0,0,0)}
 .cbar.s-from .cfield{transform:translate3d(calc(100% + 7px),0,0)}
 .cbar.s-instant .ctabs,.cbar.s-instant .cfield{transition:none}
-/* cụm nút bên phải hàng tab (17/10): [kính lúp] [sắp xếp] [mở rộng] — shop: nút sắp xếp nằm BÊN PHẢI kính lúp.
-   Nút mở rộng / thu gọn danh mục chỉ có trên điện thoại dọc (JS bật .has-x). Các nút cách nhau 4px (margin-left −4px + gap 8px).
-   Lúc tìm kiếm: các nút bên phải kính lúp (sắp xếp, mở rộng) trượt ra mép phải + mờ dần; nút tìm kiếm (X) và khung ô nhập dời sang
-   phải đúng số chỗ nút đó (--xd = 44px × số nút: 44px, điện thoại dọc 88px), nên X luôn nằm sát mép phải và ô nhập vẫn dài tới mép
-   phải như cũ, vẫn trồi ra từ sau nút. Cùng nhịp với tab / ô nhập (--s-dur, --s-ease, --s-delay). */
+/* nút mở rộng / thu gọn danh mục (chỉ điện thoại dọc: JS bật .has-x), nằm bên phải nút tìm kiếm.
+   Lúc tìm kiếm: nút này trượt ra mép phải + mờ dần; nút tìm kiếm (X) và khung ô nhập dời sang phải đúng một chỗ nút (--xd),
+   nên ô nhập vẫn dài tới mép phải như cũ và vẫn trồi ra từ sau nút. Cùng nhịp với tab / ô nhập (--s-dur, --s-ease, --s-delay). */
 .xbtn{flex:none; align-self:center; width:40px; height:40px; margin:0 0 1px -4px; border-radius:50%; display:none; place-items:center; color:var(--fg); background:var(--surface); z-index:1; transition:background-color var(--fast), transform var(--s-dur) var(--s-ease), opacity var(--s-dur) var(--s-ease)}
-.cbar{--xd:44px}
-.cbar.has-x{--xd:88px}
+.cbar.has-x{--xd:44px}
 .cbar.has-x .xbtn{display:grid}
 .xbtn::after{content:""; position:absolute; inset:-2px}
 .xbtn:active{background:var(--soft)}
 /* mũi tên lên = mở rộng; đang mở rộng thì xoay xuống, cùng nhịp với lúc danh mục đẩy lên / hạ xuống */
 .xbtn svg{transition:transform var(--lift-ms,700ms) var(--lift-ease,ease)}
 .xbtn[aria-expanded="true"] svg{transform:rotate(180deg)}
-/* nút sắp xếp (17/10, shop: "thêm icon button filter: giá giảm dần, tăng dần, mới nhất, cũ nhất"): cùng kiểu nút tròn 40px với
-   kính lúp. Đang sắp xếp khác Mặc định → chấm vàng (--accent) ở góc icon + aria-label ghi kiểu đang dùng (không chỉ dựa vào màu) */
-.fbtn{flex:none; align-self:center; width:40px; height:40px; margin:0 0 1px -4px; border-radius:50%; display:grid; place-items:center; color:var(--fg); background:var(--surface); z-index:1; transition:background-color var(--fast), transform var(--s-dur) var(--s-ease), opacity var(--s-dur) var(--s-ease)}
-.fbtn::after{content:""; position:absolute; inset:-2px}
-.fbtn:active,.fbtn[aria-expanded="true"]{background:var(--soft)}
-.fbtn .fdot{position:absolute; top:8px; right:7px; width:8px; height:8px; border-radius:50%; background:var(--accent); box-shadow:0 0 0 2px var(--surface); transform:scale(0); transition:transform 240ms var(--ease-out)}
-.fbtn[aria-expanded="true"] .fdot{box-shadow:0 0 0 2px var(--soft)}
-.fbtn.on .fdot{transform:scale(1)}
-.cbar .sbtn{margin-left:auto; transition:background-color var(--fast), transform var(--s-dur) var(--s-ease)}
-.cbar .csearch{transform:translate3d(calc(-1 * var(--xd)),0,0); transition:transform var(--s-dur) var(--s-ease)}
-.cbar.searching .sbtn{transform:translate3d(var(--xd),0,0); transition-delay:0s, var(--s-delay)}
-.cbar.searching .csearch{transform:translate3d(0,0,0); transition-delay:var(--s-delay)}
-.cbar.searching .fbtn,.cbar.searching .xbtn{transform:translate3d(44px,0,0); opacity:0; pointer-events:none; transition-delay:0s, var(--s-delay), var(--s-delay)}
-.cbar.s-gone .fbtn,.cbar.s-gone .xbtn{visibility:hidden}
-.cbar.s-from .sbtn,.cbar.s-from .fbtn,.cbar.s-from .xbtn{transform:none; opacity:1}
-.cbar.s-from .csearch{transform:translate3d(calc(-1 * var(--xd)),0,0)}
-.cbar.s-instant .sbtn,.cbar.s-instant .fbtn,.cbar.s-instant .xbtn,.cbar.s-instant .csearch{transition:none}
-/* bảng chọn kiểu sắp xếp (17/10, shop: "trên mobile bị che"): bảng NỔI — position:fixed, JS chuyển ra thẳng <body> (khỏi bị khung
-   danh mục cắt, khỏi lệch khi header + khung vòng đang đẩy lên), đặt theo vị trí nút trong màn hình thật (visualViewport): đủ chỗ thì
-   thả xuống dưới nút, thiếu thì bật lên trên nút; mép phải thẳng mép phải nút. 4 dòng cách nhau 4px, mỗi dòng cao 32px, chữ 13px,
-   không vạch ngăn; dòng đang chọn đậm + dấu tích vàng ngoài cùng bên phải (shop chốt 17/10) */
-.smenu{position:fixed; left:8px; top:8px; z-index:45; min-width:200px; padding:6px; border-radius:16px; background:var(--surface); border:1px solid var(--chip-line); box-shadow:var(--chip-shadow); transform-origin:var(--sm-ox,90%) var(--sm-oy,0px)}
-.smenu .sm-t{font-size:12px; font-weight:600; color:var(--muted); padding:6px 12px 4px; letter-spacing:.02em}
-.smenu button{display:flex; align-items:center; justify-content:space-between; gap:16px; width:100%; height:32px; margin:0; padding:0 10px 0 12px; border-radius:8px; font-size:13px; line-height:1; text-align:left; color:var(--fg); transition:background-color var(--fast)}
-.smenu button + button{margin-top:4px}
-.smenu button:active{background:var(--soft)}
-@media (hover:hover){ .smenu button:hover{background:var(--soft)} }
-.smenu button .ck{flex:none; color:var(--accent); opacity:0}
-.smenu button[aria-checked="true"]{font-weight:600}
-.smenu button[aria-checked="true"] .ck{opacity:1}
+.cbar.has-x .sbtn{margin-left:auto; transition:background-color var(--fast), transform var(--s-dur) var(--s-ease)}
+.cbar.has-x .csearch{transform:translate3d(calc(-1 * var(--xd)),0,0); transition:transform var(--s-dur) var(--s-ease)}
+.cbar.has-x.searching .sbtn{transform:translate3d(var(--xd),0,0); transition-delay:0s, var(--s-delay)}
+.cbar.has-x.searching .csearch{transform:translate3d(0,0,0); transition-delay:var(--s-delay)}
+.cbar.has-x.searching .xbtn{transform:translate3d(var(--xd),0,0); opacity:0; pointer-events:none; transition-delay:0s, var(--s-delay), var(--s-delay)}
+.cbar.s-gone .xbtn{visibility:hidden}
+.cbar.has-x.s-from .sbtn,.cbar.has-x.s-from .xbtn{transform:none; opacity:1}
+.cbar.has-x.s-from .csearch{transform:translate3d(calc(-1 * var(--xd)),0,0)}
+.cbar.s-instant .sbtn,.cbar.s-instant .xbtn,.cbar.s-instant .csearch{transition:none}
 /* con trỏ của iPhone không chạy theo hiệu ứng: ẩn con trỏ trong lúc ô nhập đang di chuyển */
 .cbar.moving .csearch input{caret-color:transparent}
 /* chữ trong ô tìm nhìn như 14px nhưng vẫn là 16px thật (iPhone tự phóng to trang khi ô nhập dưới 16px) */
@@ -423,9 +399,6 @@ textarea.copybox{width:100%; min-height:240px; border-radius:12px; border:1px so
   .sel-pill:not([hidden]){animation:pillIn 340ms var(--ease-out)}
   .sel-pill.out{animation:pillOut 280ms var(--ease-in) forwards}
   .specs:not([hidden]){animation:popIn 600ms var(--ease-out)}
-  /* bảng sắp xếp: cùng hiệu ứng với bảng (i) (shop yêu cầu 17/10) — hiện phóng .4 → 1 (popIn 600ms) từ chỗ nút, tắt mờ nhoè tan đi (specsOut 280ms) */
-  .smenu:not([hidden]){animation:popIn 600ms var(--ease-out)}
-  .smenu.out{animation:specsOut 280ms var(--ease-in) forwards; pointer-events:none}
   .specs.out{animation:specsOut 280ms var(--ease-in) forwards; pointer-events:none}
   @keyframes specsOut{from{opacity:1; filter:blur(0)} to{opacity:0; filter:blur(8px); transform:scale(1.04)}}
   @keyframes popIn{from{opacity:0; transform:scale(.4)} to{opacity:1; transform:none}}
@@ -436,7 +409,7 @@ textarea.copybox{width:100%; min-height:240px; border-radius:12px; border:1px so
 }
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms!important; animation-iteration-count:1!important; transition-duration:.01ms!important}
-  .csearch,.csearch *,.cbar .ctabs,.cbar .ctabs *,.cbar .sbtn,.cbar .xbtn,.cbar .fbtn,.xbtn svg{transition:none!important}
+  .csearch,.csearch *,.cbar .ctabs,.cbar .ctabs *,.cbar .sbtn,.cbar .xbtn,.xbtn svg{transition:none!important}
   .card.limit .ph{animation:none; box-shadow:inset 0 0 0 2px var(--danger)}
 }
 </style>
@@ -503,11 +476,6 @@ textarea.copybox{width:100%; min-height:240px; border-radius:12px; border:1px so
           <line class="s-b" x1="18" y1="6" x2="6" y2="18" stroke-dasharray="17 20"/>
         </svg>
       </button>
-      <button class="fbtn" id="sortBtn" type="button" aria-label="Sắp xếp" aria-haspopup="menu" aria-expanded="false" aria-controls="smenu">
-        <svg aria-hidden="true" focusable="false" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 5.5h17l-6.6 7.6v5.3l-3.8 1.9v-7.2z"/></svg>
-        <span class="fdot" aria-hidden="true"></span>
-      </button>
-      <div class="smenu" id="smenu" role="menu" aria-labelledby="sortBtn" hidden></div>
       <button class="xbtn" id="expBtn" type="button" aria-label="Mở rộng danh mục" aria-expanded="false" aria-controls="cpanel">
         <svg aria-hidden="true" focusable="false" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m6 11 6-6 6 6"/></svg>
       </button>
@@ -2111,21 +2079,22 @@ function renderCatalog(animate){
   else if(ctab==='charm'){
     side.hidden=false;gridHead.hidden=true;gridHead.innerHTML='';
     /* nhóm "Charm mới" (17/10): tự gom charm có Ngày thêm trong 7 ngày gần nhất, đứng TRÊN Tất cả (shop chốt; chấm đỏ cùng màu tag Mới);
-       không có charm mới thì ẩn nhóm. Trong nhóm này mặc định xếp mới nhất trước */
+       không có charm mới thì ẩn nhóm. Trong nhóm này xếp mới nhất trước (theo Ngày thêm; cùng ngày thì dòng dưới trong sheet = thêm sau lên trước).
+       17/10: shop bỏ nút sắp xếp (đã có nhóm Charm mới, giá đồng giá) — các nhóm khác giữ thứ tự trong sheet */
     const hasNew=CAT.charms.some(isNew);
     side.innerHTML=(hasNew?sideBtn('data-cat="new"',catId===NEW_CAT,'Charm mới','<span class="ndot" aria-hidden="true"></span>'):'')+sideBtn('data-cat="all"',catId==='all','Tất cả')+CAT.cats.map((c,i)=>sideBtn(`data-cat="${i}"`,c===catId,c)).join('');
-    const list=catId===NEW_CAT?sortList(CAT.charms.filter(isNew),'new'):sortList(CAT.charms.filter(e=>catId==='all'||e.cat===catId));
+    const list=catId===NEW_CAT?CAT.charms.filter(isNew).sort((x,y)=>(y.added||0)-(x.added||0)||(y.row||0)-(x.row||0)):CAT.charms.filter(e=>catId==='all'||e.cat===catId);
     grid.innerHTML=list.map((e,i)=>charmCard(e,i,cn)).join('');
     gridNote.textContent=CAT.source==='sheet'?'Bấm vào charm là charm được gắn lên vòng.':'Bấm vào charm là charm được gắn lên vòng. Đang hiện hình minh hoạ và giá mẫu.';
   }else if(ctab==='stop'&&bangleOn()){
     side.hidden=true;gridHead.hidden=true;gridHead.innerHTML='';side.innerHTML='';
-    const list=sortList(CAT.rings),r0=CAT.rings[0];
+    const list=CAT.rings,r0=list[0];
     grid.innerHTML=list.map((e,i)=>charmCard(e,i,cn)).join('');
     gridNote.textContent=r0?`Bấm 1 lần gắn 1 set ${r0.per} khoen (${fmt(r0.price)}), khoen tự rải giữa các charm, dồn nhiều ở giữa vòng; đang chọn charm thì gắn liền sau charm đó. Xoá bớt khoen vẫn tính trọn set.`:'Chưa có khoen.';
   }else if(ctab==='stop'){
     const cats=CAT.stopCats;side.hidden=!cats.length;gridHead.hidden=true;gridHead.innerHTML='';
     side.innerHTML=sideBtn('data-scat="all"',stopCatId==='all','Tất cả')+cats.map((c,i)=>sideBtn(`data-scat="${i}"`,c===stopCatId,c)).join('');
-    const list=sortList(CAT.stops.filter(e=>stopCatId==='all'||e.cat===stopCatId));
+    const list=CAT.stops.filter(e=>stopCatId==='all'||e.cat===stopCatId);
     grid.innerHTML=list.map((e,i)=>charmCard(e,i,cn)).join('');
     gridNote.textContent=list.length?'Hạt chặn được tặng miễn phí khi mua vòng mix charm. Bấm 1 lần gắn 1 hạt, thường gắn 2 hạt ở hai đầu cụm charm để giữ charm.':'Chưa có hạt chặn.';
   }else{
@@ -2135,7 +2104,7 @@ function renderCatalog(animate){
     const g=bs.length?(vcat||(bangleOn()?'bangle':'cord')):'cord';
     side.hidden=!bs.length;
     side.innerHTML=bs.length?sideBtn('data-vcat="cord"',g==='cord','Dây đan')+sideBtn('data-vcat="bangle"',g==='bangle','Vòng kiềng'):'';
-    grid.innerHTML=sortList(g==='bangle'?bs:ds).map((e,i)=>strapCard(e,i)).join('');
+    grid.innerHTML=(g==='bangle'?bs:ds).map((e,i)=>strapCard(e,i)).join('');
     gridNote.textContent=bs.length?(g==='bangle'?'Vòng kiềng kim loại chu vi 23 cm, dùng khoen thay hạt chặn.':'Dây đan dài 23 cm, có nút rút chỉnh vừa cổ tay, dùng hạt chặn.')+' Đổi loại vòng thì charm giữ nguyên; hạt chặn / khoen được cất lại, chọn lại loại vòng cũ là có lại.'
       :'Tất cả dây dài 23 cm, có nút rút để chỉnh vừa cổ tay. Bấm vào dây để đổi dây cho vòng.';
   }
@@ -2173,8 +2142,8 @@ function sMatch(e,toks){
 }
 function renderResults(cn){
   const q=SEARCH.shown,toks=sToks(q);
-  const bo=bangleOn(),cs=sortList(CAT.charms.filter(e=>sMatch(e,toks))),ss=sortList((bo?CAT.rings:CAT.stops).filter(e=>sMatch(e,toks))),
-    ds=sortList(CAT.straps.filter(e=>!isBangle(e)&&sMatch(e,toks))),bs=sortList(CAT.straps.filter(e=>isBangle(e)&&sMatch(e,toks))),n=cs.length+ss.length+ds.length+bs.length;
+  const bo=bangleOn(),cs=CAT.charms.filter(e=>sMatch(e,toks)),ss=(bo?CAT.rings:CAT.stops).filter(e=>sMatch(e,toks)),
+    ds=CAT.straps.filter(e=>!isBangle(e)&&sMatch(e,toks)),bs=CAT.straps.filter(e=>isBangle(e)&&sMatch(e,toks)),n=cs.length+ss.length+ds.length+bs.length;
   side.hidden=true;gridHead.hidden=false;
   gridHead.innerHTML=n?`<b>${n}</b> kết quả cho “${esc(q)}”`:`Không tìm thấy “${esc(q)}”`;
   let i=0;const sec=(t,k)=>`<p class="gsec">${t} · ${k}</p>`;
@@ -2191,7 +2160,7 @@ function runSearch(){
   SEARCH.shown=q;renderCatalog(true);gridTop();
 }
 function openSearch(){
-  if(SEARCH.open)return;SEARCH.open=true;sortMenu(false);
+  if(SEARCH.open)return;SEARCH.open=true;
   /* nhớ trạng thái danh mục lúc mở tìm kiếm (mở rộng / thu gọn + vị trí cuộn) để đóng thì trả về đúng như cũ */
   SEARCH.exp=EXP.on;SEARCH.st=gridWrap.scrollTop;
   const tb=$('ctabs'),lift=canLift()&&!RAISE.on,rm=reduceMotion();
@@ -2230,76 +2199,6 @@ function closeSearch(fromKey){
 }
 sBtn.addEventListener('click',e=>SEARCH.open?closeSearch(e.detail===0):openSearch());
 
-/* ---------- sắp xếp danh mục (17/10, shop: nút filter cạnh kính lúp — giá giảm dần, tăng dần, mới nhất, cũ nhất) ----------
-   Bấm nút phễu → bảng chọn: Mặc định / Mới nhất / Giá tăng dần / Giá giảm dần (shop bỏ Cũ nhất). Áp cho lưới đang xem (mọi tab,
-   mọi nhóm) và kết quả tìm kiếm (trong từng mục). Mới nhất / Cũ nhất theo cột Ngày thêm; dòng không có ngày coi như cũ hơn mọi dòng có
-   ngày; cùng ngày thì theo thứ tự dòng trong sheet (dòng dưới = thêm sau). Mặc định = thứ tự trong sheet (nhóm Charm mới: mới nhất trước).
-   Không lưu lại: mở lại web là Mặc định. */
-const SORTS=[['','Mặc định'],['new','Mới nhất'],['asc','Giá tăng dần'],['desc','Giá giảm dần']];   /* 17/10: shop bỏ Cũ nhất */
-let sortBy='';
-const priceKey=e=>e.stop?0:(e.price||0);
-function sortList(list,dflt){
-  const k=sortBy||dflt||'';if(!k||list.length<2)return list;
-  const by={asc:(x,y)=>priceKey(x)-priceKey(y),desc:(x,y)=>priceKey(y)-priceKey(x),
-    new:(x,y)=>(y.added||0)-(x.added||0)||(y.row||0)-(x.row||0),old:(x,y)=>(x.added||0)-(y.added||0)||(x.row||0)-(y.row||0)}[k];
-  if(!by)return list;
-  const tie=dflt&&dflt!==k?{new:(x,y)=>(y.added||0)-(x.added||0)||(y.row||0)-(x.row||0)}[dflt]:null;
-  return list.map((e,i)=>[e,i]).sort((a,b)=>by(a[0],b[0])||(tie?tie(a[0],b[0]):0)||a[1]-b[1]).map(a=>a[0]);
-}
-const sortBtn=$('sortBtn'),smenu=$('smenu'),SM={t:0,out:false};
-document.body.appendChild(smenu);   /* bảng nổi: ra khỏi khung danh mục (overflow cắt) và khỏi .shell (transform lúc đẩy lên làm lệch fixed) */
-const sortName=k=>(SORTS.find(x=>x[0]===k)||SORTS[0])[1];
-function syncSortBtn(){sortBtn.classList.toggle('on',!!sortBy);sortBtn.setAttribute('aria-label',sortBy?`Sắp xếp: ${sortName(sortBy)}`:'Sắp xếp');}
-const SM_CK=`<svg class="ck" aria-hidden="true" focusable="false" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7"/></svg>`;
-function sortMenu(open,focusItem){
-  if(!sortBtn)return;
-  const isOpen=sortBtn.getAttribute('aria-expanded')==='true';open=open==null?!isOpen:!!open;
-  if(open===isOpen)return;
-  clearTimeout(SM.t);
-  if(open){
-    smenu.innerHTML=`<div class="sm-t" aria-hidden="true">Sắp xếp theo</div>`+SORTS.map(([k,l])=>`<button type="button" role="menuitemradio" data-sort="${k}" aria-checked="${k===sortBy}" tabindex="-1"><span>${l}</span>${SM_CK}</button>`).join('');
-    smenu.classList.remove('out');SM.out=false;smenu.hidden=false;sortBtn.setAttribute('aria-expanded','true');
-    placeSortMenu();
-    if(focusItem)(smenu.querySelector('[aria-checked="true"]')||smenu.querySelector('[data-sort]')).focus({preventScroll:true});
-  }else{
-    const back=smenu.contains(document.activeElement);
-    sortBtn.setAttribute('aria-expanded','false');
-    if(back)sortBtn.focus({preventScroll:true});
-    if(reduceMotion()){smenu.hidden=true;return;}
-    smenu.classList.add('out');SM.out=true;
-    SM.t=setTimeout(()=>{smenu.hidden=true;smenu.classList.remove('out');SM.out=false;},290);
-  }
-}
-/* đặt bảng theo nút trong vùng màn hình đang thấy (visualViewport: trừ thanh công cụ Safari / bàn phím): dưới nút nếu đủ chỗ, không thì
-   trên nút; vẫn thiếu (màn rất thấp) thì sát mép dưới. Mép phải thẳng mép phải nút, không tràn mép trái / phải màn hình */
-function placeSortMenu(){
-  const vv=window.visualViewport,vt=vv?vv.offsetTop:0,vh=vv?vv.height:innerHeight,vw=vv?vv.width:innerWidth,vl=vv?vv.offsetLeft:0;
-  const fb=sortBtn.getBoundingClientRect(),w=smenu.offsetWidth,h=smenu.offsetHeight,g=6,m=8;
-  const left=Math.round(Math.max(vl+m,Math.min(fb.right+g,vl+vw-m)-w));
-  let top=fb.bottom+g,up=false;
-  if(top+h>vt+vh-m){if(fb.top-g-h>=vt+m){top=fb.top-g-h;up=true;}else top=Math.max(vt+m,vt+vh-m-h);}
-  smenu.style.left=left+'px';smenu.style.top=Math.round(top)+'px';
-  smenu.style.setProperty('--sm-ox',Math.round(fb.left+fb.width/2-left)+'px');smenu.style.setProperty('--sm-oy',up?h+'px':'0px');
-}
-['resize','orientationchange'].forEach(t=>window.addEventListener(t,()=>sortMenu(false)));
-if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(sortBtn.getAttribute('aria-expanded')==='true'&&!SM.out)placeSortMenu();});
-function setSort(k){
-  sortMenu(false);
-  if(k===sortBy)return;
-  sortBy=k;syncSortBtn();renderCatalog(true);gridTop();
-  $('live').textContent=`Đã sắp xếp: ${sortName(k)}`;
-}
-sortBtn.addEventListener('click',e=>{if(SEARCH.open)return;sortMenu(null,e.detail===0);});
-sortBtn.addEventListener('keydown',e=>{if((e.key==='ArrowDown'||e.key==='ArrowUp')&&!SEARCH.open){e.preventDefault();sortMenu(true,true);}});
-smenu.addEventListener('click',e=>{const b=e.target.closest('[data-sort]');if(b)setSort(b.dataset.sort);});
-smenu.addEventListener('keydown',e=>{
-  const its=[...smenu.querySelectorAll('[data-sort]')],i=its.indexOf(document.activeElement);
-  if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();its[(i+(e.key==='ArrowDown'?1:its.length-1)+its.length)%its.length].focus();}
-  else if(e.key==='Home'||e.key==='End'){e.preventDefault();its[e.key==='Home'?0:its.length-1].focus();}
-  else if(e.key==='Escape'){e.preventDefault();e.stopPropagation();sortMenu(false);}
-  else if(e.key==='Tab'){sortMenu(false);}
-});
-document.addEventListener('click',e=>{if(sortBtn.getAttribute('aria-expanded')==='true'&&e.target.closest&&!e.target.closest('#smenu,#sortBtn'))sortMenu(false);});
 function caretHide(ms){cbar.classList.add('moving');clearTimeout(SEARCH.ct);SEARCH.ct=setTimeout(()=>caretShow(true),ms+40);}
 function caretShow(nudge){
   clearTimeout(SEARCH.ct);if(!cbar.classList.contains('moving'))return;cbar.classList.remove('moving');
