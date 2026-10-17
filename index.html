@@ -418,10 +418,9 @@ textarea.copybox{width:100%; min-height:240px; border-radius:12px; border:1px so
   .sel-pill:not([hidden]){animation:pillIn 340ms var(--ease-out)}
   .sel-pill.out{animation:pillOut 280ms var(--ease-in) forwards}
   .specs:not([hidden]){animation:popIn 600ms var(--ease-out)}
-  .smenu:not([hidden]){animation:smIn 220ms var(--ease-out)}
-  .smenu.out{animation:smOut 150ms var(--ease-in) forwards; pointer-events:none}
-  @keyframes smIn{from{opacity:0; transform:translateY(var(--sm-dy,-6px)) scale(.94)} to{opacity:1; transform:none}}
-  @keyframes smOut{to{opacity:0; transform:translateY(calc(var(--sm-dy,-6px) * .7)) scale(.97)}}
+  /* bảng sắp xếp: cùng hiệu ứng với bảng (i) (shop yêu cầu 17/10) — hiện phóng .4 → 1 (popIn 600ms) từ chỗ nút, tắt mờ nhoè tan đi (specsOut 280ms) */
+  .smenu:not([hidden]){animation:popIn 600ms var(--ease-out)}
+  .smenu.out{animation:specsOut 280ms var(--ease-in) forwards; pointer-events:none}
   .specs.out{animation:specsOut 280ms var(--ease-in) forwards; pointer-events:none}
   @keyframes specsOut{from{opacity:1; filter:blur(0)} to{opacity:0; filter:blur(8px); transform:scale(1.04)}}
   @keyframes popIn{from{opacity:0; transform:scale(.4)} to{opacity:1; transform:none}}
@@ -2216,7 +2215,7 @@ function sortMenu(open,focusItem){
     if(back)sortBtn.focus({preventScroll:true});
     if(reduceMotion()){smenu.hidden=true;return;}
     smenu.classList.add('out');SM.out=true;
-    SM.t=setTimeout(()=>{smenu.hidden=true;smenu.classList.remove('out');SM.out=false;},160);
+    SM.t=setTimeout(()=>{smenu.hidden=true;smenu.classList.remove('out');SM.out=false;},290);
   }
 }
 /* đặt bảng theo nút trong vùng màn hình đang thấy (visualViewport: trừ thanh công cụ Safari / bàn phím): dưới nút nếu đủ chỗ, không thì
@@ -2229,7 +2228,6 @@ function placeSortMenu(){
   if(top+h>vt+vh-m){if(fb.top-g-h>=vt+m){top=fb.top-g-h;up=true;}else top=Math.max(vt+m,vt+vh-m-h);}
   smenu.style.left=left+'px';smenu.style.top=Math.round(top)+'px';
   smenu.style.setProperty('--sm-ox',Math.round(fb.left+fb.width/2-left)+'px');smenu.style.setProperty('--sm-oy',up?h+'px':'0px');
-  smenu.style.setProperty('--sm-dy',up?'6px':'-6px');
 }
 ['resize','orientationchange'].forEach(t=>window.addEventListener(t,()=>sortMenu(false)));
 if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(sortBtn.getAttribute('aria-expanded')==='true'&&!SM.out)placeSortMenu();});
