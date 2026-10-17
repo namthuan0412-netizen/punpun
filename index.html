@@ -207,11 +207,12 @@ button:disabled{cursor:default}
 .cbar.s-instant .sbtn,.cbar.s-instant .fbtn,.cbar.s-instant .xbtn,.cbar.s-instant .csearch{transition:none}
 /* bảng chọn kiểu sắp xếp (17/10, shop: "trên mobile bị che"): bảng NỔI — position:fixed, JS chuyển ra thẳng <body> (khỏi bị khung
    danh mục cắt, khỏi lệch khi header + khung vòng đang đẩy lên), đặt theo vị trí nút trong màn hình thật (visualViewport): đủ chỗ thì
-   thả xuống dưới nút, thiếu thì bật lên trên nút; mép phải thẳng mép phải nút. 4 dòng sát nhau (gap 0), mỗi dòng cao 24px, chữ 13px,
+   thả xuống dưới nút, thiếu thì bật lên trên nút; mép phải thẳng mép phải nút. 4 dòng cách nhau 4px, mỗi dòng cao 32px, chữ 13px,
    không vạch ngăn; dòng đang chọn đậm + dấu tích vàng ngoài cùng bên phải (shop chốt 17/10) */
 .smenu{position:fixed; left:8px; top:8px; z-index:45; min-width:200px; padding:6px; border-radius:16px; background:var(--surface); border:1px solid var(--chip-line); box-shadow:var(--chip-shadow); transform-origin:var(--sm-ox,90%) var(--sm-oy,0px)}
 .smenu .sm-t{font-size:12px; font-weight:600; color:var(--muted); padding:6px 12px 4px; letter-spacing:.02em}
-.smenu button{display:flex; align-items:center; justify-content:space-between; gap:16px; width:100%; height:24px; margin:0; padding:0 10px 0 12px; border-radius:6px; font-size:13px; line-height:1; text-align:left; color:var(--fg); transition:background-color var(--fast)}
+.smenu button{display:flex; align-items:center; justify-content:space-between; gap:16px; width:100%; height:32px; margin:0; padding:0 10px 0 12px; border-radius:8px; font-size:13px; line-height:1; text-align:left; color:var(--fg); transition:background-color var(--fast)}
+.smenu button + button{margin-top:4px}
 .smenu button:active{background:var(--soft)}
 @media (hover:hover){ .smenu button:hover{background:var(--soft)} }
 .smenu button .ck{flex:none; color:var(--accent); opacity:0}
