@@ -256,7 +256,7 @@ mark{background:var(--hl); color:var(--on-hl); border-radius:3px; padding:0 1px;
 .cside button[aria-current="true"]::before{content:""; position:absolute; left:0; top:12px; bottom:12px; width:3px; border-radius:0 3px 3px 0; background:var(--fg)}
 /* cột nhóm (12/10, shop yêu cầu): nền sáng + vạch trắng của nhóm đang chọn là 2 lớp chung (.cside::before / ::after) trượt lên / xuống
    giữa các nhóm, cùng nhịp thanh tab và nút Tròn/Ngang (600ms cubic-bezier(.3,.7,.2,1)). JS (syncSideBar) đặt vị trí + chiều cao theo nút đang chọn
-   (nhóm 2 dòng như "Butter Bear" cao hơn thì lớp nền / vạch cũng giãn theo). Lần vẽ đầu (chưa .ready) hoặc không có nhóm đang chọn thì nút tự vẽ như cũ */
+   (nhóm 2 dòng như "Butter bear", "Pompom-purin" cao hơn thì lớp nền / vạch cũng giãn theo). Lần vẽ đầu (chưa .ready) hoặc không có nhóm đang chọn thì nút tự vẽ như cũ */
 /* thứ tự lớp ghi rõ bằng z-index (nền 0 < chữ 1 < vạch 2), như nút Tròn/Ngang: iPhone (Safari) lúc danh mục đang đẩy lên / hạ xuống (will-change:transform)
    từng vẽ lớp nền đè lên chữ nhóm đang chọn → chữ mất ~0,7 giây (12/10). Dùng translateY 2D để lớp nền không bị tách thành lớp GPU riêng khi đứng yên */
 .cside::before{content:""; position:absolute; z-index:0; left:0; right:0; top:0; height:var(--cs-h,0px); transform:translateY(var(--cs-y,0px)); background:var(--surface); pointer-events:none}
@@ -267,6 +267,12 @@ mark{background:var(--hl); color:var(--on-hl); border-radius:3px; padding:0 1px;
 .cside.ready:not(.cs-off) button[aria-current="true"]{background:transparent}
 .cside.ready:not(.cs-off) button[aria-current="true"]::before{display:none}
 .cside .sk{height:14px; margin:15px 12px; border-radius:7px}
+/* tên nhóm (17/10, shop báo "Pompompurin" bị cột cắt mất chữ): JS (fitSide) tự chia dòng theo bề ngang chữ của cột, đo bằng chữ đậm 600
+   (= nhóm đang chọn) nên nhóm nào cũng ngắt dòng giống nhau dù đang chọn hay không → bấm đổi nhóm không bị nhảy cao / thấp.
+   Tên 1 chữ dài hơn cột ngắt theo vần, có gạch nối như sách báo: "Pompom-" / "purin", "Cinnamo-" / "roll" (dòng sau ít nhất 4 chữ cái).
+   Chưa chia được (JS lỗi) thì chữ tự xuống dòng như thường, chữ quá dài vẫn ngắt chứ không bị cột cắt */
+.cside .lb{position:relative; display:inline-block; vertical-align:top; max-width:100%; overflow-wrap:break-word}
+.cside .lb.fit{max-width:none; white-space:nowrap}
 .cgrid-wrap{flex:1; min-width:0; overflow-y:auto; overscroll-behavior:contain; padding:12px 12px calc(24px + env(safe-area-inset-bottom,0px))}
 .cgrid{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px 8px}
 .card{display:flex; flex-direction:column; align-items:center; gap:3px; padding:0 0 4px; border-radius:14px; text-align:center; min-width:0}
@@ -293,7 +299,6 @@ mark{background:var(--hl); color:var(--on-hl); border-radius:3px; padding:0 1px;
    ưu tiên số lượng, ẩn tag (vẫn thấy charm ở nhóm Charm mới) */
 @media (max-width:389px){ .card .new{top:5px; left:5px; height:20px; padding:0 6px; font-size:11px; letter-spacing:0} }
 @media (max-width:359px){ .card:has(.used) .new{display:none} }
-.cside .nlab{position:relative; display:inline-block; white-space:nowrap}
 .cside .ndot{position:absolute; top:0; right:-8px; width:6px; height:6px; border-radius:50%; background:var(--new)}
 .card .used{position:absolute; top:6px; right:6px; font-size:12px; font-weight:700; background:var(--fg); color:var(--bg); border-radius:999px; min-width:22px; height:22px; padding:0 6px; display:grid; place-items:center; line-height:1}
 .card.on .ph{box-shadow:inset 0 0 0 2px var(--fg)}
@@ -1833,7 +1838,54 @@ function syncTabBar(){
 }
 /* nền + vạch của nhóm đang chọn ở cột nhóm bên trái: đổi nhóm trong cùng một tab thì trượt; đổi tab (danh sách nhóm khác), lần đầu, font tải xong, đổi cỡ màn hình thì đặt ngay */
 const SIDEBAR={key:''};
+/* tên nhóm ở cột trái (17/10): tự chia dòng theo bề ngang chữ của cột (92px trừ lề = 72px; máy tính 112px), đo bằng chữ đậm 600 của nhóm đang chọn
+   → nhóm nào cũng ngắt giống nhau dù đang chọn hay không. Ngắt ở dấu cách trước; chữ dài hơn cả dòng thì ngắt theo vần + gạch nối, chỉ trước
+   1 phụ âm đứng trước nguyên âm (Pom|pom|purin, Cin|na|mo|roll), không tách phụ âm ghép (ch, ng, tr…); dòng 1 lấy dài nhất vừa (như trình duyệt),
+   dòng 1 ≥ 3 / dòng sau ≥ 4 chữ cái: "Pompom-" / "purin", "Cinnamo-" / "roll" */
+const sideBtn=(attr,cur,t,extra)=>`<button ${attr} aria-current="${cur}"><span class="lb" data-t="${esc(t)}">${esc(t)}${extra||''}</span></button>`;
+const SIDE_V='aeiouyàáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹ',SIDE_CC=/^(?:ch|gh|kh|ng|nh|ph|th|tr|sh|ck|wh|wr|qu|bl|br|cl|cr|dr|fl|fr|gl|gr|pl|pr|tw)$/;
+function sideHyph(w,max,W){
+  const s=w.toLowerCase(),v=c=>!!c&&SIDE_V.includes(c),l=c=>!!c&&c.toLowerCase()!==c.toUpperCase(),cut=i=>s[i-1]==='-'?w.slice(0,i):w.slice(0,i)+'-';
+  let best=0;
+  for(let i=3;i<=w.length-4;i++){
+    const a=s[i-1],b=s[i],n=s[i+1];
+    const ok=a==='-'||(l(a)&&l(b)&&!v(b)&&v(n)&&(v(a)||(v(s[i-2])&&!SIDE_CC.test(a+b))));
+    if(ok&&W(cut(i))<=max)best=i;
+  }
+  if(best)return best;
+  let i=w.length-1;while(i>1&&W(cut(i))>max)i--;
+  return i>1?i:0;
+}
+function sideLines(t,max,W){
+  t=String(t).replace(/\s+/g,' ').trim();
+  if(W(t)<=max)return[t];
+  const out=[];let cur='';
+  for(let w of t.split(' ')){
+    if(cur&&W(cur+' '+w)<=max){cur+=' '+w;continue;}
+    if(cur)out.push(cur);
+    while(W(w)>max){const i=sideHyph(w,max,W);if(!i)break;out.push(w[i-1]==='-'?w.slice(0,i):w.slice(0,i)+'-');w=w.slice(i);}
+    cur=w;
+  }
+  if(cur)out.push(cur);
+  return out;
+}
+function fitSide(){
+  const el=$('cside'),labs=el&&!el.hidden?el.querySelectorAll('.lb'):[];if(!labs.length)return;
+  const b=labs[0].parentElement,cs=getComputedStyle(b),max=b.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight);
+  if(!(max>20))return;
+  const cx=fitSide.cx||(fitSide.cx=document.createElement('canvas').getContext('2d'));if(!cx)return;
+  cx.font=`600 ${cs.fontSize} ${cs.fontFamily}`;
+  const key=max+'|'+cx.font+'|'+(document.fonts?document.fonts.status:''),W=x=>cx.measureText(x).width;
+  labs.forEach(lb=>{
+    if(lb.dataset.k===key)return;
+    const t=lb.dataset.t!=null?lb.dataset.t:lb.textContent,dot=lb.querySelector('.ndot'),lines=sideLines(t,max,W);
+    lb.innerHTML=lines.map(esc).join('<br>')+(dot?dot.outerHTML:'');
+    lb.classList.add('fit');lb.dataset.k=key;
+    if(lines.length>1)lb.parentElement.setAttribute('aria-label',t);else lb.parentElement.removeAttribute('aria-label');
+  });
+}
 function syncSideBar(){
+  try{fitSide();}catch(e){}
   const el=$('cside'),b=el&&!el.hidden?el.querySelector('button[aria-current="true"]'):null;
   if(!el)return;
   if(!b||!b.offsetHeight){el.classList.add('cs-off');SIDEBAR.key='';return;}
@@ -2061,7 +2113,7 @@ function renderCatalog(animate){
     /* nhóm "Charm mới" (17/10): tự gom charm có Ngày thêm trong 7 ngày gần nhất, đứng TRÊN Tất cả (shop chốt; chấm đỏ cùng màu tag Mới);
        không có charm mới thì ẩn nhóm. Trong nhóm này mặc định xếp mới nhất trước */
     const hasNew=CAT.charms.some(isNew);
-    side.innerHTML=(hasNew?`<button data-cat="new" aria-current="${catId===NEW_CAT}"><span class="nlab">Charm mới<span class="ndot" aria-hidden="true"></span></span></button>`:'')+`<button data-cat="all" aria-current="${catId==='all'}">Tất cả</button>`+CAT.cats.map((c,i)=>`<button data-cat="${i}" aria-current="${c===catId}">${esc(c)}</button>`).join('');
+    side.innerHTML=(hasNew?sideBtn('data-cat="new"',catId===NEW_CAT,'Charm mới','<span class="ndot" aria-hidden="true"></span>'):'')+sideBtn('data-cat="all"',catId==='all','Tất cả')+CAT.cats.map((c,i)=>sideBtn(`data-cat="${i}"`,c===catId,c)).join('');
     const list=catId===NEW_CAT?sortList(CAT.charms.filter(isNew),'new'):sortList(CAT.charms.filter(e=>catId==='all'||e.cat===catId));
     grid.innerHTML=list.map((e,i)=>charmCard(e,i,cn)).join('');
     gridNote.textContent=CAT.source==='sheet'?'Bấm vào charm là charm được gắn lên vòng.':'Bấm vào charm là charm được gắn lên vòng. Đang hiện hình minh hoạ và giá mẫu.';
@@ -2072,7 +2124,7 @@ function renderCatalog(animate){
     gridNote.textContent=r0?`Bấm 1 lần gắn 1 set ${r0.per} khoen (${fmt(r0.price)}), khoen tự rải giữa các charm, dồn nhiều ở giữa vòng; đang chọn charm thì gắn liền sau charm đó. Xoá bớt khoen vẫn tính trọn set.`:'Chưa có khoen.';
   }else if(ctab==='stop'){
     const cats=CAT.stopCats;side.hidden=!cats.length;gridHead.hidden=true;gridHead.innerHTML='';
-    side.innerHTML=`<button data-scat="all" aria-current="${stopCatId==='all'}">Tất cả</button>`+cats.map((c,i)=>`<button data-scat="${i}" aria-current="${c===stopCatId}">${esc(c)}</button>`).join('');
+    side.innerHTML=sideBtn('data-scat="all"',stopCatId==='all','Tất cả')+cats.map((c,i)=>sideBtn(`data-scat="${i}"`,c===stopCatId,c)).join('');
     const list=sortList(CAT.stops.filter(e=>stopCatId==='all'||e.cat===stopCatId));
     grid.innerHTML=list.map((e,i)=>charmCard(e,i,cn)).join('');
     gridNote.textContent=list.length?'Hạt chặn được tặng miễn phí khi mua vòng mix charm. Bấm 1 lần gắn 1 hạt, thường gắn 2 hạt ở hai đầu cụm charm để giữ charm.':'Chưa có hạt chặn.';
@@ -2082,7 +2134,7 @@ function renderCatalog(animate){
     const ds=CAT.straps.filter(e=>!isBangle(e)),bs=CAT.straps.filter(isBangle);
     const g=bs.length?(vcat||(bangleOn()?'bangle':'cord')):'cord';
     side.hidden=!bs.length;
-    side.innerHTML=bs.length?`<button data-vcat="cord" aria-current="${g==='cord'}">Dây đan</button><button data-vcat="bangle" aria-current="${g==='bangle'}">Vòng kiềng</button>`:'';
+    side.innerHTML=bs.length?sideBtn('data-vcat="cord"',g==='cord','Dây đan')+sideBtn('data-vcat="bangle"',g==='bangle','Vòng kiềng'):'';
     grid.innerHTML=sortList(g==='bangle'?bs:ds).map((e,i)=>strapCard(e,i)).join('');
     gridNote.textContent=bs.length?(g==='bangle'?'Vòng kiềng kim loại chu vi 23 cm, dùng khoen thay hạt chặn.':'Dây đan dài 23 cm, có nút rút chỉnh vừa cổ tay, dùng hạt chặn.')+' Đổi loại vòng thì charm giữ nguyên; hạt chặn / khoen được cất lại, chọn lại loại vòng cũ là có lại.'
       :'Tất cả dây dài 23 cm, có nút rút để chỉnh vừa cổ tay. Bấm vào dây để đổi dây cho vòng.';
